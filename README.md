@@ -4,7 +4,7 @@ Ploutos is a python library to generate and simulate a large number of microgrid
 
 ## Installation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install ploutos.
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install ploutos. (available soon)
 
 ```bash
 pip install ploutos
