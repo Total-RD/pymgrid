@@ -57,7 +57,7 @@ class MicrogridGenerator:
         self.microgrids= [] # generate a list of microgrid object
         #self.annual_load
         self.nb_microgrids=nb_microgrid
-        self.timestep=1
+        self.timestep= timestep
         self.path=path
 
     ###########################################
@@ -71,7 +71,7 @@ class MicrogridGenerator:
         onlyfiles.remove('.DS_Store')
 
 
-        file = pd.read_csv(path + onlyfiles[np.random.randint(low=0, high=len(onlyfiles))])
+        file = pd.read_csv(path + onlyfiles[np.random.randint(low=0, high=len(onlyfiles)+1)])
 
         # get number of files in our database
         # generate a random integer to select the files
@@ -163,7 +163,7 @@ class MicrogridGenerator:
     def size_mg(self, load, size_load=1):
         # generate a list of size based on the number of architecture  generated
         # 2 size the other generators based on the load
-        pv=size_load*(np.random.randint(low=30, high=120)/100)
+        pv=size_load*(np.random.randint(low=30, high=121)/100)
 
         #battery_size = self.size_battery(load)
         # return a dataframe with the power of each generator, and if applicable the number of generator
@@ -172,7 +172,7 @@ class MicrogridGenerator:
             'pv': pv,
             'load': size_load,
             'battery': self.size_battery(load),
-            'genset': self.size_genset(load),
+            'genset': self.size_genset(load,0.9),
             'grid': max(load.values)*2,
         }
 
@@ -189,7 +189,7 @@ class MicrogridGenerator:
 
     def size_battery(self, load):
         #energy duration
-        battery = np.random.randint(low=3,high=5)*np.mean(load.values)
+        battery = np.random.randint(low=3,high=6)*np.mean(load.values) #battery capacity =  3 to 5 hours of the mean load value
         #todo duration & power
         return battery
 
@@ -250,12 +250,12 @@ class MicrogridGenerator:
     ###########################################
 
 
-    def create_microgrid(self, ):
+    def create_microgrid(self):
         # get the sizing data
         # create microgrid object and append
         # return the list
 
-        rand = np.random.randn()
+        rand = np.random.rand()
         bin_genset = 0
         bin_grid = 0
 
@@ -269,16 +269,15 @@ class MicrogridGenerator:
 
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
         #size_df=8760
-        size_load = np.random.randint(low=876000,high=10000000)
-        load = pd.DataFrame(self.scale_ts(self.get_load_ts(), size_load))
+        size_load = np.random.randint(low=876000,high=10000001)
+        load = self.scale_ts(self.get_load_ts(), size_load,'sum') #already convert into a DataFrame with pd.read_csv
         print(load)
         print(size_load)
-        size = self.size_mg(load, size_load)
-
-        column_actions=[]
+        size = self.size_mg(load, size_load) #dictionary of the component characteristics
 
         column_actual_production=[]
         grid_ts=[]
+
         df_status = pd.DataFrame([0], columns=['net_load'])
         df_parameters =pd.DataFrame([size_load],columns=['load'])
         df_parameters['cost_loss_load'] = 10000
@@ -305,7 +304,6 @@ class MicrogridGenerator:
             column_actual_production.append('battery_charge')
             column_actual_production.append('battery_discharge')
             df_status['battery_soc'] = battery['soc_0']
-            df_status['battery_soc'] = battery['soc_0']
 
         if architecture['genset']==1:
             genset = self.get_genset(rated_power=size['genset'])
@@ -321,7 +319,7 @@ class MicrogridGenerator:
 
         grid_spec=0
         if architecture['grid']==1:
-            rand_weak_grid = np.random.randint(low=0, high=1)
+            rand_weak_grid = np.random.randint(low=0, high=2)
 
             grid = self.get_grid(rated_power=size['grid'], weak_grid=rand_weak_grid)
             df_parameters['grid_power_import'] = grid['grid_power_import']
@@ -336,13 +334,13 @@ class MicrogridGenerator:
         #df_parameters['load'] = size_load
         #column_status.append('net_load')
         #df_status['net_load'] = 0
-        column_actions = column_actual_production
+        column_actions = column_actual_production #useless at the moment
 
-        df_actions= pd.DataFrame(columns = column_actions, )
+        df_actions= pd.DataFrame(columns = column_actions)
         #df_status = pd.DataFrame(column_status)
         #if architecture['battery']==1:
         #    df_status = df_status.append({'battery_soc':0}, ignore_index=True)
-        df_actual_production = pd.DataFrame(columns=column_actual_production)
+        df_actual_production = pd.DataFrame(columns=column_actual_production) #df_action = df_actual_prod?
 
         #todo change microgrid spec to a more general set of attribure
         #change microgrid_spec to
@@ -370,7 +368,7 @@ class MicrogridGenerator:
             load 
             assert (sum gen, sum load)
         
-'''
+        '''
         #print(size['pv'])
         print(battery)
         microgrid_spec={
