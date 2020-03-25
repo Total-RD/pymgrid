@@ -51,7 +51,7 @@ from os.path import isfile, join
 
 class MicrogridGenerator:
 
-    def __init__(self, nb_microgrid=1, random_seed=42, timestep=1, path='/Users/j0406142/Documents/Python/ploutos/'):
+    def __init__(self, nb_microgrid=1, random_seed=42, timestep=1, path='/ploutos/'):
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
         self.microgrids= [] # generate a list of microgrid object
@@ -68,8 +68,8 @@ class MicrogridGenerator:
 
         onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
         #todo check for files name in a cleanedr way
-        onlyfiles.remove('.DS_Store')
-
+        if '.DS_Store'  in onlyfiles:
+            onlyfiles.remove('.DS_Store')
 
         file = pd.read_csv(path + onlyfiles[np.random.randint(low=0, high=len(onlyfiles))])
 
@@ -271,8 +271,7 @@ class MicrogridGenerator:
         #size_df=8760
         size_load = np.random.randint(low=876000,high=10000000)
         load = pd.DataFrame(self.scale_ts(self.get_load_ts(), size_load))
-        print(load)
-        print(size_load)
+
         size = self.size_mg(load, size_load)
 
         column_actions=[]
@@ -332,47 +331,13 @@ class MicrogridGenerator:
             column_actual_production.append('grid_import')
             column_actual_production.append('grid_export')
 
-
-        #df_parameters['load'] = size_load
-        #column_status.append('net_load')
-        #df_status['net_load'] = 0
         column_actions = column_actual_production
 
         df_actions= pd.DataFrame(columns = column_actions, )
-        #df_status = pd.DataFrame(column_status)
-        #if architecture['battery']==1:
-        #    df_status = df_status.append({'battery_soc':0}, ignore_index=True)
         df_actual_production = pd.DataFrame(columns=column_actual_production)
 
         #todo change microgrid spec to a more general set of attribure
-        #change microgrid_spec to
-        '''
-        self.parameters = parameters -> one line
-            size PV (kW)
-            size Battery kW, kWh, efficiency, soc min, soc max
-            size genset, rating + polynom, min, max
-            size load
-            
-        self.record_actions=pd.DataFrame() -> decision to dispatch what resourcee
-            pv 0, pv(i)
-            battery -p <0<p
-            genset 0 < min<max<rating
-            
-        self.record_status = pd.DataFrame()
-            battery SOC
-            genset soc ? Reserve
-            temp?
-            
-        self.record_generation = pd.DataFrame()
-            pv
-            battery
-            genset
-            load 
-            assert (sum gen, sum load)
-        
-'''
-        #print(size['pv'])
-        print(battery)
+
         microgrid_spec={
             'parameters':df_parameters,
             'df_actions':df_actions,
@@ -382,15 +347,9 @@ class MicrogridGenerator:
             'grid_spec':grid_spec,
             'df_cost':df_cost,
 
-
-            #old -> keep pv ts and load ts
             'pv':pd.DataFrame(self.scale_ts(self.get_pv_ts(), size['pv'])),
             'load': load,
             'grid_ts':grid_ts
-            #'genset': self.get_genset(rated_power=size['genset']),
-            #'battery': self.get_battery(capa=size['battery']),
-            #'size':size
-
         }
 
         microgrid = Microgrid.Microgrid(microgrid_spec)
