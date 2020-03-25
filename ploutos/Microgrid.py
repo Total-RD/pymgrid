@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 from copy import copy
-#import pyomo_model
 import cvxpy as cp
 import operator
 import math
@@ -35,22 +34,14 @@ class Microgrid:
         self.df_actual_generation = parameters['df_actual_generation']
         self.df_cost = parameters['df_cost']
 
-        #todo
-        self.df_reward = pd.DataFrame()
-
         self.horizon = 24
 
-
-        #self.new_row={'battery_soc':parameters['battery']['soc_0'], }
-        #self.record_status = self.record_status.append(self.new_row,ignore_index=True)
-
-    #def if __name__ == '__main__':
-
-    #todo
     def reset(self):
-        #todo reinitialize dataframes for RL
-        reset =0
-
+        #todo validate
+        self.df_actions = self.df_actions[0:0]
+        self.df_status = self.df_status[0:0]
+        self.df_actual_generation = self.df_actual_generation[0:0]
+        self.df_cost = self.df_cost[0:0]
 
     def generate_priority_list(self, architecture, parameters , grid_status=0,  ):
 
@@ -109,6 +100,10 @@ class Microgrid:
         pv_not_curtailed = 0
         self_consumed_pv = 0
 
+        #todo consider min production of genset
+        if self.architecture['genset'] == 1:
+            min_load = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]
+            temp_load=temp_load-min_load
         # for gen with prio i in 1:max(priority_dict)
         # we sort the priority list
         # probably we should force the PV to be number one, the min_power should be absorbed by genset, grid?
@@ -169,10 +164,10 @@ class Microgrid:
 
                 if gen == 'genset':
                     if temp_load  > 0:
-                        pGenset = temp_load #+ min_load
+                        pGenset = temp_load + min_load
                         temp_load = 0
                         # pGenset = pGenset + min_load
-                        #min_load = 0
+                        min_load = 0
 
         if temp_load > 0:
             load_not_matched = 1
@@ -184,7 +179,9 @@ class Microgrid:
                         'grid_export': pExport,
                         'load_not_matched': load_not_matched,
                         'pv_consummed': pv_not_curtailed,
-                        'pv_curtailed':pv - pv_not_curtailed}
+                        'pv_curtailed':pv - pv_not_curtailed,
+                            'load': load,
+                            'pv':pv}
                         #'nb_gen_min': nb_gen_min}
 
         return control_dict
@@ -210,269 +207,22 @@ class Microgrid:
 
             self.baseline_priority_list_action = self.record_action(control_dict, self.baseline_priority_list_action)
 
-            self.baseline_priority_list_update_status = self.update_status(control_dict,
+            self.baseline_priority_list_record_production = self.record_production(control_dict,
+                                                                                   self.baseline_priority_list_record_production, self.baseline_priority_list_update_status)
+
+
+            self.baseline_priority_list_update_status = self.update_status(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(),
                                                                            self.baseline_priority_list_update_status)
 
-            self.baseline_priority_list_record_production = self.record_production(control_dict,
-                                                                                   self.baseline_priority_list_record_production)
 
-            self.baseline_priority_list_cost = self.record_cost(control_dict, self.baseline_priority_list_cost)
+            self.baseline_priority_list_cost = self.record_cost(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(), self.baseline_priority_list_cost)
 
 
-    def mpc_lin_prog_cvxpy_old(self, parameters, load, pv, grid, status, horizon=24):
-        #horizon = 24
-        #todo switch to a matrix structure
-        load = np.reshape(load, (horizon,))
-
-        fuel_cost_polynom = 0
-        if self.architecture['genset'] == 1:
-            fuel_cost_polynom = []
-            fuel_cost_polynom_order = self.parameters['genset_polynom_order'].values[0]
-            for i in range(fuel_cost_polynom_order):
-                fuel_cost_polynom.append(self.parameters['genset_polynom_' + str(i)].values[0])
-
-        # variables
-        #if self.architecture['genset'] ==1:
-        p_genset = cp.Variable((horizon,), pos=True)
-
-        #if self.architecture['grid']==1:
-        p_grid_import = cp.Variable((horizon,), pos=True)
-        p_grid_export = cp.Variable((horizon,), pos=True)
-        u_import = cp.Variable((horizon,),pos=True)# boolean=True)
-        u_export = cp.Variable((horizon,), pos=True)#boolean=True)
-
-        #if self.architecture['battery'] == 1:
-        p_charge = cp.Variable((horizon,), pos=True)
-        p_discharge = cp.Variable((horizon,), pos=True)
-        u_charge = cp.Variable((horizon,), pos=True)#boolean=True)
-        u_discharge = cp.Variable((horizon,),pos=True)# boolean=True)
-        nb_battery_cycle = cp.Variable((horizon,), pos=True)
-
-        #if self.architecture['pv']==1:
-        p_curtail_pv = cp.Variable((horizon,), pos=True)
-
-        p_loss_load = cp.Variable((horizon,), pos=True)
-
-        # parameters
-        fuel_cost = np.zeros(horizon)
-        p_price_import = np.zeros(horizon)
-        p_price_export = np.zeros(horizon)
-        cost_battery_cycle = np.zeros(horizon)
-
-
-        cost_loss_load = parameters['cost_loss_load'].values[0]*np.ones(horizon)
-
-
-
-        # Constraints
-        constraints = []
-        constraints += [p_loss_load <= load]
-        if self.architecture['genset'] ==1:
-            # p_genset_min = parameters['genset_pmin'].values[0] * np.ones(horizon)
-            # p_genset_max = parameters['genset_pmax'].values[0] * np.ones(horizon)
-            p_genset_min = parameters['genset_pmin'].values[0]
-            p_genset_max = parameters['genset_pmax'].values[0]
-
-            for t in range(horizon):
-
-                constraints += [p_genset[t] >= p_genset_min,
-                                p_genset[t] <= p_genset_max]
-
-            #fuel_cost =  parameters['fuel_cost'].values[0]  * np.ones(horizon)
-            fuel_cost = parameters['fuel_cost'].values[0] * np.ones(horizon)
-        else:
-            for t in range(horizon):
-                constraints += [p_genset[t] == 0]
-
-
-        if self.architecture['grid']==1:
-            # grid = np.reshape(grid, (horizon,))
-            # p_grid_import_max = parameters['grid_power_import'].values[0] * np.ones(horizon)
-            # p_grid_export_max = parameters['grid_power_export'].values[0] * np.ones(horizon)
-            #
-            # constraints += [p_grid_import <= p_grid_import_max*u_import,
-            #                 p_grid_export <= p_grid_export_max*u_export,
-            #                 u_import+u_export <=1]
-            #
-            # p_price_import = parameters['grid_price_import'].values[0] * np.ones(horizon)
-            # p_price_export = parameters['grid_price_export'].values[0] * np.ones(horizon)
-
-            grid = np.reshape(grid, (horizon,))
-            p_grid_import_max = parameters['grid_power_import'].values[0]
-            p_grid_export_max = parameters['grid_power_export'].values[0]
-
-            for t in range(horizon):
-                constraints += [p_grid_import[t] <= p_grid_import_max * u_import[t],
-                                p_grid_export[t] <= p_grid_export_max * u_export[t],
-                                u_import[t] + u_export[t] <= 1]
-
-            p_price_import = parameters['grid_price_import'].values[0] * np.ones(horizon)
-            p_price_export = parameters['grid_price_export'].values[0] * np.ones(horizon)
-
-        else:
-            # constraints += [p_grid_import==np.zeros(horizon),
-            #                 p_grid_export==np.zeros(horizon)]
-
-            for t in range(horizon):
-                constraints += [p_grid_import[t] == 0,
-                                p_grid_export[t] == 0]
-
-
-
-        if self.architecture['battery'] == 1:
-            # nb_battery_cycle = cp.Variable((horizon,), pos=True)
-            # battery_soc = cp.Variable((horizon,), pos=True)
-            #
-            # cost_battery_cycle = parameters['battery_cost_cycle'].values[0] * np.ones(horizon)
-            #
-            # p_charge_max = parameters['battery_power_charge'].values[0] * np.ones(horizon)
-            # p_discharge_max = parameters['battery_power_discharge'].values[0] * np.ones(horizon)
-            #
-            # constraints += [p_charge <= p_charge_max*u_charge,
-            #                 p_discharge <= p_discharge_max*u_discharge,
-            #                 u_charge+u_discharge <=1]
-            #
-            # constraints+=[nb_battery_cycle == (p_charge+p_discharge)/(2*parameters['battery_capacity'].values[0]*np.ones(horizon))]
-            # soc_0 = status.iloc[-1]['battery_soc']
-            # constraints += [battery_soc[0] == soc_0 +(p_charge[0]*parameters['battery_efficiency'].values[0]
-            #                                           - p_discharge[0] /parameters['battery_efficiency'].values[0])/parameters['battery_capacity'].values[0]]
-            # for t in range(1, horizon):
-            #     constraints += [battery_soc[t] == battery_soc[t-1] + (p_charge[t]*parameters['battery_efficiency'].values[0]
-            #                                           - p_discharge[t] /parameters['battery_efficiency'].values[0])/parameters['battery_capacity'].values[0]]
-            #
-            # constraints += [battery_soc >= parameters['battery_soc_min'].values[0]*np.ones(horizon),
-            #                battery_soc <= parameters['battery_soc_max'].values[0] * np.ones(horizon)]
-
-            nb_battery_cycle = cp.Variable((horizon,), pos=True)
-            battery_soc = cp.Variable((horizon,), pos=True)
-
-            cost_battery_cycle = parameters['battery_cost_cycle'].values[0] * np.ones(horizon)
-
-            p_charge_max = parameters['battery_power_charge'].values[0]
-            p_discharge_max = parameters['battery_power_discharge'].values[0]
-
-            for t in range(horizon):
-
-                constraints += [p_charge[t] <= p_charge_max * u_charge[t],
-                                p_discharge[t] <= p_discharge_max * u_discharge[t],
-                                u_charge[t] + u_discharge[t] <= 1]
-
-                constraints += [nb_battery_cycle[t] == (p_charge[t] + p_discharge[t]) / (
-                            2 * parameters['battery_capacity'].values[0] )]
-
-                constraints += [battery_soc[t] >= parameters['battery_soc_min'].values[0] ,
-                                battery_soc[t] <= parameters['battery_soc_max'].values[0] ]
-
-            soc_0 = status.iloc[-1]['battery_soc']
-            constraints += [battery_soc[0] == soc_0 + (p_charge[0] * parameters['battery_efficiency'].values[0]
-                                                       - p_discharge[0] / parameters['battery_efficiency'].values[0]) /
-                            parameters['battery_capacity'].values[0]]
-            for t in range(1, horizon):
-                constraints += [
-                    battery_soc[t] == battery_soc[t - 1] + (p_charge[t] * parameters['battery_efficiency'].values[0]
-                                                            - p_discharge[t] / parameters['battery_efficiency'].values[
-                                                                0]) / parameters['battery_capacity'].values[0]]
-
-
-        else:
-            # constraints += [p_charge ==np.zeros(horizon),
-            #                 p_discharge ==np.zeros(horizon) ,
-            #                 nb_battery_cycle ==np.zeros(horizon),]
-            for t in range(horizon):
-                constraints += [p_charge[t] == 0,
-                                p_discharge[t] == 0,
-                                nb_battery_cycle[t] == 0, ]
-
-        if self.architecture['PV']==1:
-            pv = np.reshape(pv, (horizon,))
-
-            # constraints+=[p_curtail_pv >=0,
-            #               p_curtail_pv<=pv]
-
-            for t in range(horizon):
-
-                constraints += [p_curtail_pv[t] <= pv[t]]
-        else:
-            for t in range(horizon):
-                constraints += [p_curtail_pv[t] == 0]
-
-
-        #constraint balance of power
-
-        for t in range(horizon):
-
-            constraints+=[p_genset[t]
-                          + p_grid_import[t] * grid[t]
-                          + p_discharge[t]
-                          - p_grid_export[t] * grid[t]
-                          - p_charge[t]
-                          + p_curtail_pv[t]
-                          - p_loss_load[t] == load[t] - pv[t]]
-
-        total_cost = 0.0
-
-        for t in range(horizon):
-            total_cost+= (fuel_cost[t] * p_genset[t]
-                         + p_grid_import[t] * p_price_import[t]
-                         - p_grid_export[t] * p_price_export[t]
-                         + p_loss_load[t] * cost_loss_load[t]
-                         + nb_battery_cycle[t] * cost_battery_cycle[t])
-
-        # Objective function
-        obj = cp.Minimize(total_cost)
-        # obj = cp.Minimize(cp.sum(fuel_cost * p_genset
-        #                          + p_grid_import * p_price_import
-        #                          - p_grid_export * p_price_export
-        #                          +p_loss_load*cost_loss_load
-        #                          +nb_battery_cycle*cost_battery_cycle))
-
-        #todo fuel cost to consider polynom
-
-        # set fuel consumption times price, elect * price, battery degradation
-        # if fuel_cost_polynom_order == 0:
-        #     obj = cp.Minimize(cp.sum(p_grid_import*p_price_import-p_grid_export*p_price_export))
-        #
-        # if fuel_cost_polynom_order == 1:
-        #     obj = cp.Minimize(cp.sum(fuel_cost_polynom[0] +fuel_cost_polynom[1] * p_genset +
-        #                              p_grid_import * p_price_import - p_grid_export * p_price_export))
-        #
-        # if fuel_cost_polynom_order == 2:
-        #     obj = cp.Minimize(cp.sum(fuel_cost_polynom[0] +fuel_cost_polynom[1] * p_genset +
-        #                              fuel_cost_polynom[2] * p_genset**2 +
-        #                              p_grid_import * p_price_import - p_grid_export * p_price_export))
-
-        prob = cp.Problem(obj, constraints)
-        print(prob.is_dcp())
-        prob.solve()
-        #print(prob)
-        print(prob.value)
-        print(p_charge.value)
-        print(p_discharge.value)
-        print(p_genset.value)
-        print(p_grid_export.value)
-        print(p_grid_import.value)
-        print(p_loss_load.value)
-        print(p_curtail_pv.value)
-        print(pv)
-        print(load)
-        control_dict = {'battery_charge': p_charge.value[0],
-                            'battery_discharge': p_discharge.value[0],
-                            'genset': p_genset.value[0],
-                            'grid_import': p_grid_import.value[0],
-                            'grid_export': p_grid_export.value[0],
-                            'load_not_matched': p_loss_load.value[0],
-                            'pv_consummed': pv[0]-p_curtail_pv.value[0],
-                            'pv_curtailed': p_curtail_pv.value[0]}
-
-        #print(control_dict)
-
-        return control_dict
 
     def mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
-        #horizon = 24
         #todo switch to a matrix structure
         load = np.reshape(load, (horizon,))
-
+        #todo mip to choose which generators are online
         fuel_cost_polynom = 0
         if self.architecture['genset'] == 1:
             fuel_cost_polynom = []
@@ -531,28 +281,13 @@ class Microgrid:
 
                 total_cost += (p_genset[t] * fuel_cost[t])
 
-
-
-            #fuel_cost =  parameters['fuel_cost'].values[0]  * np.ones(horizon)
-
-
-
         else:
             for t in range(horizon):
                 constraints += [p_genset[t] == 0]
 
 
         if self.architecture['grid']==1:
-            # grid = np.reshape(grid, (horizon,))
-            # p_grid_import_max = parameters['grid_power_import'].values[0] * np.ones(horizon)
-            # p_grid_export_max = parameters['grid_power_export'].values[0] * np.ones(horizon)
-            #
-            # constraints += [p_grid_import <= p_grid_import_max*u_import,
-            #                 p_grid_export <= p_grid_export_max*u_export,
-            #                 u_import+u_export <=1]
-            #
-            # p_price_import = parameters['grid_price_import'].values[0] * np.ones(horizon)
-            # p_price_export = parameters['grid_price_export'].values[0] * np.ones(horizon)
+
 
             grid = np.reshape(grid, (horizon,))
             p_grid_import_max = parameters['grid_power_import'].values[0]
@@ -572,37 +307,11 @@ class Microgrid:
 
 
         else:
-            # constraints += [p_grid_import==np.zeros(horizon),
-            #                 p_grid_export==np.zeros(horizon)]
-
             for t in range(horizon):
                 constraints += [p_grid_import[t] == 0,
                                 p_grid_export[t] == 0]
 
         if self.architecture['battery'] == 1:
-            # nb_battery_cycle = cp.Variable((horizon,), pos=True)
-            # battery_soc = cp.Variable((horizon,), pos=True)
-            #
-            # cost_battery_cycle = parameters['battery_cost_cycle'].values[0] * np.ones(horizon)
-            #
-            # p_charge_max = parameters['battery_power_charge'].values[0] * np.ones(horizon)
-            # p_discharge_max = parameters['battery_power_discharge'].values[0] * np.ones(horizon)
-            #
-            # constraints += [p_charge <= p_charge_max*u_charge,
-            #                 p_discharge <= p_discharge_max*u_discharge,
-            #                 u_charge+u_discharge <=1]
-            #
-            # constraints+=[nb_battery_cycle == (p_charge+p_discharge)/(2*parameters['battery_capacity'].values[0]*np.ones(horizon))]
-            # soc_0 = status.iloc[-1]['battery_soc']
-            # constraints += [battery_soc[0] == soc_0 +(p_charge[0]*parameters['battery_efficiency'].values[0]
-            #                                           - p_discharge[0] /parameters['battery_efficiency'].values[0])/parameters['battery_capacity'].values[0]]
-            # for t in range(1, horizon):
-            #     constraints += [battery_soc[t] == battery_soc[t-1] + (p_charge[t]*parameters['battery_efficiency'].values[0]
-            #                                           - p_discharge[t] /parameters['battery_efficiency'].values[0])/parameters['battery_capacity'].values[0]]
-            #
-            # constraints += [battery_soc >= parameters['battery_soc_min'].values[0]*np.ones(horizon),
-            #                battery_soc <= parameters['battery_soc_max'].values[0] * np.ones(horizon)]
-
             nb_battery_cycle = cp.Variable((horizon,), pos=True)
             battery_soc = cp.Variable((horizon,), pos=True)
 
@@ -616,9 +325,6 @@ class Microgrid:
                 constraints += [p_charge[t] <= p_charge_max ,
                                 p_discharge[t] <= p_discharge_max ,
                                 u_charge[t] + u_discharge[t] <= 1]
-
-                constraints += [nb_battery_cycle[t] == (p_charge[t] + p_discharge[t]) / (
-                            2 * parameters['battery_capacity'].values[0] )]
 
                 constraints += [battery_soc[t] >= parameters['battery_soc_min'].values[0] ,
                                 battery_soc[t] <= parameters['battery_soc_max'].values[0] ]
@@ -638,22 +344,13 @@ class Microgrid:
 
 
         else:
-            # constraints += [p_charge ==np.zeros(horizon),
-            #                 p_discharge ==np.zeros(horizon) ,
-            #                 nb_battery_cycle ==np.zeros(horizon),]
             for t in range(horizon):
                 constraints += [p_charge[t] == 0,
-                                p_discharge[t] == 0,
-                                nb_battery_cycle[t] == 0, ]
+                                p_discharge[t] == 0 ]
 
         if self.architecture['PV']==1:
             pv = np.reshape(pv, (horizon,))
-
-            # constraints+=[p_curtail_pv >=0,
-            #               p_curtail_pv<=pv]
-
             for t in range(horizon):
-
                 constraints += [p_curtail_pv[t] <= pv[t]]
         else:
             for t in range(horizon):
@@ -674,21 +371,8 @@ class Microgrid:
                            == load[t] - pv[t]]
 
 
-
-        # for t in range(horizon):
-        #     total_cost+= (fuel_cost[t] * p_genset[t]
-        #                  + p_grid_import[t] * p_price_import[t]
-        #                  - p_grid_export[t] * p_price_export[t]
-        #                  + p_loss_load[t] * cost_loss_load[t]
-        #                  + nb_battery_cycle[t] * cost_battery_cycle[t])
-
         # Objective function
         obj = cp.Minimize(total_cost)
-        # obj = cp.Minimize(cp.sum(fuel_cost * p_genset
-        #                          + p_grid_import * p_price_import
-        #                          - p_grid_export * p_price_export
-        #                          +p_loss_load*cost_loss_load
-        #                          +nb_battery_cycle*cost_battery_cycle))
 
         #todo fuel cost to consider polynom
 
@@ -707,19 +391,8 @@ class Microgrid:
 
 
         prob = cp.Problem(obj, constraints)
-        #print(prob.is_dcp())
         prob.solve()#verbose=True)#, solver=cp.ECOS,)
-        #print(prob)
-        # print(prob.value)
-        # print(p_charge.value)
-        # print(p_discharge.value)
-        # print(p_genset.value)
-        # print(p_grid_export.value)
-        # print(p_grid_import.value)
-        # print(p_loss_load.value)
-        # print(p_curtail_pv.value)
-        # print(pv)
-        # print(load)
+
         control_dict = {'battery_charge': p_charge.value[0],
                             'battery_discharge': p_discharge.value[0],
                             'genset': p_genset.value[0],
@@ -727,15 +400,13 @@ class Microgrid:
                             'grid_export': p_grid_export.value[0],
                             'load_not_matched': p_loss_load.value[0],
                             'pv_consummed': pv[0]-p_curtail_pv.value[0],
-                            'pv_curtailed': p_curtail_pv.value[0]}
-
-        #print(control_dict)
+                            'pv_curtailed': p_curtail_pv.value[0],
+                            'load': load[0],
+                            'pv':pv[0]}
 
         return control_dict
 
     def baseline_linprog(self, forecast_error=0, length=8760):
-        #todo change to cvxpy
-        #MPC style day ahead?
 
         self.baseline_linprog_action = copy(self.df_actions)
         self.baseline_linprog_update_status = copy(self.df_status)
@@ -756,16 +427,16 @@ class Microgrid:
 
             self.baseline_linprog_action = self.record_action(control_dict, self.baseline_linprog_action)
 
-            self.baseline_linprog_update_status = self.update_status(control_dict,
+            self.baseline_linprog_record_production = self.record_production(control_dict,
+                                                                             self.baseline_linprog_record_production,
+                                                                             self.baseline_linprog_update_status)
+
+            self.baseline_linprog_update_status = self.update_status(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
                                                                            self.baseline_linprog_update_status)
 
-            self.baseline_linprog_record_production = self.record_production(control_dict,
-                                                                                   self.baseline_linprog_record_production)
-
-            self.baseline_linprog_cost = self.record_cost(control_dict,
+            self.baseline_linprog_cost = self.record_cost(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
                                                                                    self.baseline_linprog_cost)
 
-    #def apply_control(self, control_dict):
 
     def record_action(self, control_dict, df):
         df = df.append(control_dict,ignore_index=True)
@@ -787,7 +458,7 @@ class Microgrid:
 
         dict = {
             'battery_soc':new_soc,
-            'net_load': 0
+            'net_load': control_dict['load']-control_dict['pv']
         }
 
         df = df.append(dict,ignore_index=True)
@@ -800,16 +471,164 @@ class Microgrid:
 
         return df
 
-    def record_production(self, control_dict, df):
 
-        #todo enforce constaints
+    #now we consider all the generators on all the time (mainly concern genset)
+    
+    def check_constraints_genset(self, p_genset):
+        if p_genset < 0:
+            p_genset =0
+            print('error, genset power cannot be lower than 0')
+    
+        if p_genset < self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]:
+            p_genset = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]
+        
+        if p_genset > self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmax'].values[0]:
+            p_genset = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmax'].values[0]
+        
+        return p_genset
+        
+    def check_constraints_grid(self, p_import, p_export):
+        if p_import < 0:
+            p_import = 0
+
+        if p_export <0:
+            p_export = 0
+
+        if p_import > 0 and p_export > 0:
+            print ('cannot import and export at the same time')
+            #todo how to deal with that?
+            
+        if p_import > self.parameters['grid_power_import'].values[0]:
+            p_import = self.parameters['grid_power_import'].values[0]
+
+        if p_export > self.parameters['grid_power_export'].values[0]:
+            p_export = self.parameters['grid_power_export'].values[0]
+        
+        return p_import, p_export
+        
+    def check_constraints_battery(self, p_charge, p_discharge, status):
+
+        if p_charge < 0:
+            p_charge = 0
+
+        if p_discharge < 0:
+            p_discharge = 0
+
+        if p_charge > 0 and p_discharge > 0:
+            print ('cannot import and export at the same time')
+            #todo how to deal with that?
+
+        capa_to_charge = max(
+                        (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
+                         status['battery_soc'].iloc[-1] *
+                         self.parameters['battery_capacity'].values[0]
+                         ) / self.parameters['battery_efficiency'].values[0], 0)
+
+        capa_to_discharge = max((status['battery_soc'].iloc[-1] *
+                                 self.parameters['battery_capacity'].values[0]
+                                 - self.parameters['battery_soc_min'].values[0] *
+                                 self.parameters['battery_capacity'].values[0]
+                                 ) * self.parameters['battery_efficiency'].values[0], 0)
+
+        if p_charge > capa_to_charge or p_charge > self.parameters['battery_power_charge'].values[0]:
+            p_charge = min (capa_to_charge, self.parameters['battery_power_charge'].values[0])
+
+
+        if p_discharge > capa_to_discharge or p_discharge > self.parameters['battery_power_discharge'].values[0]:
+            p_discharge = min (capa_to_discharge, self.parameters['battery_power_discharge'].values[0])
+
+        return p_charge, p_discharge
+
+    def record_production(self, control_dict, df, status):
+
+        #todo enforce constraints
         #todo make sure the control actions repect their respective constriants
-        #todo enforce energy balance
-        df = df.append(control_dict,ignore_index=True)
+        total_load = 0
+        total_production = 0
+        threshold = 0.001
+        total_load = control_dict['load'] - control_dict['pv']
+
+
+        #check the generator constraints
+
+
+        try:
+            total_production += control_dict['load_not_matched']
+        except:
+            control_dict['load_not_matched'] =0
+        try:
+            total_production -= control_dict['pv_curtailed']
+        except:
+            control_dict['pv_curtailed'] = 0
+
+        if self.architecture['genset'] == 1:
+            try:
+                p_genset = control_dict['genset']
+            except:
+                p_genset = 0
+                print("this microgrid has a genset, you should add a 'genset' field to your control dictionnary")
+
+            control_dict['genset'] = self.check_constraints_genset(p_genset)
+            total_production += control_dict['genset']
+
+        if self.architecture['grid'] == 1:
+            try:
+                p_import = control_dict['grid_import']
+                p_export = control_dict['grid_export']
+            except:
+                p_import = 0
+                p_export = 0
+                print("this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
+
+            p_import, p_export = self.check_constraints_grid(p_import, p_export)
+            control_dict['grid_import'] = p_import
+            control_dict['grid_export'] = p_export
+
+            total_production += control_dict['grid_import']
+            total_production -= control_dict['grid_export']
+
+        if self.architecture['battery'] == 1:
+
+            try:
+                p_charge=control_dict['battery_charge']
+                p_discharge=control_dict['battery_discharge']
+
+            except:
+                p_charge = 0
+                p_discharge = 0
+                print(
+                    "this microgrid is grid connected, you should add a 'battery_charge' and a 'battery_discharge' field to your control dictionnary")
+
+
+            p_charge, p_discharge = self.check_constraints_battery(p_charge,
+                                                                   p_discharge,
+                                                                   status)
+            control_dict['battery_discharge'] = p_discharge
+            control_dict['battery_charge'] = p_charge
+
+            total_production += control_dict['battery_discharge']
+            total_production -= control_dict['battery_charge']
+
+        if abs(total_production - total_load) < threshold:
+            df = df.append(control_dict, ignore_index=True)
+
+        elif total_production > total_load :
+            # here we consider we produced more than needed ? we pay the price of the full cost proposed?
+            # penalties ?
+            df = df.append(control_dict, ignore_index=True)
+            print('total_production > total_load')
+            print(control_dict)
+
+        elif total_production < total_load :
+            control_dict['load_not_matched']+= total_load-total_production
+            df = df.append(control_dict, ignore_index=True)
+            print('total_production < total_load')
+            print(control_dict)
 
         return df
 
     def record_cost(self, control_dict, df):
+
         cost = control_dict['load_not_matched'] * self.parameters['cost_loss_load'].values[0]
 
         if self.architecture['genset'] == 1:
@@ -837,7 +656,7 @@ class Microgrid:
         self.df_actual_generation = self.record_production(control_dict,
                                                                          self.df_actual_generation)
 
-        self.df_cost = self.record_cost(control_dict,
+        self.df_cost = self.record_cost(self.df_actual_generation.iloc[-1,:].to_dict('list'),
                                                            self.df_cost)
 
         #self.check_control()
