@@ -133,7 +133,6 @@ class MicrogridGenerator:
         return self.get_random_file(path)
 
     def generate_weak_grid_profile(self, outage_per_day, duration_of_outage,nb_time_step_per_year):
-        np.random.seed(self.random_seed)
 
         #weak_grid_timeseries = np.random.random_integers(0,1, int(nb_time_step_per_year+1) ) #for a number of time steps, value between 0 and 1
         #generate a timeseries of 8760/timestep points based on np.random seed
@@ -231,7 +230,7 @@ class MicrogridGenerator:
         if weak_grid == 1:
             rand_outage_per_day = np.random.randn()*3/4 +0.25
             rand_duration = np.random.randint(low=1, high =8)
-            grid_ts = self.generate_weak_grid_profile(self, rand_outage_per_day, rand_duration,8760/self.timestep)
+            grid_ts = self.generate_weak_grid_profile( rand_outage_per_day, rand_duration,8760/self.timestep)
         else:
             grid_ts=pd.DataFrame([1+i*0 for i in range(int(np.floor(8760/self.timestep)))], columns=['grid_status'])
 
