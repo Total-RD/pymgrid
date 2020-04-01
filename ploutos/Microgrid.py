@@ -43,7 +43,7 @@ class Microgrid:
         self.df_actual_generation = self.df_actual_generation[0:0]
         self.df_cost = self.df_cost[0:0]
 
-    def generate_priority_list(self, architecture, parameters , grid_status=0,  ):
+    def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
 
         # compute marginal cost of each ressource
         # construct priority list
@@ -75,7 +75,7 @@ class Microgrid:
         return priority_dict
 
     #Todo later: add reserve for ploutos
-    def generate_genset_reserves(self, run_dict):
+    def _generate_genset_reserves(self, run_dict):
 
         # spinning=run_dict['next_load']*0.2
 
@@ -84,7 +84,7 @@ class Microgrid:
         return nb_gen_min
 
 
-    def run_priority_based(self, load, pv, parameters, status, priority_dict):
+    def _run_priority_based(self, load, pv, parameters, status, priority_dict):
 
 
         temp_load = load
@@ -198,28 +198,28 @@ class Microgrid:
         for i in range(length-self.horizon):
 
             if self.architecture['grid']==1:
-                priority_dict = self.generate_priority_list( self.architecture, self.parameters,self.grid_status.iloc[i].values[0])
+                priority_dict = self._generate_priority_list( self.architecture, self.parameters,self.grid_status.iloc[i].values[0])
             else:
-                priority_dict = self.generate_priority_list(self.architecture, self.parameters)
+                priority_dict = self._generate_priority_list(self.architecture, self.parameters)
 
-            control_dict = self.run_priority_based(self.load.iloc[i].values[0], self.pv.iloc[i].values[0], self.parameters,
+            control_dict = self._run_priority_based(self.load.iloc[i].values[0], self.pv.iloc[i].values[0], self.parameters,
                                                    self.baseline_priority_list_update_status, priority_dict)
 
-            self.baseline_priority_list_action = self.record_action(control_dict, self.baseline_priority_list_action)
+            self.baseline_priority_list_action = self._record_action(control_dict, self.baseline_priority_list_action)
 
-            self.baseline_priority_list_record_production = self.record_production(control_dict,
+            self.baseline_priority_list_record_production = self._record_production(control_dict,
                                                                                    self.baseline_priority_list_record_production, self.baseline_priority_list_update_status)
 
 
-            self.baseline_priority_list_update_status = self.update_status(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(),
+            self.baseline_priority_list_update_status = self._update_status(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(),
                                                                            self.baseline_priority_list_update_status)
 
 
-            self.baseline_priority_list_cost = self.record_cost(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(), self.baseline_priority_list_cost)
+            self.baseline_priority_list_cost = self._record_cost(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(), self.baseline_priority_list_cost)
 
 
 
-    def mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
+    def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
         #todo switch to a matrix structure
         load = np.reshape(load, (horizon,))
         #todo mip to choose which generators are online
@@ -419,32 +419,32 @@ class Microgrid:
                 temp_grid = np.zeros(self.horizon)
             else:
                 temp_grid = self.grid_status.iloc[i:i+self.horizon].values
-            control_dict = self.mpc_lin_prog_cvxpy(self.parameters, self.load.iloc[i:i+self.horizon].values,
+            control_dict = self._mpc_lin_prog_cvxpy(self.parameters, self.load.iloc[i:i+self.horizon].values,
                                                self.pv.iloc[i:i+self.horizon].values,
                                                temp_grid,
                                                self.baseline_linprog_update_status,
                                                self.horizon )
 
-            self.baseline_linprog_action = self.record_action(control_dict, self.baseline_linprog_action)
+            self.baseline_linprog_action = self._record_action(control_dict, self.baseline_linprog_action)
 
-            self.baseline_linprog_record_production = self.record_production(control_dict,
+            self.baseline_linprog_record_production = self._record_production(control_dict,
                                                                              self.baseline_linprog_record_production,
                                                                              self.baseline_linprog_update_status)
 
-            self.baseline_linprog_update_status = self.update_status(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
+            self.baseline_linprog_update_status = self._update_status(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
                                                                            self.baseline_linprog_update_status)
 
-            self.baseline_linprog_cost = self.record_cost(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
+            self.baseline_linprog_cost = self._record_cost(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
                                                                                    self.baseline_linprog_cost)
 
 
-    def record_action(self, control_dict, df):
+    def _record_action(self, control_dict, df):
         df = df.append(control_dict,ignore_index=True)
 
         return df
 
 
-    def update_status(self, control_dict, df):
+    def _update_status(self, control_dict, df):
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
         new_soc =np.nan
@@ -464,8 +464,8 @@ class Microgrid:
         df = df.append(dict,ignore_index=True)
 
         #self.df_status['soc'].iloc[-1] =(self.df_status['battery_soc'].iloc[-2]
-        #                                              + self.record_actions['battery_power_charge'].iloc[-1]*self.parameters['battery_efficiency']
-        #                                              - self.record_actions['battery_power_discharge'].iloc[-1]/self.parameters['battery_efficiency'])
+        #                                              + self._record_actions['battery_power_charge'].iloc[-1]*self.parameters['battery_efficiency']
+        #                                              - self._record_actions['battery_power_discharge'].iloc[-1]/self.parameters['battery_efficiency'])
 
 
 
@@ -474,7 +474,7 @@ class Microgrid:
 
     #now we consider all the generators on all the time (mainly concern genset)
     
-    def check_constraints_genset(self, p_genset):
+    def _check_constraints_genset(self, p_genset):
         if p_genset < 0:
             p_genset =0
             print('error, genset power cannot be lower than 0')
@@ -487,7 +487,7 @@ class Microgrid:
         
         return p_genset
         
-    def check_constraints_grid(self, p_import, p_export):
+    def _check_constraints_grid(self, p_import, p_export):
         if p_import < 0:
             p_import = 0
 
@@ -506,7 +506,7 @@ class Microgrid:
         
         return p_import, p_export
         
-    def check_constraints_battery(self, p_charge, p_discharge, status):
+    def _check_constraints_battery(self, p_charge, p_discharge, status):
 
         if p_charge < 0:
             p_charge = 0
@@ -539,7 +539,7 @@ class Microgrid:
 
         return p_charge, p_discharge
 
-    def record_production(self, control_dict, df, status):
+    def _record_production(self, control_dict, df, status):
 
         #todo enforce constraints
         #todo make sure the control actions repect their respective constriants
@@ -568,7 +568,7 @@ class Microgrid:
                 p_genset = 0
                 print("this microgrid has a genset, you should add a 'genset' field to your control dictionnary")
 
-            control_dict['genset'] = self.check_constraints_genset(p_genset)
+            control_dict['genset'] = self._check_constraints_genset(p_genset)
             total_production += control_dict['genset']
 
         if self.architecture['grid'] == 1:
@@ -580,7 +580,7 @@ class Microgrid:
                 p_export = 0
                 print("this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
 
-            p_import, p_export = self.check_constraints_grid(p_import, p_export)
+            p_import, p_export = self._check_constraints_grid(p_import, p_export)
             control_dict['grid_import'] = p_import
             control_dict['grid_export'] = p_export
 
@@ -600,7 +600,7 @@ class Microgrid:
                     "this microgrid is grid connected, you should add a 'battery_charge' and a 'battery_discharge' field to your control dictionnary")
 
 
-            p_charge, p_discharge = self.check_constraints_battery(p_charge,
+            p_charge, p_discharge = self._check_constraints_battery(p_charge,
                                                                    p_discharge,
                                                                    status)
             control_dict['battery_discharge'] = p_discharge
@@ -627,7 +627,7 @@ class Microgrid:
 
         return df
 
-    def record_cost(self, control_dict, df):
+    def _record_cost(self, control_dict, df):
 
         cost = control_dict['load_not_matched'] * self.parameters['cost_loss_load'].values[0]
 
@@ -649,14 +649,14 @@ class Microgrid:
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict, i):
 
-        self.df_actions = self.record_action(control_dict, self.df_actions)
+        self.df_actions = self._record_action(control_dict, self.df_actions)
 
-        self.df_status = self.update_status(control_dict, self.df_status)
+        self.df_status = self._update_status(control_dict, self.df_status)
 
-        self.df_actual_generation = self.record_production(control_dict,
+        self.df_actual_generation = self._record_production(control_dict,
                                                                          self.df_actual_generation)
 
-        self.df_cost = self.record_cost(self.df_actual_generation.iloc[-1,:].to_dict('list'),
+        self.df_cost = self._record_cost(self.df_actual_generation.iloc[-1,:].to_dict('list'),
                                                            self.df_cost)
 
         #self.check_control()
