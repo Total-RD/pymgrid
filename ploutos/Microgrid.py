@@ -447,6 +447,8 @@ class Microgrid:
     def _update_status(self, control_dict, df):
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
+        #todo add capa to discharge, capa to charge
+
         new_soc =np.nan
         for col in df.columns:
 
@@ -647,7 +649,8 @@ class Microgrid:
         return df
 
     #if return whole pv and load ts, the time can be counted in notebook
-    def run(self, control_dict, i):
+    def run(self, control_dict,i):
+        #todo internaliser le traqueur du pas de temps
 
         self.df_actions = self._record_action(control_dict, self.df_actions)
 
@@ -661,12 +664,13 @@ class Microgrid:
 
         #self.check_control()
 
+        #todo
         mg_data = {
-            'current_state':self.df_status ,
-            'PV':self.pv.iloc[i:i+self.horizon].values,
-            'load':self.load.iloc[i:i+self.horizon].values,
-            'parameters':self.parameters,
-            'cost':self.df_cost.iloc[-1]
+             'current_state':self.df_status ,
+             'PV':self.pv.iloc[i:i+self.horizon].values,
+             'load':self.load.iloc[i:i+self.horizon].values,
+             'parameters':self.parameters,
+             'cost':self.df_cost.iloc[-1]
         }
 
         return mg_data
@@ -680,4 +684,15 @@ class Microgrid:
     #todo forecasting function can be used for both mpc benchmart and rl loop
 
 
+    #todo get load(i)
+    #todo get pv(i)
+    #todo get net load
+    #todo get state
 
+
+    #todo info state -> retourner les colonnes
+    #todo info parameter -> retourner le nom des colonnes
+
+    #todo parameter done pour traquer les pas de temps
+
+    #todo verbose
