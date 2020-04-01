@@ -190,8 +190,8 @@ class Microgrid:
 
 
         self.baseline_priority_list_action = copy(self.df_actions)
-        self.baseline_priority_list__update_status = copy(self.df_status)
-        self.baseline_priority_list__record_production = copy(self.df_actual_generation)
+        self.baseline_priority_list_update_status = copy(self.df_status)
+        self.baseline_priority_list_record_production = copy(self.df_actual_generation)
         self.baseline_priority_list_cost= copy(self.df_cost)
 
 
@@ -203,19 +203,19 @@ class Microgrid:
                 priority_dict = self._generate_priority_list(self.architecture, self.parameters)
 
             control_dict = self._run_priority_based(self.load.iloc[i].values[0], self.pv.iloc[i].values[0], self.parameters,
-                                                   self.baseline_priority_list__update_status, priority_dict)
+                                                   self.baseline_priority_list_update_status, priority_dict)
 
             self.baseline_priority_list_action = self._record_action(control_dict, self.baseline_priority_list_action)
 
-            self.baseline_priority_list__record_production = self._record_production(control_dict,
-                                                                                   self.baseline_priority_list__record_production, self.baseline_priority_list__update_status)
+            self.baseline_priority_list_record_production = self._record_production(control_dict,
+                                                                                   self.baseline_priority_list_record_production, self.baseline_priority_list_update_status)
 
 
-            self.baseline_priority_list__update_status = self._update_status(self.baseline_priority_list__record_production.iloc[-1,:].to_dict(),
-                                                                           self.baseline_priority_list__update_status)
+            self.baseline_priority_list_update_status = self._update_status(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(),
+                                                                           self.baseline_priority_list_update_status)
 
 
-            self.baseline_priority_list_cost = self._record_cost(self.baseline_priority_list__record_production.iloc[-1,:].to_dict(), self.baseline_priority_list_cost)
+            self.baseline_priority_list_cost = self._record_cost(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(), self.baseline_priority_list_cost)
 
 
 
@@ -409,8 +409,8 @@ class Microgrid:
     def baseline_linprog(self, forecast_error=0, length=8760):
 
         self.baseline_linprog_action = copy(self.df_actions)
-        self.baseline_linprog__update_status = copy(self.df_status)
-        self.baseline_linprog__record_production = copy(self.df_actual_generation)
+        self.baseline_linprog_update_status = copy(self.df_status)
+        self.baseline_linprog_record_production = copy(self.df_actual_generation)
         self.baseline_linprog_cost = copy(self.df_cost)
 
 
@@ -422,19 +422,19 @@ class Microgrid:
             control_dict = self._mpc_lin_prog_cvxpy(self.parameters, self.load.iloc[i:i+self.horizon].values,
                                                self.pv.iloc[i:i+self.horizon].values,
                                                temp_grid,
-                                               self.baseline_linprog__update_status,
+                                               self.baseline_linprog_update_status,
                                                self.horizon )
 
             self.baseline_linprog_action = self._record_action(control_dict, self.baseline_linprog_action)
 
-            self.baseline_linprog__record_production = self._record_production(control_dict,
-                                                                             self.baseline_linprog__record_production,
-                                                                             self.baseline_linprog__update_status)
+            self.baseline_linprog_record_production = self._record_production(control_dict,
+                                                                             self.baseline_linprog_record_production,
+                                                                             self.baseline_linprog_update_status)
 
-            self.baseline_linprog__update_status = self._update_status(self.baseline_linprog__record_production.iloc[-1,:].to_dict(),
-                                                                           self.baseline_linprog__update_status)
+            self.baseline_linprog_update_status = self._update_status(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
+                                                                           self.baseline_linprog_update_status)
 
-            self.baseline_linprog_cost = self._record_cost(self.baseline_linprog__record_production.iloc[-1,:].to_dict(),
+            self.baseline_linprog_cost = self._record_cost(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
                                                                                    self.baseline_linprog_cost)
 
 
