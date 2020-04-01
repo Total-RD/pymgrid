@@ -651,7 +651,7 @@ class Microgrid:
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict,i):
         #todo internaliser le traqueur du pas de temps
-        self.df_actions = self.record_action(control_dict, self.df_actions)
+        self.df_actions = self._record_action(control_dict, self.df_actions)
 
         self.df_status = self.update_status(control_dict, self.df_status)
 
