@@ -66,12 +66,27 @@ class MicrogridGenerator:
     ###########################################
 
 
+    #function to plot the parameters of all the microgrid generated
+    def mg_parameters(self, id = 'all'):
 
-    def generate_microgrid(self):
+        if id == 'all':
+            if self.microgrids != []:
+                parameters = self.microgrids[0].parameters
+                for i in range(1, self.nb_microgrids):
+                    parameters = parameters.append(self.microgrids[i].parameters)
+                print(parameters)
+
+        elif isinstance(id, int) and id < self.nb_microgrids:
+            print(self.microgrids[id].parameters)
+
+    def generate_microgrid(self, verbose=True):
 
         for i in range(self.nb_microgrids):
             #size=self._size_mg()
             self.microgrids.append(self._create_microgrid())
+
+        if verbose == True:
+            self.mg_parameters()
 
 
     def _get_random_file(self, path):
@@ -191,14 +206,14 @@ class MicrogridGenerator:
         #random number > 3 < 20
         # polynomial for fuel consumption
 
-        _size_genset = np.max(load.values)/max_operating_loading
+        _size_genset = np.ceil(np.max(load.values)/max_operating_loading)
 
         return _size_genset
 
 
     def _size_battery(self, load):
         #energy duration
-        battery = np.random.randint(low=3,high=5)*np.mean(load.values)
+        battery = np.ceil(np.random.randint(low=3,high=5)*np.mean(load.values))
         #todo duration & power
         return battery
 
@@ -222,8 +237,8 @@ class MicrogridGenerator:
     def _get_battery(self, capa=1000, duration=4, pcharge=100, pdischarge=100, soc_max=1, soc_min=0.2, efficiency=0.9):
         battery={
             'capa':capa,
-            'pcharge':capa/duration,
-            'pdischarge':capa/duration,
+            'pcharge':np.ceil(capa/duration),
+            'pdischarge':np.ceil(capa/duration),
             'soc_max':soc_max,
             'soc_min':soc_min,
             'efficiency':efficiency,

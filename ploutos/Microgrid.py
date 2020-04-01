@@ -38,6 +38,7 @@ class Microgrid:
 
     def reset(self):
         #todo validate
+        #todo mechanism to store history of what happened
         self.df_actions = self.df_actions[0:0]
         self.df_status = self.df_status[0:0]
         self.df_actual_generation = self.df_actual_generation[0:0]
