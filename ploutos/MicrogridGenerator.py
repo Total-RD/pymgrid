@@ -59,7 +59,7 @@ class MicrogridGenerator:
         self.nb_microgrids=nb_microgrid
         self.timestep=1
         self.path=path
-        self._generate_microgrid()
+
 
     ###########################################
     #utility functions
@@ -67,7 +67,7 @@ class MicrogridGenerator:
 
 
 
-    def _generate_microgrid(self):
+    def generate_microgrid(self):
 
         for i in range(self.nb_microgrids):
             #size=self._size_mg()
