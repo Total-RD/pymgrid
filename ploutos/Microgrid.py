@@ -36,6 +36,25 @@ class Microgrid:
 
         self.horizon = 24
 
+        self.data_length = min(self.load, self.pv)
+
+        self.run_timestep = 0
+        self.done = False
+
+
+    def train_test_split(self, train_size=0.67, shuffle = False, ):
+        self.limit_index = np.ceil(self.data_length*train_size)
+        self.load_train = self.load.iloc[:self.limit_index]
+        self.pv_train = self.pv.iloc[:self.limit_index]
+
+        self.load_test = self.load.iloc[self.limit_index:]
+        self.pv_test = self.pv.iloc[self.limit_index:]
+
+        if self.architecture['grid'] == 1:
+            self.grid_status_train = self.grid_status.iloc[:self.limit_index]
+            self.grid_status_test = self.grid_status.iloc[self.limit_index:]
+
+
     def reset(self):
         #todo validate
         #todo mechanism to store history of what happened
@@ -43,6 +62,9 @@ class Microgrid:
         self.df_status = self.df_status[0:0]
         self.df_actual_generation = self.df_actual_generation[0:0]
         self.df_cost = self.df_cost[0:0]
+
+        self.run_timestep = 0
+        self.done = False
 
     def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
 
@@ -650,7 +672,7 @@ class Microgrid:
         return df
 
     #if return whole pv and load ts, the time can be counted in notebook
-    def run(self, control_dict,i):
+    def run(self, control_dict):
         #todo internaliser le traqueur du pas de temps
 
         self.df_actions = self._record_action(control_dict, self.df_actions)
@@ -665,17 +687,24 @@ class Microgrid:
 
         #self.check_control()
 
-        #todo
+        self.run_timestep += 1
+        if self.run_timestep == self.data_length - self.horizon:
+            self.done = True
+
+        return self.get_state()
+
+
+    def get_state(self):
+
         mg_data = {
-             'current_state':self.df_status ,
-             'PV':self.pv.iloc[i:i+self.horizon].values,
-             'load':self.load.iloc[i:i+self.horizon].values,
-             'parameters':self.parameters,
-             'cost':self.df_cost.iloc[-1]
+            'current_state': self.df_status,
+            'PV': self.pv.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
+            'load': self.load.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
+            'parameters': self.parameters,
+            'cost': self.df_cost.iloc[-1]
         }
 
         return mg_data
-
 
 
 
