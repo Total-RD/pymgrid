@@ -45,16 +45,16 @@ class Microgrid:
 
 
     def train_test_split(self, train_size=0.67, shuffle = False, ):
-        self._limit_index = np.ceil(self.data_length*train_size)
-        self.load_train = self.load.iloc[:self.limit_index]
-        self.pv_train = self.pv.iloc[:self.limit_index]
+        self._limit_index = np.ceil(self._data_length*train_size)
+        self.load_train = self.load.iloc[:self._limit_index]
+        self.pv_train = self.pv.iloc[:self._limit_index]
 
-        self.load_test = self.load.iloc[self.limit_index:]
-        self.pv_test = self.pv.iloc[self.limit_index:]
+        self.load_test = self.load.iloc[self._limit_index:]
+        self.pv_test = self.pv.iloc[self._limit_index:]
 
         if self.architecture['grid'] == 1:
-            self.grid_status_train = self.grid_status.iloc[:self.limit_index]
-            self.grid_status_test = self.grid_status.iloc[self.limit_index:]
+            self.grid_status_train = self.grid_status.iloc[:self._limit_index]
+            self.grid_status_test = self.grid_status.iloc[self._limit_index:]
 
 
     def reset(self):
@@ -65,8 +65,8 @@ class Microgrid:
         self.df_actual_generation = self.df_actual_generation[0:0]
         self.df_cost = self.df_cost[0:0]
 
-        self.run_timestep = 1
-        self.done = False
+        self._run_timestep = 1
+        self._done = False
 
     def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
 
@@ -487,7 +487,9 @@ class Microgrid:
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
         #todo add capa to discharge, capa to charge
-
+        dict = {
+            'net_load': control_dict['load'] - control_dict['pv'],
+        }
         new_soc =np.nan
         if self.architecture['battery'] == 1:
             new_soc = df['battery_soc'].iloc[-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
@@ -505,15 +507,9 @@ class Microgrid:
                                      self.parameters['battery_capacity'].values[0]
                                      ) * self.parameters['battery_efficiency'].values[0], 0)
 
-
-
-
-        dict = {
-            'battery_soc':new_soc,
-            'net_load': control_dict['load']-control_dict['pv'],
-            'capa_to_charge':capa_to_charge,
-            'cape_to_discharge':capa_to_discharge,
-        }
+            dict['battery_soc']=new_soc
+            dict['cape_to_discharge'] = capa_to_discharge
+            dict['capa_to_charge'] = capa_to_charge
 
         df = df.append(dict,ignore_index=True)
 
@@ -699,8 +695,8 @@ class Microgrid:
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict):
         #todo internaliser le traqueur du pas de temps
-        control_dict['load'] = self.load.iloc[self.run_timestep].values[0]
-        control_dict['pv'] = self.pv.iloc[self.run_timestep].values[0]
+        control_dict['load'] = self.load.iloc[self._run_timestep].values[0]
+        control_dict['pv'] = self.pv.iloc[self._run_timestep].values[0]
 
         self.df_actions = self._record_action(control_dict, self.df_actions)
 
@@ -714,9 +710,9 @@ class Microgrid:
 
         self.df_status = self._update_status(control_dict, self.df_status)
 
-        self.run_timestep += 1
+        self._run_timestep += 1
 
-        if self.run_timestep == self.data_length - self.horizon:
+        if self._run_timestep == self._data_length - self.horizon:
             self.done = True
 
         return self.get_state()
@@ -726,14 +722,14 @@ class Microgrid:
 
         mg_data = {
             'state': self.df_status,
-            'pv': self.pv.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
-            'load': self.load.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
+            'pv': self.pv.iloc[self._run_timestep:self._run_timestep + self.horizon].values,
+            'load': self.load.iloc[self._run_timestep:self._run_timestep + self.horizon].values,
             'parameters': self.parameters,
             'cost': self.df_cost.iloc[-1]
         }
 
         if self.architecture['grid'] == 1:
-            mg_data['grid_status'] = self.grid_status.iloc[self.run_timestep:self.run_timestep + self.horizon].values
+            mg_data['grid_status'] = self.grid_status.iloc[self._run_timestep:self._run_timestep + self.horizon].values
 
         return mg_data
 
