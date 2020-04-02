@@ -51,7 +51,7 @@ from os.path import isfile, join
 
 class MicrogridGenerator:
 
-    def __init__(self, nb_microgrid=1, random_seed=42, timestep=1, path='yourpath'):
+    def __init__(self, nb_microgrid=10, random_seed=42, timestep=1, path='yourpath'):
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
         self.microgrids= [] # generate a list of microgrid object

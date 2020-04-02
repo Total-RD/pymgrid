@@ -36,7 +36,7 @@ class Microgrid:
 
         self.horizon = 24
 
-        self.data_length = min(self.load, self.pv)
+        self.data_length = min(self.load.shape[0], self.pv.shape[0])
 
         self.run_timestep = 1
         self.done = False
@@ -697,22 +697,23 @@ class Microgrid:
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict):
         #todo internaliser le traqueur du pas de temps
-        #control_dict['load'] = self.load.iloc[self.run_timestep-1].values[0]
-        #control_dict['pv'] = self.pv.iloc[self.run_timestep - 1].values[0]
+        control_dict['load'] = self.load.iloc[self.run_timestep].values[0]
+        control_dict['pv'] = self.pv.iloc[self.run_timestep].values[0]
 
         self.df_actions = self._record_action(control_dict, self.df_actions)
 
 
 
         self.df_actual_generation = self._record_production(control_dict,
-                                                                         self.df_actual_generation)
+                                                                         self.df_actual_generation, self.df_status)
 
-        self.df_cost = self._record_cost(self.df_actual_generation.iloc[-1,:].to_dict('list'),
+        self.df_cost = self._record_cost(self.df_actual_generation.iloc[-1,:].to_dict(),
                                                            self.df_cost)
 
         self.df_status = self._update_status(control_dict, self.df_status)
 
         self.run_timestep += 1
+
         if self.run_timestep == self.data_length - self.horizon:
             self.done = True
 
@@ -722,7 +723,7 @@ class Microgrid:
     def get_state(self):
 
         mg_data = {
-            'current_state': self.df_status,
+            'state': self.df_status,
             'pv': self.pv.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
             'load': self.load.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
             'parameters': self.parameters,
