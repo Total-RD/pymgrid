@@ -23,8 +23,8 @@ class Microgrid:
         if parameters['architecture']['grid']==1:
             self.grid_status=parameters['grid_ts'] #time series of outages
             #todo if we move to time series of price
-            self.grid_price_import=0
-            self.grid_price_export=0
+            #self.grid_price_import=0
+            #self.grid_price_export=0
 
 
         #create timeseries of updated
