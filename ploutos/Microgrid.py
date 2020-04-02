@@ -34,16 +34,18 @@ class Microgrid:
         self.df_actual_generation = parameters['df_actual_generation']
         self.df_cost = parameters['df_cost']
 
+
+        #todo think how we can handle this
         self.horizon = 24
 
-        self.data_length = min(self.load.shape[0], self.pv.shape[0])
+        self._data_length = min(self.load.shape[0], self.pv.shape[0])
 
-        self.run_timestep = 1
-        self.done = False
+        self._run_timestep = 1
+        self._done = False
 
 
     def train_test_split(self, train_size=0.67, shuffle = False, ):
-        self.limit_index = np.ceil(self.data_length*train_size)
+        self._limit_index = np.ceil(self.data_length*train_size)
         self.load_train = self.load.iloc[:self.limit_index]
         self.pv_train = self.pv.iloc[:self.limit_index]
 
