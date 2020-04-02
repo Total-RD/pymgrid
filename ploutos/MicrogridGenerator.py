@@ -303,17 +303,20 @@ class MicrogridGenerator:
 
         column_actual_production=[]
         grid_ts=[]
-        df_status = pd.DataFrame([0], columns=['net_load'])
+
         df_parameters =pd.DataFrame([size_load],columns=['load'])
         df_parameters['cost_loss_load'] = 10000
         df_cost = pd.DataFrame([0.0], columns=['cost'])
+
+        df_status = pd.DataFrame([load.iloc[0].values], columns=['net_load'])
 
         if architecture['PV']==1:
 
             df_parameters['PV_rated_power'] = size['pv']
             column_actual_production.append('pv_consummed')
             column_actual_production.append('pv_curtailed')
-
+            pv =pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))
+            df_status = pd.DataFrame([load.iloc[0].values - pv.iloc[0].values], columns=['net_load'])
 
         if architecture['battery']==1:
             battery = self._get_battery(capa=size['battery'])
@@ -329,7 +332,21 @@ class MicrogridGenerator:
             column_actual_production.append('battery_charge')
             column_actual_production.append('battery_discharge')
             df_status['battery_soc'] = battery['soc_0']
-            df_status['battery_soc'] = battery['soc_0']
+
+            capa_to_charge = max(
+                (df_parameters['battery_soc_max'].values[0] * df_parameters['battery_capacity'].values[0] -
+                 df_parameters['battery_soc_0'].iloc[-1] *
+                 df_parameters['battery_capacity'].values[0]
+                 ) / df_parameters['battery_efficiency'].values[0], 0)
+
+            capa_to_discharge = max((df_parameters['battery_soc_0'].iloc[-1] *
+                                     df_parameters['battery_capacity'].values[0]
+                                     - df_parameters['battery_soc_min'].values[0] *
+                                     df_parameters['battery_capacity'].values[0]
+                                     ) * df_parameters['battery_efficiency'].values[0], 0)
+
+            df_status['capa_to_charge'] = capa_to_charge
+            df_status['capa_to_discharge'] = capa_to_discharge
 
         if architecture['genset']==1:
             genset = self._get_genset(rated_power=size['genset'])
@@ -363,6 +380,8 @@ class MicrogridGenerator:
 
         #todo change microgrid spec to a more general set of attribure
 
+
+
         microgrid_spec={
             'parameters':df_parameters,
             'df_actions':df_actions,
@@ -372,7 +391,7 @@ class MicrogridGenerator:
             'grid_spec':grid_spec,
             'df_cost':df_cost,
 
-            'pv':pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv'])),
+            'pv':pv,
             'load': load,
             'grid_ts':grid_ts
         }

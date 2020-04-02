@@ -38,7 +38,7 @@ class Microgrid:
 
         self.data_length = min(self.load, self.pv)
 
-        self.run_timestep = 0
+        self.run_timestep = 1
         self.done = False
 
 
@@ -63,7 +63,7 @@ class Microgrid:
         self.df_actual_generation = self.df_actual_generation[0:0]
         self.df_cost = self.df_cost[0:0]
 
-        self.run_timestep = 0
+        self.run_timestep = 1
         self.done = False
 
     def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
@@ -209,7 +209,7 @@ class Microgrid:
 
         return control_dict
 
-    def baseline_rule_based(self, priority_list=0, length = 8760):
+    def _baseline_rule_based(self, priority_list=0, length = 8760):
 
 
         self.baseline_priority_list_action = copy(self.df_actions)
@@ -429,7 +429,7 @@ class Microgrid:
 
         return control_dict
 
-    def baseline_linprog(self, forecast_error=0, length=8760):
+    def _baseline_linprog(self, forecast_error=0, length=8760):
 
         self.baseline_linprog_action = copy(self.df_actions)
         self.baseline_linprog_update_status = copy(self.df_status)
@@ -461,6 +461,20 @@ class Microgrid:
                                                                                    self.baseline_linprog_cost)
 
 
+    def compute_benchmark(self, benchmark_to_compute='all'):
+
+        if benchmark_to_compute == 'all':
+            self._baseline_rule_based()
+            self._baseline_linprog()
+
+        if benchmark_to_compute == 'rule_based':
+            self._baseline_rule_based()
+
+        if benchmark_to_compute == 'mpc_linprog':
+            self._baseline_linprog()
+
+
+
     def _record_action(self, control_dict, df):
         df = df.append(control_dict,ignore_index=True)
 
@@ -473,24 +487,33 @@ class Microgrid:
         #todo add capa to discharge, capa to charge
 
         new_soc =np.nan
-        for col in df.columns:
-
-            if col == 'battery_soc':
-                new_soc = df['battery_soc'].iloc[-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
+        if self.architecture['battery'] == 1:
+            new_soc = df['battery_soc'].iloc[-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
                                                         - control_dict['battery_discharge']/self.parameters['battery_efficiency'].values[0])/self.parameters['battery_capacity'].values[0]
             #if col == 'net_load':
+            capa_to_charge = max(
+                (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
+                 new_soc *
+                 self.parameters['battery_capacity'].values[0]
+                 ) / self.parameters['battery_efficiency'].values[0], 0)
+
+            capa_to_discharge = max((new_soc *
+                                     self.parameters['battery_capacity'].values[0]
+                                     - self.parameters['battery_soc_min'].values[0] *
+                                     self.parameters['battery_capacity'].values[0]
+                                     ) * self.parameters['battery_efficiency'].values[0], 0)
+
+
 
 
         dict = {
             'battery_soc':new_soc,
-            'net_load': control_dict['load']-control_dict['pv']
+            'net_load': control_dict['load']-control_dict['pv'],
+            'capa_to_charge':capa_to_charge,
+            'cape_to_discharge':capa_to_discharge,
         }
 
         df = df.append(dict,ignore_index=True)
-
-        #self.df_status['soc'].iloc[-1] =(self.df_status['battery_soc'].iloc[-2]
-        #                                              + self._record_actions['battery_power_charge'].iloc[-1]*self.parameters['battery_efficiency']
-        #                                              - self._record_actions['battery_power_discharge'].iloc[-1]/self.parameters['battery_efficiency'])
 
 
 
@@ -674,10 +697,12 @@ class Microgrid:
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict):
         #todo internaliser le traqueur du pas de temps
+        #control_dict['load'] = self.load.iloc[self.run_timestep-1].values[0]
+        #control_dict['pv'] = self.pv.iloc[self.run_timestep - 1].values[0]
 
         self.df_actions = self._record_action(control_dict, self.df_actions)
 
-        self.df_status = self._update_status(control_dict, self.df_status)
+
 
         self.df_actual_generation = self._record_production(control_dict,
                                                                          self.df_actual_generation)
@@ -685,7 +710,7 @@ class Microgrid:
         self.df_cost = self._record_cost(self.df_actual_generation.iloc[-1,:].to_dict('list'),
                                                            self.df_cost)
 
-        #self.check_control()
+        self.df_status = self._update_status(control_dict, self.df_status)
 
         self.run_timestep += 1
         if self.run_timestep == self.data_length - self.horizon:
@@ -698,11 +723,14 @@ class Microgrid:
 
         mg_data = {
             'current_state': self.df_status,
-            'PV': self.pv.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
+            'pv': self.pv.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
             'load': self.load.iloc[self.run_timestep:self.run_timestep + self.horizon].values,
             'parameters': self.parameters,
             'cost': self.df_cost.iloc[-1]
         }
+
+        if self.architecture['grid'] == 1:
+            mg_data['grid_status'] = self.grid_status.iloc[self.run_timestep:self.run_timestep + self.horizon].values
 
         return mg_data
 
