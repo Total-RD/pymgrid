@@ -17,7 +17,6 @@ from ploutos import MicrogridGenerator as mg
 
 m_gen=mg.MicrogridGenerator()
 m_gen.generate_microgrid()
-m_gen.microgrids[0].parameters
 ```
 
 ## Contributing
