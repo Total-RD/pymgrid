@@ -51,7 +51,8 @@ from os.path import isfile, join
 
 class MicrogridGenerator:
 
-    def __init__(self, nb_microgrid=10, random_seed=42, timestep=1, path='yourpath'):
+    def __init__(self, nb_microgrid=1, random_seed=42, timestep=1, path='yourpath'):
+        
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
         self.microgrids= [] # generate a list of microgrid object
@@ -69,24 +70,21 @@ class MicrogridGenerator:
     #function to plot the parameters of all the microgrid generated
     def mg_parameters(self, id = 'all'):
 
+
         if id == 'all':
-            if self.microgrids != []:
-                parameters = self.microgrids[0].parameters
-                for i in range(1, self.nb_microgrids):
-                    parameters = parameters.append(self.microgrids[i].parameters)
-                print(parameters)
+
+        	if self.microgrids != []:
+        		parameters = pd.DataFrame()
+	        	for i in range(self.nb_microgrids):
+
+	        		parameters = parameters.append(self.microgrids[i].parameters)
+
+	        	pd.options.display.max_columns = None
+	        	display(parameters)
 
         elif isinstance(id, int) and id < self.nb_microgrids:
-            print(self.microgrids[id].parameters)
-
-    def generate_microgrid(self, verbose=True):
-
-        for i in range(self.nb_microgrids):
-            #size=self._size_mg()
-            self.microgrids.append(self._create_microgrid())
-
-        if verbose == True:
-            self.mg_parameters()
+        	
+        	display(self.microgrids[id].parameters)
 
 
     def _get_random_file(self, path):
@@ -103,18 +101,18 @@ class MicrogridGenerator:
         # Resample the file if needed
         return file
 
-    def _scale_ts(self, ts, size, scaling_method='sum'):
+    def _scale_ts(self, df_ts, size, scaling_method='sum'):
 
         actual_ratio=1
         if scaling_method =='sum':
-            actual_ratio = size/ts.sum()#.values[0]
+            actual_ratio = size/df_ts.sum()#.values[0]
 
         if scaling_method == 'max':
-            actual_ratio=ts.max().values[0]/size
+            actual_ratio=df_ts.max().values[0]/size
 
-        ts = ts * actual_ratio
+        df_ts = df_ts * actual_ratio
 
-        return ts
+        return df_ts
 
     def _resize_timeseries(timeserie, current_time_step, new_time_step):
 
@@ -157,71 +155,8 @@ class MicrogridGenerator:
         path = self.path+'data/wind/'
         return self._get_random_file(path)
 
-    def _generate_weak_grid_profile(self, outage_per_day, duration_of_outage,nb_time_step_per_year):
-
-        #weak_grid_timeseries = np.random.random_integers(0,1, int(nb_time_step_per_year+1) ) #for a number of time steps, value between 0 and 1
-        #generate a timeseries of 8760/timestep points based on np.random seed
-        #profile of ones and zeros
-        weak_grid_timeseries = np.random.random(int(nb_time_step_per_year+1) ) #for a number of time steps, value between 0 and 1
-
-
-        weak_grid_timeseries = [0 if weak_grid_timeseries[i] < outage_per_day/24 else 1 for i in range(len(weak_grid_timeseries))]
-
-        timestep=8760/nb_time_step_per_year
-        for i in range(len(weak_grid_timeseries)):
-            if weak_grid_timeseries[i] == 0:
-                for j in range(1, int(duration_of_outage/timestep)):
-                    if i-j > 0:
-                        weak_grid_timeseries[i-j] = 0
-
-
-
-        #print weak_grid_timeseries
-
-        return pd.DataFrame(weak_grid_timeseries, columns=['grid_status']) #[0 if weak_grid_timeseries[i] < h_outage_per_day/24 else 1 for i in range(len(weak_grid_timeseries))]
-
-
-    ###########################################
-    # sizing functions
-    ###########################################
-    def _size_mg(self, load, size_load=1):
-        # generate a list of size based on the number of architecture  generated
-        # 2 size the other generators based on the load
-        pv=size_load*(np.random.randint(low=30, high=120)/100)
-
-        #battery_size = self._size_battery(load)
-        # return a dataframe with the power of each generator, and if applicable the number of generator
-
-        size={
-            'pv': pv,
-            'load': size_load,
-            'battery': self._size_battery(load),
-            'genset': self._size_genset(load),
-            'grid': max(load.values)*2,
-        }
-
-        return size
-
-    def _size_genset(self, load, max_operating_loading = 0.9):
-        #random number > 3 < 20
-        # polynomial for fuel consumption
-
-        _size_genset = np.ceil(np.max(load.values)/max_operating_loading)
-
-        return _size_genset
-
-
-    def _size_battery(self, load):
-        #energy duration
-        battery = np.ceil(np.random.randint(low=3,high=5)*np.mean(load.values))
-        #todo duration & power
-        return battery
-
-    ###########################################
-    # parameters of components
-    ###########################################
-
     def _get_genset(self, rated_power=1000, pmax=0.9, pmin=0.2):
+
         polynom=[np.random.rand()*10, np.random.rand(), np.random.rand()/10] #fuel consumption
 
         genset={
@@ -237,8 +172,8 @@ class MicrogridGenerator:
     def _get_battery(self, capa=1000, duration=4, pcharge=100, pdischarge=100, soc_max=1, soc_min=0.2, efficiency=0.9):
         battery={
             'capa':capa,
-            'pcharge':np.ceil(capa/duration),
-            'pdischarge':np.ceil(capa/duration),
+            'pcharge':int(np.ceil(capa/duration)),
+            'pdischarge':int(np.ceil(capa/duration)),
             'soc_max':soc_max,
             'soc_min':soc_min,
             'efficiency':efficiency,
@@ -251,7 +186,6 @@ class MicrogridGenerator:
 
     def _get_grid(self, rated_power=1000, weak_grid=0, pmin=0.2, price_export = 0, price_import =0.3):
 
-        grid_ts=[]
         if weak_grid == 1:
             rand_outage_per_day = np.random.randn()*3/4 +0.25
             rand_duration = np.random.randint(low=1, high =8)
@@ -270,57 +204,127 @@ class MicrogridGenerator:
 
         return grid
 
+    def _generate_weak_grid_profile(self, outage_per_day, duration_of_outage,nb_time_step_per_year):
+
+        #weak_grid_timeseries = np.random.random_integers(0,1, int(nb_time_step_per_year+1) ) #for a number of time steps, value between 0 and 1
+        #generate a timeseries of 8760/timestep points based on np.random seed
+        #profile of ones and zeros
+        weak_grid_timeseries = np.random.random(int(nb_time_step_per_year+1) ) #for a number of time steps, value between 0 and 1
+
+
+        weak_grid_timeseries = [0 if weak_grid_timeseries[i] < outage_per_day/24 else 1 for i in range(len(weak_grid_timeseries))]
+
+        timestep=8760/nb_time_step_per_year
+        for i in range(len(weak_grid_timeseries)):
+            if weak_grid_timeseries[i] == 0:
+                for j in range(1, int(duration_of_outage/timestep)):
+                    if i-j > 0:
+                        weak_grid_timeseries[i-j] = 0
+        #print weak_grid_timeseries
+
+        return pd.DataFrame(weak_grid_timeseries, columns=['grid_status']) #[0 if weak_grid_timeseries[i] < h_outage_per_day/24 else 1 for i in range(len(weak_grid_timeseries))]
+
+
+    ###########################################
+    # sizing functions
+    ###########################################
+    def _size_mg(self, load, size_load=1):
+        # generate a list of size based on the number of architecture  generated
+        # 2 size the other generators based on the load
+        pv=size_load*(np.random.randint(low=30, high=121)/100)
+
+        #battery_size = self._size_battery(load)
+        # return a dataframe with the power of each generator, and if applicable the number of generator
+
+        size={
+            'pv': pv,
+            'load': size_load,
+            'battery': self._size_battery(load),
+            'genset': self._size_genset(load),
+            'grid': int(max(load.values)*2),
+        }
+
+        return size
+
+    def _size_genset(self, load, max_operating_loading = 0.9):
+        #random number > 3 < 20
+        # polynomial for fuel consumption
+
+        _size_genset = int(np.ceil(np.max(load.values)/max_operating_loading))
+
+        return _size_genset
+
+
+    def _size_battery(self, load):
+        #energy duration
+        battery = int(np.ceil(np.random.randint(low=3,high=6)*np.mean(load.values)))
+        #todo duration & power
+        return battery
+
+
     ###########################################
     #generate the microgrid
     ###########################################
 
+    def generate_microgrid(self, verbose=True):
 
-    def _create_microgrid(self, ):
+        for i in range(self.nb_microgrids):
+            #size=self._size_mg()
+            self.microgrids.append(self._create_microgrid())
+        
+        if verbose == True:
+            self.mg_parameters()
+
+    def _create_microgrid(self):
         # get the sizing data
         # create microgrid object and append
         # return the list
-
-        rand = np.random.randn()
+        rand = np.random.rand()
         bin_genset = 0
         bin_grid = 0
 
         if rand <0.33:
+
             bin_genset =1
+
         elif rand>= 0.33 and rand <0.66:
+
             bin_grid =1
+
         else:
+
             bin_genset=1
             bin_grid=1
 
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
-        #size_df=8760
-        size_load = np.random.randint(low=876000,high=10000000)
-        load = pd.DataFrame(self._scale_ts(self._get_load_ts(), size_load))
-
-        size = self._size_mg(load, size_load)
+        size_load = np.random.randint(low=876000,high=10000001)
+        load = self._scale_ts(self._get_load_ts(), size_load) #obtain dataframe of loads
+        size = self._size_mg(load, size_load) #obtain a dictionary of mg sizing components
 
         column_actions=[]
-
         column_actual_production=[]
         grid_ts=[]
+        df_parameters = pd.DataFrame()
+        df_cost = pd.DataFrame()
+        df_status = pd.DataFrame()
 
-        df_parameters =pd.DataFrame([size_load],columns=['load'])
+
+        df_parameters['load'] = [size_load]
         df_parameters['cost_loss_load'] = 10000
-        df_cost = pd.DataFrame([0.0], columns=['cost'])
+        df_cost['cost'] = [0.0]
+        #df_status['net_load'] = [load.iloc[0].values] --> il y a doublon pour l'instant avec l'architecture PV
 
-        df_status = pd.DataFrame([load.iloc[0].values], columns=['net_load'])
+        if architecture['PV'] == 1:
 
-        if architecture['PV']==1:
-
-            df_parameters['PV_rated_power'] = size['pv']
+            df_parameters['PV_rated_power'] = np.around(size['pv'],1)
             column_actual_production.append('pv_consummed')
-            column_actual_production.append('pv_curtailed')
-            pv =pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))
-            df_status = pd.DataFrame([load.iloc[0].values - pv.iloc[0].values], columns=['net_load'])
+            column_actual_production.append('pv_curtailed') 
+            pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))           
+            df_status['net_load'] = np.around(load.iloc[0].values - pv.iloc[0].values,1)
 
         if architecture['battery']==1:
-            battery = self._get_battery(capa=size['battery'])
-            #print(battery['soc_0'])
+
+            battery = self._get_battery(capa=size['battery']) #return a dictionary of battery characteristic
             df_parameters['battery_soc_0'] = battery['soc_0']
             df_parameters['battery_power_charge'] = battery['pcharge']
             df_parameters['battery_power_discharge'] = battery['pdischarge']
@@ -342,11 +346,11 @@ class MicrogridGenerator:
             capa_to_discharge = max((df_parameters['battery_soc_0'].iloc[-1] *
                                      df_parameters['battery_capacity'].values[0]
                                      - df_parameters['battery_soc_min'].values[0] *
-                                     df_parameters['battery_capacity'].values[0]
-                                     ) * df_parameters['battery_efficiency'].values[0], 0)
+                                     df_parameters['battery_capacity'].values[0])
+                                     * df_parameters['battery_efficiency'].values[0], 0)
 
-            df_status['capa_to_charge'] = capa_to_charge
-            df_status['capa_to_discharge'] = capa_to_discharge
+            df_status['capa_to_charge'] = np.around(capa_to_charge,1)
+            df_status['capa_to_discharge'] = np.around(capa_to_discharge,1)
 
         if architecture['genset']==1:
             genset = self._get_genset(rated_power=size['genset'])
@@ -354,6 +358,7 @@ class MicrogridGenerator:
 
             for i in range(len(genset['polynom'])):
                 df_parameters['genset_polynom_'+str(i)]=genset['polynom'][i]
+
             df_parameters['genset_rated_power'] = genset['rated_power']
             df_parameters['genset_pmin'] = genset['pmin']
             df_parameters['genset_pmax'] = genset['pmax']
@@ -361,8 +366,10 @@ class MicrogridGenerator:
             column_actual_production.append('genset')
 
         grid_spec=0
+
         if architecture['grid']==1:
-            rand_weak_grid = np.random.randint(low=0, high=1)
+
+            rand_weak_grid = np.random.randint(low=0, high=2)
 
             grid = self._get_grid(rated_power=size['grid'], weak_grid=rand_weak_grid)
             df_parameters['grid_power_import'] = grid['grid_power_import']
@@ -383,17 +390,16 @@ class MicrogridGenerator:
 
 
         microgrid_spec={
-            'parameters':df_parameters,
-            'df_actions':df_actions,
-            'architecture':architecture,
-            'df_status':df_status,
-            'df_actual_generation':df_actual_production,
-            'grid_spec':grid_spec,
-            'df_cost':df_cost,
-
-            'pv':pv,
-            'load': load,
-            'grid_ts':grid_ts
+            'parameters':df_parameters, #Dictionnary
+            'df_actions':df_actions, #Dataframe
+            'architecture':architecture, #Dictionnary
+            'df_status':df_status, #Dictionnary
+            'df_actual_generation':df_actual_production,#Dataframe
+            'grid_spec':grid_spec, #value = 0
+            'df_cost':df_cost, #Dataframe of 1 value = 0.0
+            'pv':pv, #Dataframe
+            'load': load, #Dataframe
+            'grid_ts':grid_ts #Dataframe
         }
 
         microgrid = Microgrid.Microgrid(microgrid_spec)
