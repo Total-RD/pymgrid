@@ -45,7 +45,7 @@ class Microgrid:
 
 
     def train_test_split(self, train_size=0.67, shuffle = False, ):
-        self._limit_index = np.ceil(self._data_length*train_size)
+        self._limit_index = int(np.ceil(self._data_length*train_size))
         self.load_train = self.load.iloc[:self._limit_index]
         self.pv_train = self.pv.iloc[:self._limit_index]
 
