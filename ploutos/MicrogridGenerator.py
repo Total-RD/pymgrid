@@ -73,18 +73,18 @@ class MicrogridGenerator:
 
         if id == 'all':
 
-        	if self.microgrids != []:
-        		parameters = pd.DataFrame()
-	        	for i in range(self.nb_microgrids):
+            if self.microgrids != []:
+                parameters = pd.DataFrame()
+                for i in range(self.nb_microgrids):
 
-	        		parameters = parameters.append(self.microgrids[i].parameters)
+                    parameters = parameters.append(self.microgrids[i].parameters, ignore_index=True)
 
-	        	pd.options.display.max_columns = None
-	        	display(parameters)
+                pd.options.display.max_columns = None
+                display(parameters)
 
         elif isinstance(id, int) and id < self.nb_microgrids:
         	
-        	display(self.microgrids[id].parameters)
+            display(self.microgrids[id].parameters)
 
 
     def _get_random_file(self, path):
@@ -192,7 +192,9 @@ class MicrogridGenerator:
             grid_ts = self._generate_weak_grid_profile( rand_outage_per_day, rand_duration,8760/self.timestep)
 
         else:
-            grid_ts=pd.DataFrame([1+i*0 for i in range(int(np.floor(8760/self.timestep)))], columns=['grid_status'])
+            #grid_ts=pd.DataFrame([1+i*0 for i in range(int(np.floor(8760/self.timestep)))], columns=['grid_status'])
+            grid_ts = pd.DataFrame(np.ones(int(np.floor(8760 / self.timestep))),
+                                   columns=['grid_status'])
 
         grid={
             'grid_power_import':rated_power,
