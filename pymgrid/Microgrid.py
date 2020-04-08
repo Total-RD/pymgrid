@@ -1,3 +1,5 @@
+
+
 import pandas as pd
 import numpy as np
 from copy import copy
@@ -34,6 +36,8 @@ class Microgrid:
         self.df_actual_generation = parameters['df_actual_generation']
         self.df_cost = parameters['df_cost']
 
+        self._df_cost_per_epochs = parameters['df_cost']
+
 
         #todo think how we can handle this
         self.horizon = 24
@@ -45,6 +49,8 @@ class Microgrid:
 
         self._has_run_rule_based_baseline = False
         self._has_run_mpc_baseline = False
+
+        self._epoch=0
 
     def get_info(self):
 
@@ -78,8 +84,10 @@ class Microgrid:
 
 
     def reset(self):
-        #todo validate
-        #todo mechanism to store history of what happened
+        temp_cost = copy(self.df_cost)
+        temp_cost['epoch'] = self._epoch
+        self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
+
         self.df_actions = self.df_actions[0:0]
         self.df_status = self.df_status[0:1]
         self.df_actual_generation = self.df_actual_generation[0:0]
@@ -87,6 +95,8 @@ class Microgrid:
 
         self._run_timestep = 1
         self._done = False
+
+        self._epoch+=1
 
     def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
 
@@ -119,7 +129,7 @@ class Microgrid:
 
         return priority_dict
 
-    #Todo later: add reserve for ploutos
+    #Todo later: add reserve for pymgrid
     def _generate_genset_reserves(self, run_dict):
 
         # spinning=run_dict['next_load']*0.2
@@ -133,7 +143,7 @@ class Microgrid:
 
 
         temp_load = load
-        #todo add reserves to ploutos
+        #todo add reserves to pymgrid
         excess_gen = 0
 
         pCharge = 0
@@ -341,8 +351,8 @@ class Microgrid:
             p_price_export = parameters['grid_price_export'].values[0] * np.ones(horizon)
 
             for t in range(horizon):
-                constraints += [p_grid_import[t] <= p_grid_import_max,
-                                p_grid_export[t] <= p_grid_export_max,
+                constraints += [p_grid_import[t] <= p_grid_import_max * grid[t],
+                                p_grid_export[t] <= p_grid_export_max * grid[t],
                                 ]
 
                 total_cost += (p_grid_import[t] * p_price_import[t]
@@ -411,8 +421,8 @@ class Microgrid:
                           - p_charge[t]
                           - p_curtail_pv[t]
                           + p_loss_load [t]
-                          + p_grid_import [t] * grid[t]
-                          - p_grid_export [t] * grid[t]
+                          + p_grid_import [t]
+                          - p_grid_export [t]
                            == load[t] - pv[t]]
 
 

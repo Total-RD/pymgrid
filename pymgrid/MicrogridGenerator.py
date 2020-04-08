@@ -14,7 +14,7 @@ Inputs:
 - timestep
 
 Function:
-- get solar profile (maybe 5 timeseries in the ploutos)
+- get solar profile (maybe 5 timeseries in the pymgrid)
 - get wind profile (maybe 5 timeseries)
 - generate load profile (triangle, square, AR process? others)
 - get sizing based on annual load size? +- noise
@@ -33,19 +33,9 @@ A (V0) microgrid is:
 
 '''
 
-'''
-todo
-- Add files in the data folders (one or 2 pv, one or 2 load)
-
-Test the generation fo microgrid scenarios
-
-
-
-
-'''
 import numpy as np
 import pandas as pd
-from ploutos import Microgrid
+from pymgrid import Microgrid
 from os import listdir
 from os.path import isfile, join
 
@@ -83,7 +73,6 @@ class MicrogridGenerator:
                 display(parameters)
 
         elif isinstance(id, int) and id < self.nb_microgrids:
-        	
             display(self.microgrids[id].parameters)
 
 
