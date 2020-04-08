@@ -376,9 +376,6 @@ class MicrogridGenerator:
         df_actions= pd.DataFrame(columns = column_actions, )
         df_actual_production = pd.DataFrame(columns=column_actual_production)
 
-        #todo change microgrid spec to a more general set of attribure
-
-
 
         microgrid_spec={
             'parameters':df_parameters, #Dictionnary

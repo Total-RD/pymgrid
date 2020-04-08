@@ -38,8 +38,6 @@ class Microgrid:
 
         self._df_cost_per_epochs = parameters['df_cost']
 
-
-        #todo think how we can handle this
         self.horizon = 24
 
         self._data_length = min(self.load.shape[0], self.pv.shape[0])
@@ -51,6 +49,12 @@ class Microgrid:
         self._has_run_mpc_baseline = False
 
         self._epoch=0
+
+        self._zero = 10^-5
+
+    def set_horizon(self, horizon):
+        self.horizon = horizon
+
 
     def get_info(self):
 
@@ -130,13 +134,13 @@ class Microgrid:
         return priority_dict
 
     #Todo later: add reserve for pymgrid
-    def _generate_genset_reserves(self, run_dict):
-
-        # spinning=run_dict['next_load']*0.2
-
-        nb_gen_min = int(math.ceil(run_dict['next_peak'] / self.genset_power_max))
-
-        return nb_gen_min
+    # def _generate_genset_reserves(self, run_dict):
+    #
+    #     # spinning=run_dict['next_load']*0.2
+    #
+    #     nb_gen_min = int(math.ceil(run_dict['next_peak'] / self.genset_power_max))
+    #
+    #     return nb_gen_min
 
 
     def _run_priority_based(self, load, pv, parameters, status, priority_dict):
@@ -155,7 +159,6 @@ class Microgrid:
         pv_not_curtailed = 0
         self_consumed_pv = 0
 
-        #todo consider min production of genset
         if self.architecture['genset'] == 1:
             min_load = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]
             temp_load=temp_load-min_load
@@ -517,7 +520,6 @@ class Microgrid:
     def _update_status(self, control_dict, df):
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
-        #todo add capa to discharge, capa to charge
         dict = {
             'net_load': control_dict['load'] - control_dict['pv'],
         }
@@ -571,7 +573,7 @@ class Microgrid:
         if p_export <0:
             p_export = 0
 
-        if p_import > 0 and p_export > 0:
+        if p_import > self._zero and p_export > self._zero:
             print ('cannot import and export at the same time')
             #todo how to deal with that?
             
@@ -591,7 +593,7 @@ class Microgrid:
         if p_discharge < 0:
             p_discharge = 0
 
-        if p_charge > 0 and p_discharge > 0:
+        if p_charge > self._zero and p_discharge > self._zero:
             print ('cannot import and export at the same time')
             #todo how to deal with that?
 
@@ -767,20 +769,8 @@ class Microgrid:
 
 
     ########RL utility
-    #todo utility function to split the data between training and testing
     #todo add a forecasting function that add noise to the time series
     #todo forecasting function can be used for both mpc benchmart and rl loop
 
-
-    #todo get load(i)
-    #todo get pv(i)
-    #todo get net load
-    #todo get state
-
-
-    #todo info state -> retourner les colonnes
-    #todo info parameter -> retourner le nom des colonnes
-
-    #todo parameter done pour traquer les pas de temps
 
     #todo verbose
