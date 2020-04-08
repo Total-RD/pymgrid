@@ -1,3 +1,5 @@
+
+
 import pandas as pd
 import numpy as np
 from copy import copy
@@ -34,6 +36,8 @@ class Microgrid:
         self.df_actual_generation = parameters['df_actual_generation']
         self.df_cost = parameters['df_cost']
 
+        self._df_cost_per_epochs = parameters['df_cost']
+
 
         #todo think how we can handle this
         self.horizon = 24
@@ -41,7 +45,28 @@ class Microgrid:
         self._data_length = min(self.load.shape[0], self.pv.shape[0])
 
         self._run_timestep = 1
-        self._done = False
+        self.done = False
+
+        self._has_run_rule_based_baseline = False
+        self._has_run_mpc_baseline = False
+
+        self._epoch=0
+
+    def get_info(self):
+
+        print('Microgrid parameters')
+        display(self.parameters)
+        print('Architecture:')
+        print(self.architecture)
+        print('Actions: ')
+        print(self.df_actions.columns)
+        print('Status: ')
+        print(self.df_status.columns)
+        print('Has run mpc baseline:')
+        print(self._has_run_mpc_baseline)
+        print('Has run rule based baseline:')
+        print(self._has_run_rule_based_baseline)
+
 
 
     def train_test_split(self, train_size=0.67, shuffle = False, ):
@@ -57,16 +82,21 @@ class Microgrid:
             self.grid_status_test = self.grid_status.iloc[self._limit_index:]
 
 
+
     def reset(self):
-        #todo validate
-        #todo mechanism to store history of what happened
+        temp_cost = copy(self.df_cost)
+        temp_cost['epoch'] = self._epoch
+        self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
+
         self.df_actions = self.df_actions[0:0]
-        self.df_status = self.df_status[0:0]
+        self.df_status = self.df_status[0:1]
         self.df_actual_generation = self.df_actual_generation[0:0]
         self.df_cost = self.df_cost[0:0]
 
         self._run_timestep = 1
         self._done = False
+
+        self._epoch+=1
 
     def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
 
@@ -99,7 +129,7 @@ class Microgrid:
 
         return priority_dict
 
-    #Todo later: add reserve for ploutos
+    #Todo later: add reserve for pymgrid
     def _generate_genset_reserves(self, run_dict):
 
         # spinning=run_dict['next_load']*0.2
@@ -113,7 +143,7 @@ class Microgrid:
 
 
         temp_load = load
-        #todo add reserves to ploutos
+        #todo add reserves to pymgrid
         excess_gen = 0
 
         pCharge = 0
@@ -242,7 +272,7 @@ class Microgrid:
 
             self.baseline_priority_list_cost = self._record_cost(self.baseline_priority_list_record_production.iloc[-1,:].to_dict(), self.baseline_priority_list_cost)
 
-
+        self._has_run_rule_based_baseline = True
 
     def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
         #todo switch to a matrix structure
@@ -321,8 +351,8 @@ class Microgrid:
             p_price_export = parameters['grid_price_export'].values[0] * np.ones(horizon)
 
             for t in range(horizon):
-                constraints += [p_grid_import[t] <= p_grid_import_max,
-                                p_grid_export[t] <= p_grid_export_max,
+                constraints += [p_grid_import[t] <= p_grid_import_max * grid[t],
+                                p_grid_export[t] <= p_grid_export_max * grid[t],
                                 ]
 
                 total_cost += (p_grid_import[t] * p_price_import[t]
@@ -391,8 +421,8 @@ class Microgrid:
                           - p_charge[t]
                           - p_curtail_pv[t]
                           + p_loss_load [t]
-                          + p_grid_import [t] * grid[t]
-                          - p_grid_export [t] * grid[t]
+                          + p_grid_import [t]
+                          - p_grid_export [t]
                            == load[t] - pv[t]]
 
 
@@ -462,6 +492,7 @@ class Microgrid:
             self.baseline_linprog_cost = self._record_cost(self.baseline_linprog_record_production.iloc[-1,:].to_dict(),
                                                                                    self.baseline_linprog_cost)
 
+            self._has_run_mpc_baseline = True
 
     def compute_benchmark(self, benchmark_to_compute='all'):
 
@@ -525,11 +556,11 @@ class Microgrid:
             p_genset =0
             print('error, genset power cannot be lower than 0')
     
-        if p_genset < self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]:
-            p_genset = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]
+        if p_genset < self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]:
+            p_genset = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
         
-        if p_genset > self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmax'].values[0]:
-            p_genset = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmax'].values[0]
+        if p_genset > self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmax'].values[0]:
+            p_genset = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmax'].values[0]
         
         return p_genset
         
@@ -722,8 +753,8 @@ class Microgrid:
 
         mg_data = {
             'state': self.df_status,
-            'pv': self.pv.iloc[self._run_timestep:self._run_timestep + self.horizon].values,
-            'load': self.load.iloc[self._run_timestep:self._run_timestep + self.horizon].values,
+            'pv': self.pv.iloc[self._run_timestep:self._run_timestep + self.horizon],
+            'load': self.load.iloc[self._run_timestep:self._run_timestep + self.horizon],
             'parameters': self.parameters,
             'cost': self.df_cost.iloc[-1]
         }
