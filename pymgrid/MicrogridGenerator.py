@@ -58,7 +58,7 @@ class MicrogridGenerator:
 
 
     #function to plot the parameters of all the microgrid generated
-    def mg_parameters(self, id = 'all'):
+    def print_mg_parameters(self, id = 'all'):
 
 
         if id == 'all':
@@ -264,7 +264,7 @@ class MicrogridGenerator:
             self.microgrids.append(self._create_microgrid())
         
         if verbose == True:
-            self.mg_parameters()
+            self.print_mg_parameters()
 
     def _create_microgrid(self):
         # get the sizing data
@@ -296,22 +296,23 @@ class MicrogridGenerator:
         column_actual_production=[]
         grid_ts=[]
         df_parameters = pd.DataFrame()
-        df_cost = pd.DataFrame()
+        df_cost = pd.DataFrame(columns=['cost'])
         df_status = pd.DataFrame()
 
 
         df_parameters['load'] = [size_load]
         df_parameters['cost_loss_load'] = 10000
-        df_cost['cost'] = [0.0]
-        #df_status['net_load'] = [load.iloc[0].values] --> il y a doublon pour l'instant avec l'architecture PV
-
+        #df_cost['cost'] = [0.0]
+        df_status['load'] = [np.around(load.iloc[0,0],1)]# --> il y a doublon pour l'instant avec l'architecture PV, -> non si pas de pv la net load est juste la load
+        column_actual_production.append('loss_load')
         if architecture['PV'] == 1:
 
             df_parameters['PV_rated_power'] = np.around(size['pv'],1)
             column_actual_production.append('pv_consummed')
-            column_actual_production.append('pv_curtailed') 
+            column_actual_production.append('pv_curtailed')
+            column_actions.append('pv')
             pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))           
-            df_status['net_load'] = np.around(load.iloc[0].values - pv.iloc[0].values,1)
+            df_status['pv'] = np.around( pv.iloc[0].values,1)
 
         if architecture['battery']==1:
 
@@ -326,6 +327,8 @@ class MicrogridGenerator:
             df_parameters['battery_cost_cycle'] = battery['cost_cycle']
             column_actual_production.append('battery_charge')
             column_actual_production.append('battery_discharge')
+            column_actions.append('battery_charge')
+            column_actions.append('battery_discharge')
             df_status['battery_soc'] = battery['soc_0']
 
             capa_to_charge = max(
@@ -355,6 +358,7 @@ class MicrogridGenerator:
             df_parameters['genset_pmax'] = genset['pmax']
             df_parameters['fuel_cost'] = genset['fuel_cost']
             column_actual_production.append('genset')
+            column_actions.append('genset')
 
         grid_spec=0
 
@@ -370,8 +374,10 @@ class MicrogridGenerator:
             df_parameters['grid_price_export'] = grid['grid_price_export']
             column_actual_production.append('grid_import')
             column_actual_production.append('grid_export')
+            column_actions.append('grid_import')
+            column_actions.append('grid_export')
+            df_status['grid_status'] = grid_ts.iloc[0,0]
 
-        column_actions = column_actual_production
 
         df_actions= pd.DataFrame(columns = column_actions, )
         df_actual_production = pd.DataFrame(columns=column_actual_production)
@@ -387,17 +393,10 @@ class MicrogridGenerator:
             'df_cost':df_cost, #Dataframe of 1 value = 0.0
             'pv':pv, #Dataframe
             'load': load, #Dataframe
-            'grid_ts':grid_ts #Dataframe
+            'grid_ts':grid_ts, #Dataframe
+            'control_dict': column_actions #dictionnary
         }
 
         microgrid = Microgrid.Microgrid(microgrid_spec)
 
         return microgrid
-
-        #1. Generagte a DF with the parameters of each generator
-
-        #2. Get the timeseries for load and generation
-
-        #3. Dataframe with a timeseries of conrol order and updated battery parameters
-        #- updated battery SOC, fuel consumption, load, power produced
-
