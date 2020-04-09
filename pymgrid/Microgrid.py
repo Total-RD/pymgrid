@@ -14,6 +14,7 @@ class Microgrid:
 
         #list of parameters
         #this is a static dataframe: parameters of the microgrid that do not change with time
+        self.parameter = parameters
         self.parameters = parameters['parameters']
         self.architecture =  parameters['architecture']
 
@@ -91,7 +92,7 @@ class Microgrid:
         self.df_actions = self.df_actions[0:0]
         self.df_status = self.df_status[0:1]
         self.df_actual_generation = self.df_actual_generation[0:0]
-        self.df_cost = self.df_cost[0:0]
+        self.df_cost = self.parameter['df_cost']
 
         self._run_timestep = 1
         self._done = False
@@ -734,10 +735,10 @@ class Microgrid:
 
 
         self.df_actual_generation = self._record_production(control_dict,
-                                                                         self.df_actual_generation, self.df_status)
+                                                            self.df_actual_generation, self.df_status)
 
         self.df_cost = self._record_cost(self.df_actual_generation.iloc[-1,:].to_dict(),
-                                                           self.df_cost)
+                                                            self.df_cost)
 
         self.df_status = self._update_status(control_dict, self.df_status)
 
