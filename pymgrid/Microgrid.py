@@ -264,40 +264,32 @@ class Microgrid:
 
     Notes
     -----
-    The algorithm works by first finding a "running dimension", along which
-    the blocks will be extracted. Given an array of dimensions
-    ``(d1, d2, ..., dn)``, e.g. if `buf_size` is smaller than ``d1``, the
-    first dimension will be used. If, on the other hand,
-    ``d1 < buf_size < d1*d2`` the second dimension will be used, and so on.
-    Blocks are extracted along this dimension, and when the last block is
-    returned the process continues from the next dimension, until all
-    elements have been read.
+    We are trying to keep hidden a lot of what is happening under the hood to simplify using this class for control or
+    RL research at the maximum. A few notes, in this class parameters refer to the fixed parameters of the microgrid,
+    meaning they don't vary with time. The varying parameters can be found in either the other classes or
+    _df_record_state.
 
     Examples
     --------
-    >>> a = np.arange(3 * 4 * 5 * 6).reshape(3, 4, 5, 6)
-    >>> a_itor = np.lib.Arrayterator(a, 2)
-    >>> a_itor.shape
-    (3, 4, 5, 6)
-    Now we can iterate over ``a_itor``, and it will return arrays of size
-    two. Since `buf_size` was smaller than any dimension, the first
-    dimension will be iterated over first:
-    >>> for subarr in a_itor:
-    ...     if not subarr.all():
-    ...         print(subarr, subarr.shape) # doctest: +SKIP
-    >>> # [[[[0 1]]]] (1, 1, 1, 2)
-
+    To create microgrids through MicrogridGenerator:
     >>> m_gen=mg.MicrogridGenerator(nb_microgrid=1,path='your_path')
     >>> m_gen.generate_microgrid()
-    >>> m_gen.microgrids[0].battery
-    You can then add a point and use tab to have suggestion of the different paramterers
-    You can access state of charge for example with:
-    >>> m_gen.microgrids[0].battery.soc
+    >>>microgrid = m_gen.microgrid[0]
 
-    create microgrids
-    plot info
-    compute benchmark
-    one loop of control
+    To plot informations about the microgrid:
+    >>> microgrid.print_info()
+    >>> microgrid.print_control_info()
+
+    To compute the benchmarks:
+    >>> microgrid.compute_benchmark() # to compute them all
+    >>> microgrid.compute_benchmark('mpc_linprog') #to compute only the MPC
+
+    For example, a simple control loop:
+    >>> while m_gen.microgrids[0].done == False:
+    >>>     load = mg_data['load']
+    >>>     pv = mg_data['pv']
+    >>>     control_dict = {'battery_charge': 0, 'battery_discharge': 0,'grid_import': max(0, load-pv),'grid_export':0,'pv': min(pv, load),}
+    >>>     mg_data = m_gen.microgrids[0].run(control_dict)
     """
 
     def __init__(self, parameters, horizon=DEFAULT_HORIZON, timestep=DEFAULT_TIMESTEP):
@@ -307,17 +299,12 @@ class Microgrid:
         self.parameters = parameters['parameters']
         self.architecture =  parameters['architecture']
 
-
-
-
         #different timeseries
         self._load_ts=parameters['load']
         self._pv_ts=parameters['pv']
 
         self.pv=self._pv_ts.iloc[0,0]
         self.load = self._load_ts.iloc[0, 0]
-
-
         if parameters['architecture']['grid']==1:
             self._grid_status_ts=parameters['grid_ts'] #time series of outages
             #self.grid_status = self._grid_status_ts.iloc[0, 0]
@@ -325,49 +312,37 @@ class Microgrid:
             #self.grid_price_import=0
             #self.grid_price_export=0
 
-
-        #create timeseries of updated
         # those dataframe record what is hapepning at each time step
         self._df_record_control_dict=parameters['df_actions']
         self._df_record_state = parameters['df_status']
         self._df_record_actual_production = parameters['df_actual_generation']
         self._df_record_cost = parameters['df_cost']
-
         self._df_cost_per_epochs = parameters['df_cost']
-
         self.horizon = horizon
         self._run_timestep = timestep
-
         self._data_length = min(self._load_ts.shape[0], self._pv_ts.shape[0])
-
-
         self.done = False
-
         self._has_run_rule_based_baseline = False
         self._has_run_mpc_baseline = False
-
         self._epoch=0
-
         self._zero = ZERO
-
         self.control_dict = parameters['control_dict']
-
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
                                    self._df_record_state.capa_to_charge,
                                    self._df_record_state.capa_to_discharge)
-
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
-
         if self.architecture['grid'] == 1:
             self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0, 0])
 
     def set_horizon(self, horizon):
+        """Function used to change the horizon of the simulation."""
         self.horizon = horizon
 
 
     def update_variables(self):
+        """ Function that updates the variablers containing the parameters of the microgrid changing with time. """
         self.pv = self._pv_ts.iloc[self._run_timestep, 0]
         self.load = self._load_ts.iloc[self._run_timestep, 0]
         if self.architecture['grid']==1:
@@ -380,19 +355,30 @@ class Microgrid:
 
 
     def get_control_dict(self):
+        """ Function that returns the control_dict. """
         return self.control_dict
 
 
     def get_parameters(self):
+        """ Function that returns the parameters of the microgrid. """
         return self.parameters
 
 
     def get_cost(self):
+        """ Function that returns the cost associated the operation of the last time step. """
         return self._df_record_cost.iloc[-1]
 
 
     def get_updated_values(self):
-
+        """
+        Function that returns microgrid parameters that change with time. Depending on the architecture we have:
+            - PV production
+            - Load
+            - Battery state of charge
+            - Battery capacity to charge
+            - Battery capacity to discharge
+            - Whether the grid is connected or not
+        """
         mg_data = {}
 
         for i in self._df_record_state.columns:
@@ -402,6 +388,7 @@ class Microgrid:
 
 
     def forecast_all(self):
+        """ Function that returns the PV, load and grid_status forecasted values for the next horizon. """
         forecast = {
             'pv': self.forecast_pv(),
             'load': self.forecast_load(),
@@ -413,20 +400,43 @@ class Microgrid:
 
 
     def forecast_pv(self):
-            return self._pv_ts.iloc[self._run_timestep:self._run_timestep + self.horizon].values.flatten()
+        """ Function that returns the PV forecasted values for the next horizon. """
+        return self._pv_ts.iloc[self._run_timestep:self._run_timestep + self.horizon].values.flatten()
 
 
     def forecast_load(self):
-            return self._load_ts.iloc[self._run_timestep:self._run_timestep + self.horizon].values.flatten()
+        """ Function that returns the load forecasted values for the next horizon. """
+        return self._load_ts.iloc[self._run_timestep:self._run_timestep + self.horizon].values.flatten()
 
     def forecast_grid_status(self):
+        """ Function that returns the grid_status forecasted values for the next horizon. """
         return self._grid_status_ts.iloc[
                                   self._run_timestep:self._run_timestep + self.horizon].values.flatten()
 
 
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict):
-        #todo internaliser le traqueur du pas de temps
+        """
+        Function to 'run' the microgrid and iterate over the dataset.
+
+        Parameters
+        ----------
+        control_dict : dictionnary
+            Dictionnary containing the different control actions we want to apply to the microgrid. Its fields depend
+            on the architecture of the microgrid
+
+        Return
+        ----------
+        self.get_updated_values(): dictionnary
+            Return all the parameters that change with time in the microgrid. CF this function for more details.
+
+        Notes
+        ----------
+        This loop is the main connexion with a user in a notebook. That is where the simulation is ran and where the
+        control actions are recorder and applied.
+
+        """
+
         control_dict['load'] = self.load
         control_dict['pv'] = self.pv
 
@@ -454,6 +464,35 @@ class Microgrid:
         return self.get_updated_values()
 
     def train_test_split(self, train_size=0.67, shuffle = False, ):
+        """
+        Function to split our data between a training and testing set.
+
+        Parameters
+        ----------
+        train_size : float, optional
+            Value between 0 and 1 reflecting the percentage of the dataset that should be in the training set.
+        shuffle: boolean
+            Variable to know if the training and testing sets should be shuffled or in the 'temporal' order
+            Not implemented yet for shuffle = True
+
+        Attributes
+        ----------
+        _limit_index : int
+            Index that delimit the training and testing sets in the time series
+        load_train : dataframe
+            Timeseries of load in training set
+        pv_train: dataframe
+            Timeseries of PV in training set
+        load_test : dataframe
+            Timeseries of load in testing set
+        pv_test: dataframe
+            Timeseries of PV in testing set
+        grid_status_train: dataframe
+            Timeseries of grid_status in training set
+        grid_status_test: dataframe
+            Timeseries of grid_status in testing set
+
+        """
         self._limit_index = int(np.ceil(self._data_length*train_size))
         self.load_train = self._load_ts.iloc[:self._limit_index]
         self.pv_train = self._pv_ts.iloc[:self._limit_index]
@@ -468,6 +507,7 @@ class Microgrid:
 
 
     def reset(self):
+        """This function is used to reset the dataframes that track what is happening in simulation. Mainly used in RL."""
         temp_cost = copy(self._df_record_cost)
         temp_cost['epoch'] = self._epoch
         self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
