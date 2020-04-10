@@ -319,7 +319,7 @@ class Microgrid:
         self._df_record_cost = parameters['df_cost']
         self._df_cost_per_epochs = parameters['df_cost']
         self.horizon = horizon
-        self._run_timestep = timestep
+        self._tracking_timestep = 0
         self._data_length = min(self._load_ts.shape[0], self._pv_ts.shape[0])
         self.done = False
         self._has_run_rule_based_baseline = False
@@ -343,10 +343,10 @@ class Microgrid:
 
     def update_variables(self):
         """ Function that updates the variablers containing the parameters of the microgrid changing with time. """
-        self.pv = self._pv_ts.iloc[self._run_timestep, 0]
-        self.load = self._load_ts.iloc[self._run_timestep, 0]
+        self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
+        self.load = self._load_ts.iloc[self._tracking_timestep, 0]
         if self.architecture['grid']==1:
-            self.grid_status = self._grid_status_ts.iloc[self._run_timestep, 0]
+            self.grid_status = self._grid_status_ts.iloc[self._tracking_timestep, 0]
 
         if self.architecture['battery'] == 1:
             self.battery.soc = self._df_record_state.battery_soc.iloc[-1]
@@ -401,17 +401,17 @@ class Microgrid:
 
     def forecast_pv(self):
         """ Function that returns the PV forecasted values for the next horizon. """
-        return self._pv_ts.iloc[self._run_timestep:self._run_timestep + self.horizon].values.flatten()
+        return self._pv_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
 
     def forecast_load(self):
         """ Function that returns the load forecasted values for the next horizon. """
-        return self._load_ts.iloc[self._run_timestep:self._run_timestep + self.horizon].values.flatten()
+        return self._load_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
     def forecast_grid_status(self):
         """ Function that returns the grid_status forecasted values for the next horizon. """
         return self._grid_status_ts.iloc[
-                                  self._run_timestep:self._run_timestep + self.horizon].values.flatten()
+               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
 
     #if return whole pv and load ts, the time can be counted in notebook
@@ -451,15 +451,16 @@ class Microgrid:
         self.df_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
                                                            self._df_record_cost)
 
-        self._df_record_state = self._update_status(control_dict,
-                                                    self._df_record_state)
 
-        self._run_timestep += 1
-
+        self._tracking_timestep += 1
         self.update_variables()
 
-        if self._run_timestep == self._data_length - self.horizon:
+        self._df_record_state = self._update_status(control_dict,
+                                                    self._df_record_state, self.load, self.pv)
+
+        if self._tracking_timestep == self._data_length - self.horizon:
             self.done = True
+
 
         return self.get_updated_values()
 
@@ -513,11 +514,11 @@ class Microgrid:
         self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
 
         self._df_record_control_dict = self._df_record_control_dict[0:0]
-        self._df_record_state = self._df_record_state[0:1]
+        self._df_record_state = self._df_record_state.iloc[0,:]
         self._df_record_actual_production = self._df_record_actual_production[0:0]
         self._df_record_cost = self._df_record_cost[0:0]
 
-        self._run_timestep = 1
+        self._tracking_timestep = 0
         self.done = False
 
         self._epoch+=1
@@ -533,12 +534,12 @@ class Microgrid:
         return df
 
 
-    def _update_status(self, control_dict, df):
+    def _update_status(self, control_dict, df, next_load, next_pv):
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
         dict = {
-            'load': control_dict['load'],
-                    'pv': control_dict['pv'],
+            'load': next_load,
+                    'pv': next_pv,
         }
         new_soc =np.nan
         if self.architecture['battery'] == 1:
@@ -561,6 +562,7 @@ class Microgrid:
             dict['capa_to_discharge'] = capa_to_discharge
             dict['capa_to_charge'] = capa_to_charge
             dict['grid_status'] = self._grid_status_ts.iloc[df.shape[0], 0]
+
 
         df = df.append(dict,ignore_index=True)
 
@@ -957,7 +959,7 @@ class Microgrid:
 
             self.baseline_priority_list_update_status = self._update_status(
                 self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_update_status)
+                self.baseline_priority_list_update_status, self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0])
 
             self.baseline_priority_list_cost = self._record_cost(
                 self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
@@ -1170,7 +1172,7 @@ class Microgrid:
 
             self.baseline_linprog_update_status = self._update_status(
                 self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                self.baseline_linprog_update_status)
+                self.baseline_linprog_update_status, self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0])
 
             self.baseline_linprog_cost = self._record_cost(
                 self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
