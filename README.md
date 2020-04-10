@@ -1,6 +1,6 @@
 # pymgrid
 
-pymgrid is a python library to generate and simulate a large number of microgrids.
+pymgrid (PYthon MicroGRID) is a python library to generate and simulate a large number of microgrids.
 
 ## Installation
 

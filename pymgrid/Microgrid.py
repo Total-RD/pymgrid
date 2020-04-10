@@ -4,6 +4,8 @@ from copy import copy
 import cvxpy as cp
 import operator
 import math
+import time
+import sys
 
 
 DEFAULT_HORIZON = 24 #in hours
@@ -594,7 +596,8 @@ class Microgrid:
             p_export = 0
 
         if p_import > self._zero and p_export > self._zero:
-            print ('cannot import and export at the same time')
+        	pass
+            #print ('cannot import and export at the same time')
             #todo how to deal with that?
             
         if p_import > self.parameters['grid_power_import'].values[0]:
@@ -614,7 +617,8 @@ class Microgrid:
             p_discharge = 0
 
         if p_charge > self._zero and p_discharge > self._zero:
-            print ('cannot import and export at the same time')
+        	pass
+            #print ('cannot import and export at the same time')
             #todo how to deal with that?
 
         capa_to_charge = max(
@@ -719,14 +723,14 @@ class Microgrid:
             # here we consider we produced more than needed ? we pay the price of the full cost proposed?
             # penalties ?
             df = df.append(control_dict, ignore_index=True)
-            print('total_production > total_load')
-            print(control_dict)
+            #print('total_production > total_load')
+            #print(control_dict)
 
         elif total_production < total_load :
             control_dict['loss_load']+= total_load-total_production
             df = df.append(control_dict, ignore_index=True)
-            print('total_production < total_load')
-            print(control_dict)
+            #print('total_production < total_load')
+            #print(control_dict)
 
         return df
 
@@ -931,41 +935,6 @@ class Microgrid:
 
         return control_dict
 
-    def _baseline_rule_based(self, priority_list=0, length=8760):
-
-        self.baseline_priority_list_action = copy(self._df_record_control_dict)
-        self.baseline_priority_list_update_status = copy(self._df_record_state)
-        self.baseline_priority_list_record_production = copy(self._df_record_actual_production)
-        self.baseline_priority_list_cost = copy(self._df_record_cost)
-
-        for i in range(length - self.horizon):
-
-            if self.architecture['grid'] == 1:
-                priority_dict = self._generate_priority_list(self.architecture, self.parameters,
-                                                             self._grid_status_ts.iloc[i].values[0])
-            else:
-                priority_dict = self._generate_priority_list(self.architecture, self.parameters)
-
-            control_dict = self._run_priority_based(self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0],
-                                                    self.parameters,
-                                                    self.baseline_priority_list_update_status, priority_dict)
-
-            self.baseline_priority_list_action = self._record_action(control_dict,
-                                                                     self.baseline_priority_list_action)
-
-            self.baseline_priority_list_record_production = self._record_production(control_dict,
-                                                                                    self.baseline_priority_list_record_production,
-                                                                                    self.baseline_priority_list_update_status)
-
-            self.baseline_priority_list_update_status = self._update_status(
-                self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_update_status, self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0])
-
-            self.baseline_priority_list_cost = self._record_cost(
-                self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_cost)
-
-        self._has_run_rule_based_baseline = True
 
     def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
         # todo switch to a matrix structure
@@ -1146,6 +1115,62 @@ class Microgrid:
 
         return control_dict
 
+    def _baseline_rule_based(self, priority_list=0, length=8760):
+
+        self.baseline_priority_list_action = copy(self._df_record_control_dict)
+        self.baseline_priority_list_update_status = copy(self._df_record_state)
+        self.baseline_priority_list_record_production = copy(self._df_record_actual_production)
+        self.baseline_priority_list_cost = copy(self._df_record_cost)
+
+        n = length - self.horizon
+        print_ratio = n/100
+
+        for i in range(length - self.horizon):
+
+            e = i
+
+            if e == (n-1):
+
+               e = n
+
+            e = e/print_ratio
+
+            sys.stdout.write("\rIn Progress %d%% " % e)
+            sys.stdout.flush()
+
+            if e == 100:
+
+                sys.stdout.write("\nRules Based Calculation Finished")
+                sys.stdout.flush()
+
+
+            if self.architecture['grid'] == 1:
+                priority_dict = self._generate_priority_list(self.architecture, self.parameters,
+                                                             self._grid_status_ts.iloc[i].values[0])
+            else:
+                priority_dict = self._generate_priority_list(self.architecture, self.parameters)
+
+            control_dict = self._run_priority_based(self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0],
+                                                    self.parameters,
+                                                    self.baseline_priority_list_update_status, priority_dict)
+
+            self.baseline_priority_list_action = self._record_action(control_dict,
+                                                                     self.baseline_priority_list_action)
+
+            self.baseline_priority_list_record_production = self._record_production(control_dict,
+                                                                                    self.baseline_priority_list_record_production,
+                                                                                    self.baseline_priority_list_update_status)
+
+            self.baseline_priority_list_update_status = self._update_status(
+                self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                self.baseline_priority_list_update_status, self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0])
+
+            self.baseline_priority_list_cost = self._record_cost(
+                self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                self.baseline_priority_list_cost)
+
+        self._has_run_rule_based_baseline = True
+
     def _baseline_linprog(self, forecast_error=0, length=8760):
 
         self.baseline_linprog_action = copy(self._df_record_control_dict)
@@ -1153,11 +1178,32 @@ class Microgrid:
         self.baseline_linprog_record_production = copy(self._df_record_actual_production)
         self.baseline_linprog_cost = copy(self._df_record_cost)
 
-        for i in range(length - self.horizon):
+        n = length - self.horizon
+        print_ratio = n/100
+
+        for i in range(n):
+
+            e = i
+
+            if e == (n-1):
+
+               e = n
+
+            e = e/print_ratio
+
+            sys.stdout.write("\rIn Progress %d%% " % e)
+            sys.stdout.flush()
+
+            if e == 100:
+
+                sys.stdout.write("\nMPC Calculation Finished")
+                sys.stdout.flush()
+        	
             if self.architecture['grid'] == 0:
                 temp_grid = np.zeros(self.horizon)
             else:
                 temp_grid = self._grid_status_ts.iloc[i:i + self.horizon].values
+
             control_dict = self._mpc_lin_prog_cvxpy(self.parameters, self._load_ts.iloc[i:i + self.horizon].values,
                                                     self._pv_ts.iloc[i:i + self.horizon].values,
                                                     temp_grid,
@@ -1179,6 +1225,8 @@ class Microgrid:
                 self.baseline_linprog_cost)
 
             self._has_run_mpc_baseline = True
+
+
 
     def compute_benchmark(self, benchmark_to_compute='all'):
 
