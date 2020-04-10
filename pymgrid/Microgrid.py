@@ -1163,7 +1163,7 @@ class Microgrid:
 
             self.baseline_priority_list_update_status = self._update_status(
                 self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_update_status, self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0])
+                self.baseline_priority_list_update_status, self._load_ts.iloc[i+1].values[0], self._pv_ts.iloc[i+1].values[0])
 
             self.baseline_priority_list_cost = self._record_cost(
                 self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
@@ -1218,7 +1218,7 @@ class Microgrid:
 
             self.baseline_linprog_update_status = self._update_status(
                 self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                self.baseline_linprog_update_status, self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0])
+                self.baseline_linprog_update_status, self._load_ts.iloc[i+1].values[0], self._pv_ts.iloc[i+1].values[0])
 
             self.baseline_linprog_cost = self._record_cost(
                 self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
