@@ -450,7 +450,7 @@ class Microgrid:
                                                                          self._df_record_actual_production,
                                                                     self._df_record_state)
 
-        self.df_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
+        self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
                                                            self._df_record_cost)
 
 
@@ -736,8 +736,8 @@ class Microgrid:
         return df
 
     def _record_cost(self, control_dict, df):
-
-        cost = control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
+        cost = 0
+        cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
 
         if self.architecture['genset'] == 1:
             cost += control_dict['genset'] * self.parameters['fuel_cost'].values[0]
@@ -750,7 +750,8 @@ class Microgrid:
 
         cost_dict= {'cost': cost}
 
-        df = df.append(cost_dict, ignore_index=True)
+
+        df = df.append({'cost': cost}, ignore_index=True)
 
         return df
 
