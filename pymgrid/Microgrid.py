@@ -521,6 +521,7 @@ class Microgrid:
         self._df_record_cost = self._df_record_cost[0:0]
 
         self._tracking_timestep = 0
+        self.update_variables()
         self.done = False
 
         self._epoch+=1
