@@ -516,7 +516,7 @@ class Microgrid:
         self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
 
         self._df_record_control_dict = self._df_record_control_dict[0:0]
-        self._df_record_state = self._df_record_state.iloc[0,:]
+        self._df_record_state = self._df_record_state.iloc[:1]
         self._df_record_actual_production = self._df_record_actual_production[0:0]
         self._df_record_cost = self._df_record_cost[0:0]
 
