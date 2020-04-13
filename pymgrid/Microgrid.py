@@ -355,7 +355,10 @@ class Microgrid:
             self.battery.capa_to_discharge = self._df_record_state.capa_to_discharge.iloc[-1]
             self.battery.capa_to_charge = self._df_record_state.capa_to_charge.iloc[-1]
 
-
+    def get_data(self):
+        """Function to return the time series used in the microgrid"""
+        return self._load_ts, self._pv_ts
+    
     def get_control_dict(self):
         """ Function that returns the control_dict. """
         return self.control_dict
@@ -368,7 +371,7 @@ class Microgrid:
 
     def get_cost(self):
         """ Function that returns the cost associated the operation of the last time step. """
-        return self._df_record_cost.iloc[-1]
+        return self._df_record_cost.iloc[-1].values[0]
 
 
     def get_updated_values(self):
@@ -466,6 +469,7 @@ class Microgrid:
 
         return self.get_updated_values()
 
+
     def train_test_split(self, train_size=0.67, shuffle = False, ):
         """
         Function to split our data between a training and testing set.
@@ -509,7 +513,7 @@ class Microgrid:
 
 
 
-    def reset(self):
+    def reset(self, testing=False):
         """This function is used to reset the dataframes that track what is happening in simulation. Mainly used in RL."""
         temp_cost = copy(self._df_record_cost)
         temp_cost['epoch'] = self._epoch
@@ -747,6 +751,8 @@ class Microgrid:
 
             cost +=( control_dict['grid_import'] * self.parameters['grid_price_import'].values[0]
                      - control_dict['grid_export'] * self.parameters['grid_price_export'].values[0])
+        if self.architecture['battery'] ==1 :
+            cost+= (control_dict['battery_charge']+control_dict['battery_discharge'])/(self.parameters['battery_capacity'].values[0]*2)*self.parameters['battery_cost_cycle'].values[0]
 
         cost_dict= {'cost': cost}
 
