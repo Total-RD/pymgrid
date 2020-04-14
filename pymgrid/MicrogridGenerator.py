@@ -40,8 +40,57 @@ from os import listdir
 from os.path import isfile, join
 
 class MicrogridGenerator:
+    """
+        The class MicrogridGenerator generates a number of microgrids with differerent and randomized paramters based on
+        the load and renewable data files in the data folder.
 
-    def __init__(self, nb_microgrid=1, random_seed=42, timestep=1, path='yourpath'):
+        Parameters
+        ----------
+            nb_microgrid: int, optional
+                Number representing the number of microgrid to be generated.
+            random_seed: int, optional
+                Seed to be used to generate the needed random numbers to size microgrids.
+            timestep: int, optional
+                Timestep to be used in the time series.
+            path: string
+                The path to the pymgrid folder, used to get the data files needed.
+
+        Attributes
+        ----------
+        self.microgrids= [] # generate a list of microgrid object
+        #self.annual_load
+        self.nb_microgrids=nb_microgrid
+        self.timestep=1
+        self.path=path
+
+            microgrids: list
+                List that contains all the generated microgrids
+            nb_microgrid: int, optional
+                Number representing the number of microgrid to be generated.
+                this microgrid has one of them
+            timestep: int, optional
+                Timestep to be used in the time series.
+            path: string
+                The path to the pymgrid folder, used to get the data files needed.
+
+        Notes
+        -----
+        Due to the random nature of the implemented process, all the generated microgrids might not make the most sense
+        economically or in term of generator sizing. The main idea is to generate realistic-ich microgrids to develop,
+        test and compare control algorithms and advance AI research applied to microgrids.
+
+        Examples
+        --------
+        To create microgrids through MicrogridGenerator:
+        >>> m_gen=mg.MicrogridGenerator(nb_microgrid=1,path='your_path')
+        >>> m_gen.generate_microgrid()
+
+        To plot informations about the generated microgrids:
+        >>> m_gen.print_mg_parameters()
+        """
+
+
+    def __init__(self, nb_microgrid=10, random_seed=42, timestep=1, path='yourpath/pymgrid/'):
         
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
@@ -59,6 +108,7 @@ class MicrogridGenerator:
 
     #function to plot the parameters of all the microgrid generated
     def print_mg_parameters(self, id = 'all'):
+        """ This function is used to print the parameters of all the generated microgrids."""
 
 
         if id == 'all':
@@ -77,6 +127,7 @@ class MicrogridGenerator:
 
 
     def _get_random_file(self, path):
+        """ Based on a path, and a folder containing data files, return a file chosen randomly."""
 
         onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
         #todo check for files name in a cleanedr way
@@ -91,6 +142,7 @@ class MicrogridGenerator:
         return file
 
     def _scale_ts(self, df_ts, size, scaling_method='sum'):
+        """ Scales a time series based on either the sum or the maximum of the time series."""
 
         actual_ratio=1
         if scaling_method =='sum':
@@ -104,6 +156,7 @@ class MicrogridGenerator:
         return df_ts
 
     def _resize_timeseries(timeserie, current_time_step, new_time_step):
+        """ Change the frequency of a time series. """
 
         index = pd.date_range('1/1/2015 00:00:00', freq=str(int(current_time_step * 60)) + 'Min',
                               periods=(len(timeserie)))  # , freq='0.9S')
@@ -121,6 +174,7 @@ class MicrogridGenerator:
     #     annual_consumption = annual_consumption
 
     def _get_pv_ts(self):
+        """ Function to get a random PV file."""
         #open pv folder
         # get list of file
         # select randomly rank if file to select in the list
@@ -129,6 +183,7 @@ class MicrogridGenerator:
         return self._get_random_file(path)
 
     def _get_load_ts(self):
+        """ Function to get a random load file. """
         #open load folder
         # get list of file
         # select randomly rank if file to select in the list
@@ -137,6 +192,7 @@ class MicrogridGenerator:
         return self._get_random_file(path)
 
     def _get_wind_ts(self):
+        """ Function to get a random wind file. """
         #open load folder
         # get list of file
         # select randomly rank if file to select in the list
@@ -145,6 +201,7 @@ class MicrogridGenerator:
         return self._get_random_file(path)
 
     def _get_genset(self, rated_power=1000, pmax=0.9, pmin=0.2):
+        """ Function generates a dictionnary with the genset information. """
 
         polynom=[np.random.rand()*10, np.random.rand(), np.random.rand()/10] #fuel consumption
 
@@ -159,6 +216,7 @@ class MicrogridGenerator:
         return genset
 
     def _get_battery(self, capa=1000, duration=4, pcharge=100, pdischarge=100, soc_max=1, soc_min=0.2, efficiency=0.9):
+        """ Function generates a dictionnary with the battery information. """
         battery={
             'capa':capa,
             'pcharge':int(np.ceil(capa/duration)),
@@ -174,6 +232,7 @@ class MicrogridGenerator:
 
 
     def _get_grid(self, rated_power=1000, weak_grid=0, pmin=0.2, price_export = 0, price_import =0.3):
+        """ Function generates a dictionnary with the grid information. """
 
         if weak_grid == 1:
             rand_outage_per_day = np.random.randn()*3/4 +0.25
@@ -196,6 +255,7 @@ class MicrogridGenerator:
         return grid
 
     def _generate_weak_grid_profile(self, outage_per_day, duration_of_outage,nb_time_step_per_year):
+        """ Function generates an outage time series to be used in the microgrids with a weak grid. """
 
         #weak_grid_timeseries = np.random.random_integers(0,1, int(nb_time_step_per_year+1) ) #for a number of time steps, value between 0 and 1
         #generate a timeseries of 8760/timestep points based on np.random seed
@@ -220,6 +280,7 @@ class MicrogridGenerator:
     # sizing functions
     ###########################################
     def _size_mg(self, load, size_load=1):
+        ''' Function that returns a dictionnary with the size of each component of a microgrid.'''
         # generate a list of size based on the number of architecture  generated
         # 2 size the other generators based on the load
         pv=size_load*(np.random.randint(low=30, high=121)/100)
@@ -238,6 +299,7 @@ class MicrogridGenerator:
         return size
 
     def _size_genset(self, load, max_operating_loading = 0.9):
+        """ Function that returns the maximum power a genset. """
         #random number > 3 < 20
         # polynomial for fuel consumption
 
@@ -247,6 +309,7 @@ class MicrogridGenerator:
 
 
     def _size_battery(self, load):
+        """ Function that returns the capacity of the battery, equivalent to 3 to 5 hours of mean load. """
         #energy duration
         battery = int(np.ceil(np.random.randint(low=3,high=6)*np.mean(load.values)))
         #todo duration & power
@@ -258,6 +321,7 @@ class MicrogridGenerator:
     ###########################################
 
     def generate_microgrid(self, verbose=True):
+        """ Function used to generate the nb_microgrids to append them to the microgrids list. """
 
         for i in range(self.nb_microgrids):
             #size=self._size_mg()
@@ -267,6 +331,12 @@ class MicrogridGenerator:
             self.print_mg_parameters()
 
     def _create_microgrid(self):
+        """
+        Function used to create one microgrid. First selecting a load file, and a load size  and a randome architecture
+        and then size the other components of the microgrid depending on the load size. This function also initializes
+        the tracking dataframes to be used in microgrid.
+        """
+
         # get the sizing data
         # create microgrid object and append
         # return the list

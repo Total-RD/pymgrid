@@ -615,12 +615,14 @@ class Microgrid:
 
 
     def _record_action(self, control_dict, df):
+        """ This function is used to record the actions taken, before being checked for feasability. """
         df = df.append(control_dict,ignore_index=True)
 
         return df
 
 
     def _update_status(self, control_dict, df, next_load, next_pv):
+        """ This function update the parameters of the microgrid that change with time. """
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
         dict = {
@@ -662,6 +664,7 @@ class Microgrid:
     #now we consider all the generators on all the time (mainly concern genset)
     
     def _check_constraints_genset(self, p_genset):
+        """ This function checks that the constraints of the genset are respected."""
         if p_genset < 0:
             p_genset =0
             print('error, genset power cannot be lower than 0')
@@ -675,6 +678,7 @@ class Microgrid:
         return p_genset
         
     def _check_constraints_grid(self, p_import, p_export):
+        """ This function checks that the constraints of the grid are respected."""
         if p_import < 0:
             p_import = 0
 
@@ -695,6 +699,7 @@ class Microgrid:
         return p_import, p_export
         
     def _check_constraints_battery(self, p_charge, p_discharge, status):
+        """ This function checks that the constraints of the battery are respected."""
 
         if p_charge < 0:
             p_charge = 0
@@ -729,6 +734,24 @@ class Microgrid:
         return p_charge, p_discharge
 
     def _record_production(self, control_dict, df, status):
+        """
+        This function records the actual production occuring in the microgrid. Based on the control actions and the
+        parameters of the microgrid. This function will check that the control actions respect the constraints of
+        the microgrid and then record what generators have produced energy.
+
+        Parameters
+        ----------
+        control_dict : dictionnary
+            Dictionnary representing the control actions taken by an algorithm (either benchmark or in the run function).
+        df: dataframe
+            Previous version of the record_production dataframe (coming from the run loop, or benchmarks).
+        status: dataframe
+            One line dataframe representing the changing parameters of the microgrid.
+
+        Notes
+        -----
+        The mechanism to incure a penalty in case of over-generation is not yet in its final version.
+        """
 
         #todo enforce constraints
         #todo make sure the control actions repect their respective constriants
@@ -821,6 +844,7 @@ class Microgrid:
         return df
 
     def _record_cost(self, control_dict, df):
+        """ This function record the cost of operating the microgrid at each time step."""
         cost = 0
         cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
 
@@ -847,6 +871,10 @@ class Microgrid:
     ########################################################
 
     def print_benchmark_cost(self):
+        """
+        This function prints the cumulative cost of the different benchmark ran and different part of the dataset
+        depending on if split it in train/test or not.
+        """
         if self._has_train_test_split == False:
             if self._has_run_rule_based_baseline == True:
                 print('Rule based cost: ', self.baseline_priority_list_cost.sum())
@@ -865,6 +893,7 @@ class Microgrid:
 
 
     def print_info(self):
+        """ This function prints the main information regarding the microgrid."""
 
         print('Microgrid parameters')
         display(self.parameters)
@@ -882,6 +911,7 @@ class Microgrid:
         print(self._has_run_rule_based_baseline)
 
     def print_control_info(self):
+        """ This function prints the control_dict that needs to be used to control the microgrid"""
 
         print('you should fill this dictionnary at each time step')
         print('it is included in the mg_data object')
@@ -890,7 +920,8 @@ class Microgrid:
         print('Control dictionnary:')
         print(self.control_dict)
 
-    def print_updates_parameters(self):
+    def print_updated_parameters(self):
+        """ This function prints the last values for the parameters of the microgrid changing with time."""
         state={}
         for i in self._df_record_state.columns:
             state[i] = self._df_record_state[i].iloc[-1]
@@ -912,7 +943,10 @@ class Microgrid:
     #     return nb_gen_min
 
     def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
-
+        """
+        Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
+        priority list to be run in the rule based benchmark.
+        """
         # compute marginal cost of each ressource
         # construct priority list
         # should receive fuel cost and cost curve, price of electricity
@@ -943,6 +977,24 @@ class Microgrid:
         return priority_dict
 
     def _run_priority_based(self, load, pv, parameters, status, priority_dict):
+        """
+        This function runs one loop of rule based control, based on a priority list, load and pv, dispatch the
+        generators
+
+        Parameters
+        ----------
+        load: float
+            Demand value
+        PV: float
+            PV generation
+        parameters: dataframe
+            The fixed parameters of the mircrogrid
+        status: dataframe
+            The parameters of the microgrid changing with time.
+        priority_dict: dictionnary
+            Dictionnary representing the priority with which run each generator.
+
+        """
 
         temp_load = load
         # todo add reserves to pymgrid
@@ -1044,6 +1096,8 @@ class Microgrid:
 
 
     def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
+        """ This function implements one loop of the MPC, optimizing the microgrid over the next horizon."""
+
         # todo switch to a matrix structure
         load = np.reshape(load, (horizon,))
         # todo mip to choose which generators are online
@@ -1223,6 +1277,7 @@ class Microgrid:
         return control_dict
 
     def _baseline_rule_based(self, priority_list=0, length=8760):
+        """ This function runs the rule based benchmark over the datasets (load and pv profiles) in the microgrid."""
 
         self.baseline_priority_list_action = copy(self._df_record_control_dict)
         self.baseline_priority_list_update_status = copy(self._df_record_state)
@@ -1279,6 +1334,7 @@ class Microgrid:
         self._has_run_rule_based_baseline = True
 
     def _baseline_linprog(self, forecast_error=0, length=8760):
+        """ This function runs the MPC benchmark over the datasets (load and pv profiles) in the microgrid."""
 
         self.baseline_linprog_action = copy(self._df_record_control_dict)
         self.baseline_linprog_update_status = copy(self._df_record_state)
@@ -1336,6 +1392,10 @@ class Microgrid:
 
 
     def compute_benchmark(self, benchmark_to_compute='all'):
+        """
+        This function can be used to run all the benchmarks, or one at a time depending on the argument being
+        passed.
+        """
 
         if benchmark_to_compute == 'all':
             if self._has_run_rule_based_baseline == False:
