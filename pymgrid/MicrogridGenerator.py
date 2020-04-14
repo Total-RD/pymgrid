@@ -1,37 +1,3 @@
-'''
-Inputs:
-- nb microgrid
-- size of load = rand
-- shape of load = rand
-- pv = 1
-- genset = 1
-- wind = 0
-- gas = 0
-- hydrogen = 0
-- battery = 1
-- (smart load)
-- random_seed
-- timestep
-
-Function:
-- get solar profile (maybe 5 timeseries in the pymgrid)
-- get wind profile (maybe 5 timeseries)
-- generate load profile (triangle, square, AR process? others)
-- get sizing based on annual load size? +- noise
-
-Next step:
-- implement benchmark algorithms
-- control for RL in notebook
-
-A (V0) microgrid is:
-- PV time series, + P_max
-- Load time series, + E_yearly
-- Genset, a polynome, + P_rated, Power + and -
-- Battery, Capa, P + and -, SOC + and -
-- optional: Grid, interconnexion capacity + and -
-
-
-'''
 
 import numpy as np
 import pandas as pd
