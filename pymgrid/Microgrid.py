@@ -326,6 +326,7 @@ class Microgrid:
         self.done = False
         self._has_run_rule_based_baseline = False
         self._has_run_mpc_baseline = False
+        self._has_train_test_split = False
         self._epoch=0
         self._zero = ZERO
         self.control_dict = parameters['control_dict']
@@ -358,7 +359,17 @@ class Microgrid:
     def get_data(self):
         """Function to return the time series used in the microgrid"""
         return self._load_ts, self._pv_ts
-    
+
+    def get_training_testing_data(self):
+
+        if self._has_train_test_split == True:
+
+            return self._limit_index, self._load_train, self._pv_train, self._load_test, self._pv_test
+
+        else:
+            print('You have not split the dataset into training and testing sets')
+
+
     def get_control_dict(self):
         """ Function that returns the control_dict. """
         return self.control_dict
@@ -501,15 +512,17 @@ class Microgrid:
 
         """
         self._limit_index = int(np.ceil(self._data_length*train_size))
-        self.load_train = self._load_ts.iloc[:self._limit_index]
-        self.pv_train = self._pv_ts.iloc[:self._limit_index]
+        self._load_train = self._load_ts.iloc[:self._limit_index]
+        self._pv_train = self._pv_ts.iloc[:self._limit_index]
 
-        self.load_test = self._load_ts.iloc[self._limit_index:]
-        self.pv_test = self._pv_ts.iloc[self._limit_index:]
+        self._load_test = self._load_ts.iloc[self._limit_index:]
+        self._pv_test = self._pv_ts.iloc[self._limit_index:]
 
         if self.architecture['grid'] == 1:
-            self.grid_status_train = self._grid_status_ts.iloc[:self._limit_index]
-            self.grid_status_test = self._grid_status_ts.iloc[self._limit_index:]
+            self._grid_status_train = self._grid_status_ts.iloc[:self._limit_index]
+            self._grid_status_test = self._grid_status_ts.iloc[self._limit_index:]
+
+        self._has_train_test_split = True
 
 
 
