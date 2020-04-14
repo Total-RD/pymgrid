@@ -846,6 +846,24 @@ class Microgrid:
     # PRINT FUNCTIONS
     ########################################################
 
+    def print_benchmark_cost(self):
+        if self._has_train_test_split == False:
+            if self._has_run_rule_based_baseline == True:
+                print('Rule based cost: ', self.baseline_priority_list_cost.sum())
+
+            if self._has_run_mpc_baseline == True:
+                print('MPC cost: ', self.baseline_linprog_cost.sum())
+
+        else:
+            if self._has_run_rule_based_baseline == True:
+                print('Training rule based cost: ', self.baseline_priority_list_cost.iloc[:self._limit_index].sum())
+                print('Testing rule based cost: ', self.baseline_priority_list_cost.iloc[self._limit_index:].sum())
+
+            if self._has_run_mpc_baseline == True:
+                print('Training MPC cost: ', self.baseline_linprog_cost.iloc[:self._limit_index].sum())
+                print('Testing MPC cost: ', self.baseline_linprog_cost.iloc[self._limit_index:].sum())
+
+
     def print_info(self):
 
         print('Microgrid parameters')
@@ -1320,13 +1338,15 @@ class Microgrid:
     def compute_benchmark(self, benchmark_to_compute='all'):
 
         if benchmark_to_compute == 'all':
-            self._baseline_rule_based()
-            self._baseline_linprog()
+            if self._has_run_rule_based_baseline == False:
+                self._baseline_rule_based()
+            if self._has_run_mpc_baseline == False:
+                self._baseline_linprog()
 
-        if benchmark_to_compute == 'rule_based':
+        if benchmark_to_compute == 'rule_based' and self._has_run_rule_based_baseline == False:
             self._baseline_rule_based()
 
-        if benchmark_to_compute == 'mpc_linprog':
+        if benchmark_to_compute == 'mpc_linprog' and self._has_run_mpc_baseline == False:
             self._baseline_linprog()
 
     ########################################################
