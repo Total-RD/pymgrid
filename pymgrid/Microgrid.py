@@ -330,6 +330,8 @@ class Microgrid:
         self._epoch=0
         self._zero = ZERO
         self.control_dict = parameters['control_dict']
+        self._data_set_to_use_default = 'all'
+        self._data_set_to_use = 'all'
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
                                    self._df_record_state.capa_to_charge,
@@ -343,19 +345,6 @@ class Microgrid:
         """Function used to change the horizon of the simulation."""
         self.horizon = horizon
 
-
-    def update_variables(self):
-        """ Function that updates the variablers containing the parameters of the microgrid changing with time. """
-        self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
-        self.load = self._load_ts.iloc[self._tracking_timestep, 0]
-        if self.architecture['grid']==1:
-            self.grid_status = self._grid_status_ts.iloc[self._tracking_timestep, 0]
-
-        if self.architecture['battery'] == 1:
-            self.battery.soc = self._df_record_state.battery_soc.iloc[-1]
-            self.battery.capa_to_discharge = self._df_record_state.capa_to_discharge.iloc[-1]
-            self.battery.capa_to_charge = self._df_record_state.capa_to_charge.iloc[-1]
-
     def get_data(self):
         """Function to return the time series used in the microgrid"""
         return self._load_ts, self._pv_ts
@@ -368,7 +357,6 @@ class Microgrid:
 
         else:
             print('You have not split the dataset into training and testing sets')
-
 
     def get_control_dict(self):
         """ Function that returns the control_dict. """
@@ -417,17 +405,50 @@ class Microgrid:
 
     def forecast_pv(self):
         """ Function that returns the PV forecasted values for the next horizon. """
-        return self._pv_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+        forecast = np.nan
+        if self._data_set_to_use == 'training':
+            forecast=self._pv_train.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'testing':
+            forecast = self._pv_test.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'all':
+            forecast = self._pv_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        return forecast
 
 
     def forecast_load(self):
         """ Function that returns the load forecasted values for the next horizon. """
-        return self._load_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+        forecast = np.nan
+        if self._data_set_to_use == 'training':
+            forecast = self._load_train.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'testing':
+            forecast = self._load_test.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'all':
+            forecast = self._load_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        return forecast
 
     def forecast_grid_status(self):
         """ Function that returns the grid_status forecasted values for the next horizon. """
-        return self._grid_status_ts.iloc[
+        forecast = np.nan
+        if self._data_set_to_use == 'training':
+            forecast = self._grid_status_train.iloc[
                self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'testing':
+            forecast = self._grid_status_test.iloc[
+               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'all':
+            forecast = self._grid_status_ts.iloc[
+               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        return forecast
 
 
     #if return whole pv and load ts, the time can be counted in notebook
@@ -523,8 +544,39 @@ class Microgrid:
             self._grid_status_test = self._grid_status_ts.iloc[self._limit_index:]
 
         self._has_train_test_split = True
+        self._data_set_to_use_default = 'training'
+        self._data_set_to_use = 'training'
+
+    def update_variables(self):
+        """ Function that updates the variablers containing the parameters of the microgrid changing with time. """
+
+        if self._data_set_to_use == 'training':
+            self.pv = self._pv_train.iloc[self._tracking_timestep, 0]
+            self.load = self._load_train.iloc[self._tracking_timestep, 0]
+
+        if self._data_set_to_use == 'testing':
+            self.pv = self._pv_test.iloc[self._tracking_timestep, 0]
+            self.load = self._load_test.iloc[self._tracking_timestep, 0]
+
+        if self._data_set_to_use == 'all':
+            self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
+            self.load = self._load_ts.iloc[self._tracking_timestep, 0]
 
 
+        if self.architecture['grid']==1:
+            if self._data_set_to_use == 'training':
+                self.grid_status = self._grid_status_train.iloc[self._tracking_timestep, 0]
+
+            if self._data_set_to_use == 'testing':
+                self.grid_status = self._grid_status_test.iloc[self._tracking_timestep, 0]
+
+            if self._data_set_to_use == 'all':
+                self.grid_status = self._grid_status_ts.iloc[self._tracking_timestep, 0]
+
+        if self.architecture['battery'] == 1:
+            self.battery.soc = self._df_record_state.battery_soc.iloc[-1]
+            self.battery.capa_to_discharge = self._df_record_state.capa_to_discharge.iloc[-1]
+            self.battery.capa_to_charge = self._df_record_state.capa_to_charge.iloc[-1]
 
     def reset(self, testing=False):
         """This function is used to reset the dataframes that track what is happening in simulation. Mainly used in RL."""
@@ -538,10 +590,24 @@ class Microgrid:
         self._df_record_cost = self._df_record_cost[0:0]
 
         self._tracking_timestep = 0
+
+        if testing == True and self._data_set_to_use_default == 'training':
+            self._data_set_to_use = 'testing'
+            self._data_length = min(self._load_test.shape[0], self._pv_test.shape[0])
+        else:
+            self._data_set_to_use = self._data_set_to_use_default
+            if self._data_set_to_use == 'training':
+                self._data_length = min(self._load_train.shape[0], self._pv_train.shape[0])
+            else:
+                self._data_length = min(self._load_ts.shape[0], self._pv_ts.shape[0])
+
         self.update_variables()
         self.done = False
 
+
+
         self._epoch+=1
+
 
     ########################################################
     # FUNCTIONS TO UPDATE THE INTERNAL DATAFRAMES
@@ -560,6 +626,7 @@ class Microgrid:
         dict = {
             'load': next_load,
                     'pv': next_pv,
+            'hour':self._tracking_timestep%24,
         }
         new_soc =np.nan
         if self.architecture['battery'] == 1:
@@ -582,6 +649,7 @@ class Microgrid:
             dict['capa_to_discharge'] = capa_to_discharge
             dict['capa_to_charge'] = capa_to_charge
             dict['grid_status'] = self._grid_status_ts.iloc[df.shape[0], 0]
+
 
 
         df = df.append(dict,ignore_index=True)

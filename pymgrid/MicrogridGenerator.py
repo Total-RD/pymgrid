@@ -304,6 +304,7 @@ class MicrogridGenerator:
         df_parameters['cost_loss_load'] = 10000
         #df_cost['cost'] = [0.0]
         df_status['load'] = [np.around(load.iloc[0,0],1)]# --> il y a doublon pour l'instant avec l'architecture PV, -> non si pas de pv la net load est juste la load
+        df_status['hour'] = 0
         column_actual_production.append('loss_load')
         if architecture['PV'] == 1:
 
