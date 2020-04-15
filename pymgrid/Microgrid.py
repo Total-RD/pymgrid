@@ -857,7 +857,7 @@ class Microgrid:
             cost +=( control_dict['grid_import'] * self.parameters['grid_price_import'].values[0]
                      - control_dict['grid_export'] * self.parameters['grid_price_export'].values[0])
         if self.architecture['battery'] ==1 :
-            cost+= (control_dict['battery_charge']+control_dict['battery_discharge'])/(self.parameters['battery_capacity'].values[0]*2)*self.parameters['battery_cost_cycle'].values[0]
+            cost+= (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
 
         cost_dict= {'cost': cost}
 
