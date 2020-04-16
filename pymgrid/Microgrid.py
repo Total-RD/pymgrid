@@ -1032,6 +1032,7 @@ class Microgrid:
         self_consumed_pv = 0
 
         if self.architecture['genset'] == 1:
+            #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
             min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
             temp_load = temp_load - min_load
         # for gen with prio i in 1:max(priority_dict)
