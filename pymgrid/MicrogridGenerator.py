@@ -347,7 +347,7 @@ class MicrogridGenerator:
             df_parameters['PV_rated_power'] = np.around(size['pv'],1)
             column_actual_production.append('pv_consummed')
             column_actual_production.append('pv_curtailed')
-            column_actions.append('pv')
+            column_actions.append('pv_consummed')
             pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))           
             df_status['pv'] = np.around( pv.iloc[0].values,1)
 
