@@ -221,6 +221,10 @@ class Microgrid:
             The PV production at _run_timestep
         load: float
             The load consumption at _run_timestep
+        _next_pv: float
+            The PV production at _run_timestep +1
+        _next_load: float
+            The load consumption at _run_timestep + 1
         _grid_status_ts: dataframe
             A timeseries of binary values indicating whether the grid is connected or not.
         _df_record_control_dict: dataframe
@@ -307,6 +311,8 @@ class Microgrid:
 
         self.pv=self._pv_ts.iloc[0,0]
         self.load = self._load_ts.iloc[0, 0]
+        self._next_load = self._load_ts.iloc[1,0]
+        self._next_pv = self._pv_ts.iloc[1,0]
         if parameters['architecture']['grid']==1:
             self._grid_status_ts=parameters['grid_ts'] #time series of outages
             #self.grid_status = self._grid_status_ts.iloc[0, 0]
@@ -490,7 +496,7 @@ class Microgrid:
 
 
         self._df_record_state = self._update_status(control_dict,
-                                                    self._df_record_state, self.load, self.pv)
+                                                    self._df_record_state, self._next_load, self._next_pv)
 
         self._tracking_timestep += 1
         self.update_variables()
@@ -554,13 +560,23 @@ class Microgrid:
             self.pv = self._pv_train.iloc[self._tracking_timestep, 0]
             self.load = self._load_train.iloc[self._tracking_timestep, 0]
 
+            self._next_pv = self._pv_train.iloc[self._tracking_timestep +1, 0]
+            self._next_load = self._load_train.iloc[self._tracking_timestep+1, 0]
+
+
         if self._data_set_to_use == 'testing':
             self.pv = self._pv_test.iloc[self._tracking_timestep, 0]
             self.load = self._load_test.iloc[self._tracking_timestep, 0]
 
+            self._next_pv = self._pv_test.iloc[self._tracking_timestep+1, 0]
+            self._next_load = self._load_test.iloc[self._tracking_timestep+1, 0]
+
         if self._data_set_to_use == 'all':
             self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
             self.load = self._load_ts.iloc[self._tracking_timestep, 0]
+
+            self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
+            self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
 
 
         if self.architecture['grid']==1:
@@ -1424,7 +1440,7 @@ class Microgrid:
 
     #todo verbose
     def penalty(self, coef = 1):
-
+        """Penalty that represents discrepancies between control dict and what really happens. """
         penalty = 0
         for i in self._df_record_control_dict.columns:
             penalty += abs(self._df_record_control_dict[i].iloc[-1] - self._df_record_actual_production[i].iloc[-1])
