@@ -98,7 +98,7 @@ class Genset:
 
     Attributes
     ----------
-    rater_power: int
+    rated_power: int
         Maximum rater power of the genset.
     p_min: float
         Value representing the minimum operating power of the genset (kW)
@@ -122,7 +122,7 @@ class Genset:
     >>> m_gen.microgrids[0].genset.p_max
     """
     def __init__(self, param):
-        self.rater_power = param['genset_rated_power'].values[0]
+        self.rated_power = param['genset_rated_power'].values[0]
         self.p_min = param['genset_pmin'].values[0]
         self.p_max = param['genset_pmax'].values[0]
         self.fuel_cost = param['fuel_cost'].values[0]
@@ -1032,7 +1032,7 @@ class Microgrid:
         self_consumed_pv = 0
 
         if self.architecture['genset'] == 1:
-            min_load = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]
+            min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
             temp_load = temp_load - min_load
         # for gen with prio i in 1:max(priority_dict)
         # we sort the priority list
@@ -1139,6 +1139,7 @@ class Microgrid:
         p_grid_export = cp.Variable((horizon,), pos=True)
         u_import = cp.Variable((horizon,), pos=True)  # boolean=True)
         u_export = cp.Variable((horizon,), pos=True)  # boolean=True)
+        u_genset = cp.Variable((horizon,), boolean = True)
 
         # if self.architecture['battery'] == 1:
         p_charge = cp.Variable((horizon,), pos=True)
