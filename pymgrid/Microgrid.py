@@ -1427,6 +1427,6 @@ class Microgrid:
 
         penalty = 0
         for i in self._df_record_control_dict.columns:
-            penalty += abs(self._df_record_control_dict[i].iloc[-1,0] - self._df_record_actual_production[i].iloc[-1,0])
+            penalty += abs(self._df_record_control_dict[i].iloc[-1] - self._df_record_actual_production[i].iloc[-1])
 
         return penalty*coef
