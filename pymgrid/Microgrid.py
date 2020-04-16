@@ -98,7 +98,7 @@ class Genset:
 
     Attributes
     ----------
-    rater_power: int
+    rated_power: int
         Maximum rater power of the genset.
     p_min: float
         Value representing the minimum operating power of the genset (kW)
@@ -122,7 +122,7 @@ class Genset:
     >>> m_gen.microgrids[0].genset.p_max
     """
     def __init__(self, param):
-        self.rater_power = param['genset_rated_power'].values[0]
+        self.rated_power = param['genset_rated_power'].values[0]
         self.p_min = param['genset_pmin'].values[0]
         self.p_max = param['genset_pmax'].values[0]
         self.fuel_cost = param['fuel_cost'].values[0]
@@ -221,6 +221,10 @@ class Microgrid:
             The PV production at _run_timestep
         load: float
             The load consumption at _run_timestep
+        _next_pv: float
+            The PV production at _run_timestep +1
+        _next_load: float
+            The load consumption at _run_timestep + 1
         _grid_status_ts: dataframe
             A timeseries of binary values indicating whether the grid is connected or not.
         _df_record_control_dict: dataframe
@@ -307,6 +311,8 @@ class Microgrid:
 
         self.pv=self._pv_ts.iloc[0,0]
         self.load = self._load_ts.iloc[0, 0]
+        self._next_load = self._load_ts.iloc[1,0]
+        self._next_pv = self._pv_ts.iloc[1,0]
         if parameters['architecture']['grid']==1:
             self._grid_status_ts=parameters['grid_ts'] #time series of outages
             #self.grid_status = self._grid_status_ts.iloc[0, 0]
@@ -490,7 +496,7 @@ class Microgrid:
 
 
         self._df_record_state = self._update_status(control_dict,
-                                                    self._df_record_state, self.load, self.pv)
+                                                    self._df_record_state, self._next_load, self._next_pv)
 
         self._tracking_timestep += 1
         self.update_variables()
@@ -554,13 +560,23 @@ class Microgrid:
             self.pv = self._pv_train.iloc[self._tracking_timestep, 0]
             self.load = self._load_train.iloc[self._tracking_timestep, 0]
 
+            self._next_pv = self._pv_train.iloc[self._tracking_timestep +1, 0]
+            self._next_load = self._load_train.iloc[self._tracking_timestep+1, 0]
+
+
         if self._data_set_to_use == 'testing':
             self.pv = self._pv_test.iloc[self._tracking_timestep, 0]
             self.load = self._load_test.iloc[self._tracking_timestep, 0]
 
+            self._next_pv = self._pv_test.iloc[self._tracking_timestep+1, 0]
+            self._next_load = self._load_test.iloc[self._tracking_timestep+1, 0]
+
         if self._data_set_to_use == 'all':
             self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
             self.load = self._load_ts.iloc[self._tracking_timestep, 0]
+
+            self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
+            self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
 
 
         if self.architecture['grid']==1:
@@ -770,6 +786,10 @@ class Microgrid:
             total_production += control_dict['loss_load']
         except:
             control_dict['loss_load'] =0
+        try:
+            total_production += control_dict['overgeneration']
+        except:
+            control_dict['overgeneration'] = 0
 
         if self.architecture['PV'] == 1:
             try:
@@ -831,6 +851,7 @@ class Microgrid:
         elif total_production > total_load :
             # here we consider we produced more than needed ? we pay the price of the full cost proposed?
             # penalties ?
+            control_dict['overgeneration'] = total_production-total_load
             df = df.append(control_dict, ignore_index=True)
             #print('total_production > total_load')
             #print(control_dict)
@@ -847,6 +868,7 @@ class Microgrid:
         """ This function record the cost of operating the microgrid at each time step."""
         cost = 0
         cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
+        cost += control_dict['overgeneration'] * self.parameters['cost_overgeneration'].values[0]
 
         if self.architecture['genset'] == 1:
             cost += control_dict['genset'] * self.parameters['fuel_cost'].values[0]
@@ -1010,7 +1032,8 @@ class Microgrid:
         self_consumed_pv = 0
 
         if self.architecture['genset'] == 1:
-            min_load = self.parameters['genset_rater_power'].values[0] * self.parameters['genset_pmin'].values[0]
+            #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
+            min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
             temp_load = temp_load - min_load
         # for gen with prio i in 1:max(priority_dict)
         # we sort the priority list
@@ -1117,6 +1140,7 @@ class Microgrid:
         p_grid_export = cp.Variable((horizon,), pos=True)
         u_import = cp.Variable((horizon,), pos=True)  # boolean=True)
         u_export = cp.Variable((horizon,), pos=True)  # boolean=True)
+        u_genset = cp.Variable((horizon,), boolean = True)
 
         # if self.architecture['battery'] == 1:
         p_charge = cp.Variable((horizon,), pos=True)
@@ -1417,3 +1441,10 @@ class Microgrid:
 
 
     #todo verbose
+    def penalty(self, coef = 1):
+        """Penalty that represents discrepancies between control dict and what really happens. """
+        penalty = 0
+        for i in self._df_record_control_dict.columns:
+            penalty += abs(self._df_record_control_dict[i].iloc[-1] - self._df_record_actual_production[i].iloc[-1])
+
+        return penalty*coef
