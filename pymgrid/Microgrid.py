@@ -770,6 +770,10 @@ class Microgrid:
             total_production += control_dict['loss_load']
         except:
             control_dict['loss_load'] =0
+        try:
+            total_production += control_dict['overgeneration']
+        except:
+            control_dict['overgeneration'] = 0
 
         if self.architecture['PV'] == 1:
             try:
@@ -831,6 +835,7 @@ class Microgrid:
         elif total_production > total_load :
             # here we consider we produced more than needed ? we pay the price of the full cost proposed?
             # penalties ?
+            control_dict['overgeneration'] = total_production-total_load
             df = df.append(control_dict, ignore_index=True)
             #print('total_production > total_load')
             #print(control_dict)
@@ -847,6 +852,7 @@ class Microgrid:
         """ This function record the cost of operating the microgrid at each time step."""
         cost = 0
         cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
+        cost += control_dict['overgeneration'] * self.parameters['cost_overgeneration'].values[0]
 
         if self.architecture['genset'] == 1:
             cost += control_dict['genset'] * self.parameters['fuel_cost'].values[0]
@@ -1417,3 +1423,10 @@ class Microgrid:
 
 
     #todo verbose
+    def penalty(self, coef = 1):
+
+        penalty = 0
+        for i in self._df_record_control_dict.columns:
+            penalty += abs(self._df_record_control_dict[i].iloc[-1,0] - self._df_record_actual_production[i].iloc[-1,0])
+
+        return penalty*coef
