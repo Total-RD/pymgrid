@@ -793,6 +793,12 @@ class Microgrid:
 
         if self.architecture['PV'] == 1:
             try:
+                total_production += control_dict['pv_consummed']
+                control_dict['pv_curtailed'] = control_dict['pv'] - control_dict['pv_consummed']
+            except:
+                control_dict['pv_consummed'] = 0
+
+            try:
                 total_production -= control_dict['pv_curtailed']
             except:
                 control_dict['pv_curtailed'] = 0
