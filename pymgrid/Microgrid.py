@@ -776,8 +776,8 @@ class Microgrid:
         total_load = 0
         total_production = 0
         threshold = 0.001
-        total_load = control_dict['load'] - control_dict['pv']
-
+        total_load = control_dict['load']
+        temp_pv = 0
 
         #check the generator constraints
 
@@ -794,7 +794,8 @@ class Microgrid:
         if self.architecture['PV'] == 1:
             try:
                 total_production += control_dict['pv_consummed']
-                control_dict['pv_curtailed'] = control_dict['pv'] - control_dict['pv_consummed']
+                temp_pv += control_dict['pv_consummed']
+                #control_dict['pv_curtailed'] = control_dict['pv'] - control_dict['pv_consummed']
             except:
                 control_dict['pv_consummed'] = 0
 
