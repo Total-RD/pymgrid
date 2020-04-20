@@ -175,7 +175,7 @@ class Grid:
         self.price_export = price_export #param['grid_price_export'].values[0]
         self.price_import = price_import # param['grid_price_import'].values[0]
         self.status = status
-        
+
 
 class Microgrid:
 
