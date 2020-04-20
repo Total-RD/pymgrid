@@ -197,6 +197,13 @@ class MicrogridGenerator:
         return battery
 
 
+    def _get_grid_price_ts(self, price, nb_time_step_per_year, tou=0, rt=0):
+        """ This functions is used to generate time series of import and export prices."""
+        if tou == 0  and rt ==0:
+            price_ts = [price for i in range(nb_time_step_per_year)]
+
+        return price_ts
+
     def _get_grid(self, rated_power=1000, weak_grid=0, pmin=0.2, price_export = 0, price_import =0.3):
         """ Function generates a dictionnary with the grid information. """
 
@@ -209,6 +216,12 @@ class MicrogridGenerator:
             #grid_ts=pd.DataFrame([1+i*0 for i in range(int(np.floor(8760/self.timestep)))], columns=['grid_status'])
             grid_ts = pd.DataFrame(np.ones(int(np.floor(8760 / self.timestep))),
                                    columns=['grid_status'])
+
+
+        price_export = pd.DataFrame(self._get_grid_price_ts(price_export,8760),
+                                   columns=['grid_price_export'])
+        price_import = pd.DataFrame(self._get_grid_price_ts(price_import, 8760),
+                                   columns=['grid_price_import'])
 
         grid={
             'grid_power_import':rated_power,
@@ -331,6 +344,8 @@ class MicrogridGenerator:
         column_actions=[]
         column_actual_production=[]
         grid_ts=[]
+        grid_price_export_ts = []
+        grid_price_import_ts = []
         df_parameters = pd.DataFrame()
         df_cost = pd.DataFrame(columns=['cost'])
         df_status = pd.DataFrame()
@@ -409,13 +424,19 @@ class MicrogridGenerator:
             df_parameters['grid_power_import'] = grid['grid_power_import']
             df_parameters['grid_power_export'] = grid['grid_power_export']
             grid_ts = grid['grid_ts']
-            df_parameters['grid_price_import'] = grid['grid_price_import']
-            df_parameters['grid_price_export'] = grid['grid_price_export']
+            #df_parameters['grid_price_import'] = grid['grid_price_import']
+            #df_parameters['grid_price_export'] = grid['grid_price_export']
             column_actual_production.append('grid_import')
             column_actual_production.append('grid_export')
             column_actions.append('grid_import')
             column_actions.append('grid_export')
             df_status['grid_status'] = grid_ts.iloc[0,0]
+
+
+            grid_price_import_ts = grid['grid_price_import']
+            grid_price_export_ts = grid['grid_price_export']
+            df_status['grid_price_import'] = grid_price_import_ts.iloc[0, 0]
+            df_status['grid_price_export'] = grid_price_export_ts.iloc[0, 0]
 
 
         df_actions= pd.DataFrame(columns = column_actions, )
@@ -433,7 +454,9 @@ class MicrogridGenerator:
             'pv':pv, #Dataframe
             'load': load, #Dataframe
             'grid_ts':grid_ts, #Dataframe
-            'control_dict': column_actions #dictionnary
+            'control_dict': column_actions, #dictionnary
+            'grid_price_import' : grid_price_import_ts,
+            'grid_price_export' : grid_price_export_ts,
         }
 
         microgrid = Microgrid.Microgrid(microgrid_spec)

@@ -169,11 +169,11 @@ class Grid:
     You can access the status of the grid for example with:
     >>> m_gen.microgrids[0].grid.status
     """
-    def __init__(self, param, status):
+    def __init__(self, param, status, price_import, price_export):
         self.power_export = param['grid_power_export'].values[0]
         self.power_import = param['grid_power_import'].values[0]
-        self.price_export = param['grid_price_export'].values[0]
-        self.price_import = param['grid_price_import'].values[0]
+        self.price_export = price_export #param['grid_price_export'].values[0]
+        self.price_import = price_import # param['grid_price_import'].values[0]
         self.status = status
 
 
@@ -317,8 +317,12 @@ class Microgrid:
             self._grid_status_ts=parameters['grid_ts'] #time series of outages
             #self.grid_status = self._grid_status_ts.iloc[0, 0]
             #todo if we move to time series of price
-            #self.grid_price_import=0
-            #self.grid_price_export=0
+            self._grid_price_import=parameters['grid_price_import']
+            self._grid_price_export=parameters['grid_price_export']
+
+            self._next_grid_status = self._grid_status_ts.iloc[0, 0]
+            self._next_grid_price_export = self._grid_price_export.iloc[0, 0]
+            self._next_grid_price_import = self._grid_price_import.iloc[0, 0]
 
         # those dataframe record what is hapepning at each time step
         self._df_record_control_dict=parameters['df_actions']
@@ -338,6 +342,7 @@ class Microgrid:
         self.control_dict = parameters['control_dict']
         self._data_set_to_use_default = 'all'
         self._data_set_to_use = 'all'
+
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
                                    self._df_record_state.capa_to_charge,
@@ -345,7 +350,9 @@ class Microgrid:
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
         if self.architecture['grid'] == 1:
-            self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0, 0])
+            self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0, 0],
+                             self._grid_price_import.iloc[0, 0],
+                             self._grid_price_export.iloc[0, 0])
 
     def set_horizon(self, horizon):
         """Function used to change the horizon of the simulation."""
@@ -405,6 +412,7 @@ class Microgrid:
         }
         if self.architecture['grid'] == 1:
             forecast['grid_status'] = self.forecast_grid_status()
+            forecast['grid_import'], forecast['grid_export'] = self.forecast_grid_prices()
 
         return forecast
 
@@ -456,6 +464,31 @@ class Microgrid:
 
         return forecast
 
+    def forecast_grid_prices(self):
+        """ Function that returns the forecasted import and export prices for the next horizon. """
+        forecast_import = np.nan
+        forecast_export = np.nan
+        if self._data_set_to_use == 'training':
+            forecast_import = self._grid_price_import_train.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast_export = self._grid_price_export_train.iloc[
+                              self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'testing':
+            forecast_import = self._grid_price_import_test.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast_export = self._grid_price_export_test.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        if self._data_set_to_use == 'all':
+            forecast_import = self._grid_price_import.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast_export = self._grid_price_export.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+
+        return forecast_import, forecast_export
+
+
 
     #if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict):
@@ -496,7 +529,8 @@ class Microgrid:
 
 
         self._df_record_state = self._update_status(control_dict,
-                                                    self._df_record_state, self._next_load, self._next_pv)
+                                                    self._df_record_state, self._next_load, self._next_pv,
+                                                    self._next_grid_status, self._next_grid_price_import, self._next_grid_price_export)
 
         self._tracking_timestep += 1
         self.update_variables()
@@ -536,6 +570,14 @@ class Microgrid:
             Timeseries of grid_status in training set
         grid_status_test: dataframe
             Timeseries of grid_status in testing set
+        grid_price_import_train: dataframe
+            Timeseries of price_import in training set
+        grid_price_import_test: dataframe
+            Timeseries of price_import in testing set
+        grid_price_export_train: dataframe
+            Timeseries of price_export in training set
+        grid_price_export_test: dataframe
+            Timeseries of price_export in testing set
 
         """
         self._limit_index = int(np.ceil(self._data_length*train_size))
@@ -548,6 +590,12 @@ class Microgrid:
         if self.architecture['grid'] == 1:
             self._grid_status_train = self._grid_status_ts.iloc[:self._limit_index]
             self._grid_status_test = self._grid_status_ts.iloc[self._limit_index:]
+
+            self._grid_price_import_train = self._grid_price_import.iloc[:self._limit_index]
+            self._grid_price_import_test = self._grid_price_import.iloc[self._limit_index:]
+
+            self._grid_price_export_train = self._grid_price_export.iloc[:self._limit_index]
+            self._grid_price_export_test = self._grid_price_export.iloc[self._limit_index:]
 
         self._has_train_test_split = True
         self._data_set_to_use_default = 'training'
@@ -581,13 +629,32 @@ class Microgrid:
 
         if self.architecture['grid']==1:
             if self._data_set_to_use == 'training':
-                self.grid_status = self._grid_status_train.iloc[self._tracking_timestep, 0]
+                self.grid.status = self._grid_status_train.iloc[self._tracking_timestep, 0]
+                self.grid.price_import = self._grid_price_import_train.iloc[self._tracking_timestep,0]
+                self.grid.price_export = self._grid_price_export_train.iloc[self._tracking_timestep,0]
+
+                self._next_grid_status = self._grid_status_train.iloc[self._tracking_timestep +1, 0]
+                self._next_grid_price_import = self._grid_price_import_train.iloc[self._tracking_timestep +1, 0]
+                self._next_grid_price_export = self._grid_price_export_train.iloc[self._tracking_timestep +1, 0]
 
             if self._data_set_to_use == 'testing':
-                self.grid_status = self._grid_status_test.iloc[self._tracking_timestep, 0]
+                self.grid.status = self._grid_status_test.iloc[self._tracking_timestep, 0]
+                self.grid.price_import = self._grid_price_import_test.iloc[self._tracking_timestep, 0]
+                self.grid.price_export = self._grid_price_export_test.iloc[self._tracking_timestep, 0]
+
+                self._next_grid_status = self._grid_status_test.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_import = self._grid_price_import_test.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_export = self._grid_price_export_test.iloc[self._tracking_timestep + 1, 0]
+
 
             if self._data_set_to_use == 'all':
-                self.grid_status = self._grid_status_ts.iloc[self._tracking_timestep, 0]
+                self.grid.status = self._grid_status_ts.iloc[self._tracking_timestep, 0]
+                self.grid.price_import = self._grid_price_import.iloc[self._tracking_timestep, 0]
+                self.grid.price_export = self._grid_price_export.iloc[self._tracking_timestep, 0]
+
+                self._next_grid_status = self._grid_status_ts.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_import = self._grid_price_import.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_export = self._grid_price_export.iloc[self._tracking_timestep + 1, 0]
 
         if self.architecture['battery'] == 1:
             self.battery.soc = self._df_record_state.battery_soc.iloc[-1]
@@ -637,7 +704,7 @@ class Microgrid:
         return df
 
 
-    def _update_status(self, control_dict, df, next_load, next_pv):
+    def _update_status(self, control_dict, df, next_load, next_pv, next_grid = 0, next_price_import =0, next_price_export = 0):
         """ This function update the parameters of the microgrid that change with time. """
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
@@ -666,7 +733,11 @@ class Microgrid:
             dict['battery_soc']=new_soc
             dict['capa_to_discharge'] = capa_to_discharge
             dict['capa_to_charge'] = capa_to_charge
-            dict['grid_status'] = self._grid_status_ts.iloc[df.shape[0], 0]
+
+        if self.architecture['grid'] == 1 :
+            dict['grid_status'] = next_grid
+            dict['grid_price_import'] = next_price_import
+            dict['grid_price_export'] = next_price_export
 
 
 
@@ -883,8 +954,10 @@ class Microgrid:
         if self.architecture['grid'] ==1:
 
 
-            cost +=( control_dict['grid_import'] * self.parameters['grid_price_import'].values[0]
-                     - control_dict['grid_export'] * self.parameters['grid_price_export'].values[0])
+            cost +=( control_dict['grid_import'] * self.grid.price_import
+                     - control_dict['grid_export'] * self.grid.price_export)
+
+
         if self.architecture['battery'] ==1 :
             cost+= (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
 
@@ -971,7 +1044,7 @@ class Microgrid:
     #
     #     return nb_gen_min
 
-    def _generate_priority_list(self, architecture, parameters , grid_status=0,  ):
+    def _generate_priority_list(self, architecture, parameters , grid_status=0, price_import = 0, price_export=0):
         """
         Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
         priority list to be run in the rule based benchmark.
@@ -982,7 +1055,7 @@ class Microgrid:
         if architecture['battery'] != 0 and architecture['grid'] == 1:
 
 
-            if parameters['grid_price_export'].values[0] / (parameters['battery_efficiency'].values[0]**2) < parameters['grid_price_import'].values[0]:
+            if price_export / (parameters['battery_efficiency'].values[0]**2) < price_import:
 
                 # should return something like ['gen', starting at in MW]?
                 priority_dict = {'PV': 1 * architecture['PV'],
@@ -1125,7 +1198,7 @@ class Microgrid:
         return control_dict
 
 
-    def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, horizon=24):
+    def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, price_import, price_export, horizon=24):
         """ This function implements one loop of the MPC, optimizing the microgrid over the next horizon."""
 
         # todo switch to a matrix structure
@@ -1195,8 +1268,8 @@ class Microgrid:
             grid = np.reshape(grid, (horizon,))
             p_grid_import_max = parameters['grid_power_import'].values[0]
             p_grid_export_max = parameters['grid_power_export'].values[0]
-            p_price_import = parameters['grid_price_import'].values[0] * np.ones(horizon)
-            p_price_export = parameters['grid_price_export'].values[0] * np.ones(horizon)
+            p_price_import = np.reshape(price_import, (horizon,))
+            p_price_export = np.reshape(price_export, (horizon,))
 
             for t in range(horizon):
                 constraints += [p_grid_import[t] <= p_grid_import_max * grid[t],
@@ -1339,7 +1412,9 @@ class Microgrid:
 
             if self.architecture['grid'] == 1:
                 priority_dict = self._generate_priority_list(self.architecture, self.parameters,
-                                                             self._grid_status_ts.iloc[i].values[0])
+                                                             self._grid_status_ts.iloc[i].values[0],
+                                                             self._grid_price_import.iloc[i].values[0],
+                                                             self._grid_price_export.iloc[i].values[0])
             else:
                 priority_dict = self._generate_priority_list(self.architecture, self.parameters)
 
@@ -1356,7 +1431,10 @@ class Microgrid:
 
             self.baseline_priority_list_update_status = self._update_status(
                 self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_update_status, self._load_ts.iloc[i+1].values[0], self._pv_ts.iloc[i+1].values[0])
+                self.baseline_priority_list_update_status, self._load_ts.iloc[i+1].values[0], self._pv_ts.iloc[i+1].values[0],
+                                                            self._grid_status_ts.iloc[i+1].values[0],
+                                                             self._grid_price_import.iloc[i+1].values[0],
+                                                             self._grid_price_export.iloc[i+1].values[0])
 
             self.baseline_priority_list_cost = self._record_cost(
                 self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
@@ -1395,13 +1473,16 @@ class Microgrid:
         	
             if self.architecture['grid'] == 0:
                 temp_grid = np.zeros(self.horizon)
+                price_import =np.zeros(self.horizon)
+                price_export = np.zeros(self.horizon)
             else:
                 temp_grid = self._grid_status_ts.iloc[i:i + self.horizon].values
+                price_import= self._grid_price_import.iloc[i:i + self.horizon].values
+                price_export= self._grid_price_export.iloc[i:i + self.horizon].values
 
             control_dict = self._mpc_lin_prog_cvxpy(self.parameters, self._load_ts.iloc[i:i + self.horizon].values,
-                                                    self._pv_ts.iloc[i:i + self.horizon].values,
-                                                    temp_grid,
-                                                    self.baseline_linprog_update_status,
+                                                    self._pv_ts.iloc[i:i + self.horizon].values, temp_grid,
+                                                    self.baseline_linprog_update_status, price_import, price_export,
                                                     self.horizon)
 
             self.baseline_linprog_action = self._record_action(control_dict, self.baseline_linprog_action)
@@ -1410,9 +1491,13 @@ class Microgrid:
                                                                               self.baseline_linprog_record_production,
                                                                               self.baseline_linprog_update_status)
 
-            self.baseline_linprog_update_status = self._update_status(
-                self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                self.baseline_linprog_update_status, self._load_ts.iloc[i+1].values[0], self._pv_ts.iloc[i+1].values[0])
+            self.baseline_linprog_update_status = self._update_status( self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                                                                        self.baseline_linprog_update_status,
+                                                                        self._load_ts.iloc[i+1].values[0],
+                                                                        self._pv_ts.iloc[i+1].values[0],
+                                                                        self._grid_status_ts.iloc[i+1].values[0],
+                                                                        self._grid_price_import.iloc[i+1].values[0],
+                                                                        self._grid_price_export.iloc[i+1].values[0])
 
             self.baseline_linprog_cost = self._record_cost(
                 self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
