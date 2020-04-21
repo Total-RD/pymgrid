@@ -580,26 +580,34 @@ class Microgrid:
             Timeseries of price_export in testing set
 
         """
-        self._limit_index = int(np.ceil(self._data_length*train_size))
-        self._load_train = self._load_ts.iloc[:self._limit_index]
-        self._pv_train = self._pv_ts.iloc[:self._limit_index]
 
-        self._load_test = self._load_ts.iloc[self._limit_index:]
-        self._pv_test = self._pv_ts.iloc[self._limit_index:]
+        if self._has_train_test_split ==  False:
+            self._limit_index = int(np.ceil(self._data_length*train_size))
+            self._load_train = self._load_ts.iloc[:self._limit_index]
+            self._pv_train = self._pv_ts.iloc[:self._limit_index]
 
-        if self.architecture['grid'] == 1:
-            self._grid_status_train = self._grid_status_ts.iloc[:self._limit_index]
-            self._grid_status_test = self._grid_status_ts.iloc[self._limit_index:]
+            self._load_test = self._load_ts.iloc[self._limit_index:]
+            self._pv_test = self._pv_ts.iloc[self._limit_index:]
 
-            self._grid_price_import_train = self._grid_price_import.iloc[:self._limit_index]
-            self._grid_price_import_test = self._grid_price_import.iloc[self._limit_index:]
+            if self.architecture['grid'] == 1:
+                self._grid_status_train = self._grid_status_ts.iloc[:self._limit_index]
+                self._grid_status_test = self._grid_status_ts.iloc[self._limit_index:]
 
-            self._grid_price_export_train = self._grid_price_export.iloc[:self._limit_index]
-            self._grid_price_export_test = self._grid_price_export.iloc[self._limit_index:]
+                self._grid_price_import_train = self._grid_price_import.iloc[:self._limit_index]
+                self._grid_price_import_test = self._grid_price_import.iloc[self._limit_index:]
 
-        self._has_train_test_split = True
-        self._data_set_to_use_default = 'training'
-        self._data_set_to_use = 'training'
+                self._grid_price_export_train = self._grid_price_export.iloc[:self._limit_index]
+                self._grid_price_export_test = self._grid_price_export.iloc[self._limit_index:]
+
+            self._has_train_test_split = True
+            self._data_set_to_use_default = 'training'
+            self._data_set_to_use = 'training'
+
+        elif self._has_train_test_split ==  True:
+            self._has_train_test_split = False
+            self._data_set_to_use_default = 'all'
+            self._data_set_to_use = 'all'
+
         self.reset()
 
     def update_variables(self):
