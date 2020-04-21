@@ -600,6 +600,7 @@ class Microgrid:
         self._has_train_test_split = True
         self._data_set_to_use_default = 'training'
         self._data_set_to_use = 'training'
+        self.reset()
 
     def update_variables(self):
         """ Function that updates the variablers containing the parameters of the microgrid changing with time. """
