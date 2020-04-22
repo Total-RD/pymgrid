@@ -988,19 +988,19 @@ class Microgrid:
         """
         if self._has_train_test_split == False:
             if self._has_run_rule_based_baseline == True:
-                print('Rule based cost: ', self.baseline_priority_list_cost.sum())
+                print('Rule based cost: ', self._baseline_priority_list_cost.sum())
 
             if self._has_run_mpc_baseline == True:
-                print('MPC cost: ', self.baseline_linprog_cost.sum())
+                print('MPC cost: ', self._baseline_linprog_cost.sum())
 
         else:
             if self._has_run_rule_based_baseline == True:
-                print('Training rule based cost: ', self.baseline_priority_list_cost.iloc[:self._limit_index].sum())
-                print('Testing rule based cost: ', self.baseline_priority_list_cost.iloc[self._limit_index:].sum())
+                print('Training rule based cost: ', self._baseline_priority_list_cost.iloc[:self._limit_index].sum())
+                print('Testing rule based cost: ', self._baseline_priority_list_cost.iloc[self._limit_index:].sum())
 
             if self._has_run_mpc_baseline == True:
-                print('Training MPC cost: ', self.baseline_linprog_cost.iloc[:self._limit_index].sum())
-                print('Testing MPC cost: ', self.baseline_linprog_cost.iloc[self._limit_index:].sum())
+                print('Training MPC cost: ', self._baseline_linprog_cost.iloc[:self._limit_index].sum())
+                print('Testing MPC cost: ', self._baseline_linprog_cost.iloc[self._limit_index:].sum())
 
 
     def print_info(self):
@@ -1392,10 +1392,10 @@ class Microgrid:
     def _baseline_rule_based(self, priority_list=0, length=8760):
         """ This function runs the rule based benchmark over the datasets (load and pv profiles) in the microgrid."""
 
-        self.baseline_priority_list_action = copy(self._df_record_control_dict)
-        self.baseline_priority_list_update_status = copy(self._df_record_state)
-        self.baseline_priority_list_record_production = copy(self._df_record_actual_production)
-        self.baseline_priority_list_cost = copy(self._df_record_cost)
+        self._baseline_priority_list_action = copy(self._df_record_control_dict)
+        self._baseline_priority_list_update_status = copy(self._df_record_state)
+        self._baseline_priority_list_record_production = copy(self._df_record_actual_production)
+        self._baseline_priority_list_cost = copy(self._df_record_cost)
 
         n = length - self.horizon
         print_ratio = n/100
@@ -1429,35 +1429,35 @@ class Microgrid:
 
             control_dict = self._run_priority_based(self._load_ts.iloc[i].values[0], self._pv_ts.iloc[i].values[0],
                                                     self.parameters,
-                                                    self.baseline_priority_list_update_status, priority_dict)
+                                                    self._baseline_priority_list_update_status, priority_dict)
 
-            self.baseline_priority_list_action = self._record_action(control_dict,
-                                                                     self.baseline_priority_list_action)
+            self._baseline_priority_list_action = self._record_action(control_dict,
+                                                                      self._baseline_priority_list_action)
 
-            self.baseline_priority_list_record_production = self._record_production(control_dict,
-                                                                                    self.baseline_priority_list_record_production,
-                                                                                    self.baseline_priority_list_update_status)
+            self._baseline_priority_list_record_production = self._record_production(control_dict,
+                                                                                     self._baseline_priority_list_record_production,
+                                                                                     self._baseline_priority_list_update_status)
 
-            self.baseline_priority_list_update_status = self._update_status(
-                self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_update_status, self._load_ts.iloc[i+1].values[0], self._pv_ts.iloc[i+1].values[0],
+            self._baseline_priority_list_update_status = self._update_status(
+                self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                self._baseline_priority_list_update_status, self._load_ts.iloc[i + 1].values[0], self._pv_ts.iloc[i + 1].values[0],
                                                             self._grid_status_ts.iloc[i+1].values[0],
                                                              self._grid_price_import.iloc[i+1].values[0],
                                                              self._grid_price_export.iloc[i+1].values[0])
 
-            self.baseline_priority_list_cost = self._record_cost(
-                self.baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self.baseline_priority_list_cost)
+            self._baseline_priority_list_cost = self._record_cost(
+                self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                self._baseline_priority_list_cost)
 
         self._has_run_rule_based_baseline = True
 
     def _baseline_linprog(self, forecast_error=0, length=8760):
         """ This function runs the MPC benchmark over the datasets (load and pv profiles) in the microgrid."""
 
-        self.baseline_linprog_action = copy(self._df_record_control_dict)
-        self.baseline_linprog_update_status = copy(self._df_record_state)
-        self.baseline_linprog_record_production = copy(self._df_record_actual_production)
-        self.baseline_linprog_cost = copy(self._df_record_cost)
+        self._baseline_linprog_action = copy(self._df_record_control_dict)
+        self._baseline_linprog_update_status = copy(self._df_record_state)
+        self._baseline_linprog_record_production = copy(self._df_record_actual_production)
+        self._baseline_linprog_cost = copy(self._df_record_cost)
 
         n = length - self.horizon
         print_ratio = n/100
@@ -1491,26 +1491,26 @@ class Microgrid:
 
             control_dict = self._mpc_lin_prog_cvxpy(self.parameters, self._load_ts.iloc[i:i + self.horizon].values,
                                                     self._pv_ts.iloc[i:i + self.horizon].values, temp_grid,
-                                                    self.baseline_linprog_update_status, price_import, price_export,
+                                                    self._baseline_linprog_update_status, price_import, price_export,
                                                     self.horizon)
 
-            self.baseline_linprog_action = self._record_action(control_dict, self.baseline_linprog_action)
+            self._baseline_linprog_action = self._record_action(control_dict, self._baseline_linprog_action)
 
-            self.baseline_linprog_record_production = self._record_production(control_dict,
-                                                                              self.baseline_linprog_record_production,
-                                                                              self.baseline_linprog_update_status)
+            self._baseline_linprog_record_production = self._record_production(control_dict,
+                                                                               self._baseline_linprog_record_production,
+                                                                               self._baseline_linprog_update_status)
 
-            self.baseline_linprog_update_status = self._update_status( self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                                                                        self.baseline_linprog_update_status,
-                                                                        self._load_ts.iloc[i+1].values[0],
-                                                                        self._pv_ts.iloc[i+1].values[0],
-                                                                        self._grid_status_ts.iloc[i+1].values[0],
-                                                                        self._grid_price_import.iloc[i+1].values[0],
-                                                                        self._grid_price_export.iloc[i+1].values[0])
+            self._baseline_linprog_update_status = self._update_status(self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                                                                       self._baseline_linprog_update_status,
+                                                                       self._load_ts.iloc[i+1].values[0],
+                                                                       self._pv_ts.iloc[i+1].values[0],
+                                                                       self._grid_status_ts.iloc[i+1].values[0],
+                                                                       self._grid_price_import.iloc[i+1].values[0],
+                                                                       self._grid_price_export.iloc[i+1].values[0])
 
-            self.baseline_linprog_cost = self._record_cost(
-                self.baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                self.baseline_linprog_cost)
+            self._baseline_linprog_cost = self._record_cost(
+                self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                self._baseline_linprog_cost)
 
             self._has_run_mpc_baseline = True
 
