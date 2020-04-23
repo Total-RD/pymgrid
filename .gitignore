@@ -1,0 +1,6 @@
+#Ignore what is not python code
+notebooks/
+data/
+.DS_STORE
+.idea
+pymgrid/__pycache__/

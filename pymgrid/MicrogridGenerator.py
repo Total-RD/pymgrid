@@ -4,6 +4,9 @@ import pandas as pd
 from pymgrid import Microgrid
 from os import listdir
 from os.path import isfile, join
+import os
+import sys
+
 
 class MicrogridGenerator:
     """
@@ -48,7 +51,7 @@ class MicrogridGenerator:
         Examples
         --------
         To create microgrids through MicrogridGenerator:
-        >>> m_gen=mg.MicrogridGenerator(nb_microgrid=1,path='your_path')
+        >>> m_gen=mg.MicrogridGenerator(nb_microgrid=10)
         >>> m_gen.generate_microgrid()
 
         To plot informations about the generated microgrids:
@@ -56,7 +59,10 @@ class MicrogridGenerator:
         """
 
 
-    def __init__(self, nb_microgrid=10, random_seed=42, timestep=1, path='yourpath/pymgrid/'):
+    def __init__(self, nb_microgrid=10,
+                 random_seed=42,
+                 timestep=1,
+                 path=os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0] ):
         
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
@@ -97,6 +103,7 @@ class MicrogridGenerator:
 
         onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
         #todo check for files name in a cleanedr way
+        onlyfiles.remove('__init__.py')
         if '.DS_Store'  in onlyfiles:
             onlyfiles.remove('.DS_Store')
 
@@ -145,7 +152,7 @@ class MicrogridGenerator:
         # get list of file
         # select randomly rank if file to select in the list
 
-        path = self.path+'data/pv/'
+        path = self.path+'/data/pv/'
         return self._get_random_file(path)
 
     def _get_load_ts(self):
@@ -154,7 +161,7 @@ class MicrogridGenerator:
         # get list of file
         # select randomly rank if file to select in the list
 
-        path = self.path+'data/load/'
+        path = self.path+'/data/load/'
         return self._get_random_file(path)
 
     def _get_wind_ts(self):
@@ -163,7 +170,7 @@ class MicrogridGenerator:
         # get list of file
         # select randomly rank if file to select in the list
 
-        path = self.path+'data/wind/'
+        path = self.path+'/data/wind/'
         return self._get_random_file(path)
 
     def _get_genset(self, rated_power=1000, pmax=0.9, pmin=0.2):
