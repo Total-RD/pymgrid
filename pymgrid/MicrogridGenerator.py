@@ -62,7 +62,7 @@ class MicrogridGenerator:
     def __init__(self, nb_microgrid=10,
                  random_seed=42,
                  timestep=1,
-                 path=os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0] ):
+                 path=os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]):
         
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
