@@ -672,9 +672,10 @@ class Microgrid:
 
     def reset(self, testing=False):
         """This function is used to reset the dataframes that track what is happening in simulation. Mainly used in RL."""
-        temp_cost = copy(self._df_record_cost)
-        temp_cost['epoch'] = self._epoch
-        self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
+        if self._data_set_to_use == 'training':
+            temp_cost = copy(self._df_record_cost)
+            temp_cost['epoch'] = self._epoch
+            self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
 
         self._df_record_control_dict = self._df_record_control_dict[0:0]
         self._df_record_state = self._df_record_state.iloc[:1]
