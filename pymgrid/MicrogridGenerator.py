@@ -128,7 +128,7 @@ class MicrogridGenerator:
 
         return df_ts
 
-    def _resize_timeseries(timeserie, current_time_step, new_time_step):
+    def _resize_timeseries(self, timeserie, current_time_step, new_time_step):
         """ Change the frequency of a time series. """
 
         index = pd.date_range('1/1/2015 00:00:00', freq=str(int(current_time_step * 60)) + 'Min',
