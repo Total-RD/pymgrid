@@ -1,62 +1,72 @@
 import numpy as np
 import pandas as pd
+
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
 from pymgrid import MicrogridGenerator
 
-mgen = MicrogridGenerator()
-mg = mgen._create_microgrid()
+import unittest
 
-def test_set_horizon():
-    mg.set_horizon(25)
-    assert(25, mg._horizon)
+class TesttMicogrid(unittest.TestCase):
 
+    def setUp(self):
+        mgen = MicrogridGenerator()
+        self.mg = mgen._create_microgrid()
 
-def test_get_updated_values():
-    mg_data = mg.get_updates_values()
-    assert(0, mg_data['pv'].iloc[0])
-
-def test_forecast_all():
-    mg.set_horizon(24)
-    forecast = mg.forecast_all()
-
-    assert(24, len(forecast['load']))
+    def test_set_horizon(self):
+        self.mg.set_horizon(25)
+        self.assertEqual(25, self.mg._horizon)
 
 
-def test_forecast_pv():
-    mg.set_horizon(24)
-    forecast = mg.forecast_pv()
+    def test_get_updated_values(self):
+        mg_data = self.mg.get_updates_values()
+        self.assertEqual(0, self.mg_data['pv'].iloc[0])
 
-    assert (24, len(forecast['pv']))
+    def test_forecast_all(self):
+        self.mg.set_horizon(24)
+        forecast = self.mg.forecast_all()
 
-
-def test_forecast_load():
-    mg.set_horizon(24)
-    forecast = mg.forecast_load()
-
-    assert (24, len(forecast['load']))
+        self.assertEqual(24, len(forecast['load']))
 
 
-def test_run():
-    pv1 = mg.forecast_pv()[1]
-    control={}
-    mg.run(control)
-    pv2 = mg.pv
+    def test_forecast_pv(self):
+        self.mg.set_horizon(24)
+        forecast = self.mg.forecast_pv()
 
-    assert(pv1, pv2)
+        self.assertEqual (24, len(forecast['pv']))
 
 
-def test_train_test_split():
-    mg.train_test_split()
+    def test_forecast_load(self):
+        self.mg.set_horizon(24)
+        forecast = self.mg.forecast_load()
 
-    assert('training', mg._data_set_to_use)
-
-def test_reset():
-    control = {}
-    mg.run(control)
-    mg.reset()
-
-    assert (0, mg._tracking_timestep)
+        self.assertEqual (24, len(forecast['load']))
 
 
+    def test_run(self):
+        pv1 = self.mg.forecast_pv()[1]
+        control={}
+        self.mg.run(control)
+        pv2 =  self.mg.pv
+
+        self.assertEqual(pv1, pv2)
+
+
+    def test_train_test_split(self):
+        self.mg.train_test_split()
+
+        self.assertEqual('training',self.mg._data_set_to_use)
+
+    def test_reset(self):
+        control = {}
+        self.mg.run(control)
+        self.mg.reset()
+
+        self.assertEqual (0, self.mg._tracking_timestep)
 
 
 
+
+if __name__ == '__main__':
+    unittest.main()
