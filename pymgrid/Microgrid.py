@@ -345,8 +345,8 @@ class Microgrid:
 
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
-                                   self._df_record_state.capa_to_charge,
-                                   self._df_record_state.capa_to_discharge)
+                                   self._df_record_state.capa_to_charge.iloc[0],
+                                   self._df_record_state.capa_to_discharge.iloc[0])
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
         if self.architecture['grid'] == 1:
