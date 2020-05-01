@@ -354,6 +354,7 @@ class Microgrid:
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0])
 
+
     def set_horizon(self, horizon):
         """Function used to change the horizon of the simulation."""
         self.horizon = horizon
@@ -524,8 +525,13 @@ class Microgrid:
                                                                          self._df_record_actual_production,
                                                                     self._df_record_state)
 
-        self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
-                                                           self._df_record_cost)
+        if self.architecture['grid'] == 1:
+
+            self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
+                                                               self._df_record_cost, self.grid.price_import, self.grid.price_export)
+        else:
+            self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1, :].to_dict(),
+                                                     self._df_record_cost)
 
 
         self._df_record_state = self._update_status(control_dict,
@@ -952,7 +958,7 @@ class Microgrid:
 
         return df
 
-    def _record_cost(self, control_dict, df):
+    def _record_cost(self, control_dict, df, cost_import=0, cost_export=0):
         """ This function record the cost of operating the microgrid at each time step."""
         cost = 0
         cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
@@ -964,8 +970,8 @@ class Microgrid:
         if self.architecture['grid'] ==1:
 
 
-            cost +=( control_dict['grid_import'] * self.grid.price_import
-                     - control_dict['grid_export'] * self.grid.price_export)
+            cost +=( cost_import * self.grid.price_import
+                     - cost_export * self.grid.price_export)
 
 
         if self.architecture['battery'] ==1 :
@@ -1445,10 +1451,14 @@ class Microgrid:
                                                             self._grid_status_ts.iloc[i+1].values[0],
                                                              self._grid_price_import.iloc[i+1].values[0],
                                                              self._grid_price_export.iloc[i+1].values[0])
-
-            self._baseline_priority_list_cost = self._record_cost(
-                self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self._baseline_priority_list_cost)
+            if self.architecture['grid']==1:
+                self._baseline_priority_list_cost = self._record_cost(
+                    self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_priority_list_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
+            else:
+                self._baseline_priority_list_cost = self._record_cost(
+                    self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_priority_list_cost)
 
         self._has_run_rule_based_baseline = True
 
@@ -1509,9 +1519,17 @@ class Microgrid:
                                                                        self._grid_price_import.iloc[i+1].values[0],
                                                                        self._grid_price_export.iloc[i+1].values[0])
 
-            self._baseline_linprog_cost = self._record_cost(
-                self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                self._baseline_linprog_cost)
+
+            if self.architecture['grid'] == 1:
+                self._baseline_linprog_cost = self._record_cost(
+                    self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_linprog_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
+
+            else:
+                self._baseline_linprog_cost = self._record_cost(
+                    self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_linprog_cost)
+
 
             self._has_run_mpc_baseline = True
 
