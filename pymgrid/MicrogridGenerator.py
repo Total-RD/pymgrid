@@ -407,26 +407,15 @@ class MicrogridGenerator:
             df_status['capa_to_charge'] = np.around(capa_to_charge,1)
             df_status['capa_to_discharge'] = np.around(capa_to_discharge,1)
 
-        if architecture['genset']==1:
-            genset = self._get_genset(rated_power=size['genset'])
-            df_parameters['genset_polynom_order'] = len(genset['polynom'])
 
-            for i in range(len(genset['polynom'])):
-                df_parameters['genset_polynom_'+str(i)]=genset['polynom'][i]
-
-            df_parameters['genset_rated_power'] = genset['rated_power']
-            df_parameters['genset_pmin'] = genset['pmin']
-            df_parameters['genset_pmax'] = genset['pmax']
-            df_parameters['fuel_cost'] = genset['fuel_cost']
-            column_actual_production.append('genset')
-            column_actions.append('genset')
 
         grid_spec=0
 
         if architecture['grid']==1:
 
             rand_weak_grid = np.random.randint(low=0, high=2)
-
+            if rand_weak_grid == 1:
+                architecture['genset'] = 1
             grid = self._get_grid(rated_power=size['grid'], weak_grid=rand_weak_grid)
             df_parameters['grid_power_import'] = grid['grid_power_import']
             df_parameters['grid_power_export'] = grid['grid_power_export']
@@ -444,6 +433,20 @@ class MicrogridGenerator:
             grid_price_export_ts = grid['grid_price_export']
             df_status['grid_price_import'] = grid_price_import_ts.iloc[0, 0]
             df_status['grid_price_export'] = grid_price_export_ts.iloc[0, 0]
+
+        if architecture['genset']==1:
+            genset = self._get_genset(rated_power=size['genset'])
+            df_parameters['genset_polynom_order'] = len(genset['polynom'])
+
+            for i in range(len(genset['polynom'])):
+                df_parameters['genset_polynom_'+str(i)]=genset['polynom'][i]
+
+            df_parameters['genset_rated_power'] = genset['rated_power']
+            df_parameters['genset_pmin'] = genset['pmin']
+            df_parameters['genset_pmax'] = genset['pmax']
+            df_parameters['fuel_cost'] = genset['fuel_cost']
+            column_actual_production.append('genset')
+            column_actions.append('genset')
 
 
         df_actions= pd.DataFrame(columns = column_actions, )
