@@ -349,7 +349,6 @@ class MicrogridGenerator:
         size_load = np.random.randint(low=1000,high=100001)
         load = self._scale_ts(self._get_load_ts(), size_load, scaling_method='max') #obtain dataframe of loads
         size = self._size_mg(load, size_load) #obtain a dictionary of mg sizing components
-        print (size)
         column_actions=[]
         column_actual_production=[]
         grid_ts=[]
@@ -375,8 +374,6 @@ class MicrogridGenerator:
             column_actual_production.append('pv_curtailed')
             column_actions.append('pv_consummed')
             pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv'], scaling_method='max'))
-            print(np.around(size['pv'],1))
-            print(pv)
             df_status['pv'] = np.around( pv.iloc[0].values,1)
 
         if architecture['battery']==1:
@@ -421,6 +418,7 @@ class MicrogridGenerator:
             if rand_weak_grid == 1:
                 architecture['genset'] = 1
             grid = self._get_grid(rated_power=size['grid'], weak_grid=rand_weak_grid)
+            df_parameters['grid_weak'] = rand_weak_grid
             df_parameters['grid_power_import'] = grid['grid_power_import']
             df_parameters['grid_power_export'] = grid['grid_power_export']
             grid_ts = grid['grid_ts']
