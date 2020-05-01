@@ -122,8 +122,7 @@ class MicrogridGenerator:
             actual_ratio = size/df_ts.sum()#.values[0]
 
         if scaling_method == 'max':
-            actual_ratio=df_ts.max().values[0]/size
-
+            actual_ratio=size / df_ts.max()
         df_ts = df_ts * actual_ratio
 
         return df_ts
@@ -269,7 +268,10 @@ class MicrogridGenerator:
         ''' Function that returns a dictionnary with the size of each component of a microgrid.'''
         # generate a list of size based on the number of architecture  generated
         # 2 size the other generators based on the load
-        pv=size_load*(np.random.randint(low=30, high=121)/100)
+
+        #PV penetration definition by NREL: https: // www.nrel.gov/docs/fy12osti/55094.pdf
+        # penetragion = peak pv / peak load
+        pv=load.max().values[0]*(np.random.randint(low=30, high=151)/100)
 
         #battery_size = self._size_battery(load)
         # return a dataframe with the power of each generator, and if applicable the number of generator
@@ -344,10 +346,10 @@ class MicrogridGenerator:
             bin_grid=1
 
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
-        size_load = np.random.randint(low=876000,high=10000001)
-        load = self._scale_ts(self._get_load_ts(), size_load) #obtain dataframe of loads
+        size_load = np.random.randint(low=1000,high=100001)
+        load = self._scale_ts(self._get_load_ts(), size_load, scaling_method='max') #obtain dataframe of loads
         size = self._size_mg(load, size_load) #obtain a dictionary of mg sizing components
-
+        print (size)
         column_actions=[]
         column_actual_production=[]
         grid_ts=[]
@@ -368,11 +370,13 @@ class MicrogridGenerator:
         column_actual_production.append('overgeneration')
         if architecture['PV'] == 1:
 
-            df_parameters['PV_rated_power'] = np.around(size['pv'],1)
+            df_parameters['PV_rated_power'] = np.around(size['pv'],2)
             column_actual_production.append('pv_consummed')
             column_actual_production.append('pv_curtailed')
             column_actions.append('pv_consummed')
-            pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))           
+            pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv'], scaling_method='max'))
+            print(np.around(size['pv'],1))
+            print(pv)
             df_status['pv'] = np.around( pv.iloc[0].values,1)
 
         if architecture['battery']==1:
