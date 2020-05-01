@@ -1127,14 +1127,29 @@ class Microgrid:
         pv_not_curtailed = 0
         self_consumed_pv = 0
 
+        sorted_priority = sorted(priority_dict.items(), key=operator.itemgetter(1))
+
+        min_load = 0
         if self.architecture['genset'] == 1:
             #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
-            min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
-            temp_load = temp_load - min_load
+            grid_first = 0
+            capa_to_discharge = max((status['battery_soc'].iloc[-1] *
+                                     parameters['battery_capacity'].values[0]
+                                     - parameters['battery_soc_min'].values[0] *
+                                     parameters['battery_capacity'].values[0]
+                                     ) * parameters['battery_efficiency'].values[0], 0)
+
+            if self.architecture['grid'] == 1 and sorted_priority['grid'] < sorted_priority['genset'] and sorted_priority['grid']>0:
+                grid_first=1
+            if temp_load > pv + capa_to_discharge and grid_first ==0:
+
+                min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
+                temp_load = temp_load - min_load
+
+
         # for gen with prio i in 1:max(priority_dict)
         # we sort the priority list
         # probably we should force the PV to be number one, the min_power should be absorbed by genset, grid?
-        sorted_priority = sorted(priority_dict.items(), key=operator.itemgetter(1))
         # print (sorted_priority)
         for gen, priority in sorted_priority:  # .iteritems():
 
@@ -1230,6 +1245,7 @@ class Microgrid:
         # variables
         # if self.architecture['genset'] ==1:
         p_genset = cp.Variable((horizon,), pos=True)
+        u_genset = cp.Variable((horizon,), boolean = True)
 
         # if self.architecture['grid']==1:
         p_grid_import = cp.Variable((horizon,), pos=True)
@@ -1270,8 +1286,8 @@ class Microgrid:
             fuel_cost = parameters['fuel_cost'].values[0] * np.ones(horizon)
 
             for t in range(horizon):
-                constraints += [p_genset[t] >= p_genset_min,
-                                p_genset[t] <= p_genset_max]
+                constraints += [p_genset[t] >= u_genset*p_genset_min,
+                                p_genset[t] <= u_genset*p_genset_max]
 
                 total_cost += (p_genset[t] * fuel_cost[t])
 
@@ -1445,17 +1461,28 @@ class Microgrid:
                                                                                      self._baseline_priority_list_record_production,
                                                                                      self._baseline_priority_list_update_status)
 
-            self._baseline_priority_list_update_status = self._update_status(
-                self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                self._baseline_priority_list_update_status, self._load_ts.iloc[i + 1].values[0], self._pv_ts.iloc[i + 1].values[0],
-                                                            self._grid_status_ts.iloc[i+1].values[0],
-                                                             self._grid_price_import.iloc[i+1].values[0],
-                                                             self._grid_price_export.iloc[i+1].values[0])
+
             if self.architecture['grid']==1:
+
+                self._baseline_priority_list_update_status = self._update_status(
+                    self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_priority_list_update_status, self._load_ts.iloc[i + 1].values[0],
+                    self._pv_ts.iloc[i + 1].values[0],
+                    self._grid_status_ts.iloc[i + 1].values[0],
+                    self._grid_price_import.iloc[i + 1].values[0],
+                    self._grid_price_export.iloc[i + 1].values[0])
+
+
                 self._baseline_priority_list_cost = self._record_cost(
                     self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
                     self._baseline_priority_list_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
             else:
+
+                self._baseline_priority_list_update_status = self._update_status(
+                    self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_priority_list_update_status, self._load_ts.iloc[i + 1].values[0],
+                    self._pv_ts.iloc[i + 1].values[0])
+
                 self._baseline_priority_list_cost = self._record_cost(
                     self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
                     self._baseline_priority_list_cost)
@@ -1511,21 +1538,32 @@ class Microgrid:
                                                                                self._baseline_linprog_record_production,
                                                                                self._baseline_linprog_update_status)
 
-            self._baseline_linprog_update_status = self._update_status(self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                                                                       self._baseline_linprog_update_status,
-                                                                       self._load_ts.iloc[i+1].values[0],
-                                                                       self._pv_ts.iloc[i+1].values[0],
-                                                                       self._grid_status_ts.iloc[i+1].values[0],
-                                                                       self._grid_price_import.iloc[i+1].values[0],
-                                                                       self._grid_price_export.iloc[i+1].values[0])
-
 
             if self.architecture['grid'] == 1:
+
+                self._baseline_linprog_update_status = self._update_status(
+                    self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_linprog_update_status,
+                    self._load_ts.iloc[i + 1].values[0],
+                    self._pv_ts.iloc[i + 1].values[0],
+                    self._grid_status_ts.iloc[i + 1].values[0],
+                    self._grid_price_import.iloc[i + 1].values[0],
+                    self._grid_price_export.iloc[i + 1].values[0])
+
                 self._baseline_linprog_cost = self._record_cost(
                     self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
                     self._baseline_linprog_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
 
+
+
             else:
+
+                self._baseline_linprog_update_status = self._update_status(
+                    self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    self._baseline_linprog_update_status,
+                    self._load_ts.iloc[i + 1].values[0],
+                    self._pv_ts.iloc[i + 1].values[0])
+
                 self._baseline_linprog_cost = self._record_cost(
                     self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
                     self._baseline_linprog_cost)
