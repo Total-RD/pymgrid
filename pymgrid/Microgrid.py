@@ -1051,15 +1051,6 @@ class Microgrid:
     # BENCHMARK RELATED FUNCTIONS
     ########################################################
 
-    # Todo later: add reserve for pymgrid
-    # def _generate_genset_reserves(self, run_dict):
-    #
-    #     # spinning=run_dict['next_load']*0.2
-    #
-    #     nb_gen_min = int(math.ceil(run_dict['next_peak'] / self.genset_power_max))
-    #
-    #     return nb_gen_min
-
     def _generate_priority_list(self, architecture, parameters , grid_status=0, price_import = 0, price_export=0):
         """
         Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
@@ -1076,20 +1067,20 @@ class Microgrid:
                 # should return something like ['gen', starting at in MW]?
                 priority_dict = {'PV': 1 * architecture['PV'],
                                  'battery': 2 * architecture['battery'],
-                                 'grid': 3 * architecture['grid'] * grid_status,
+                                 'grid': int(3 * architecture['grid'] * grid_status),
                                  'genset': 4 * architecture['genset']}
 
             else:
                 # should return something like ['gen', starting at in MW]?
                 priority_dict = {'PV': 1 * architecture['PV'],
                                  'battery': 3 * architecture['battery'],
-                                 'grid': 2 * architecture['grid'] * grid_status,
+                                 'grid': int(2 * architecture['grid'] * grid_status),
                                  'genset': 4 * architecture['genset']}
 
         else:
             priority_dict = {'PV': 1 * architecture['PV'],
                              'battery': 2 * architecture['battery'],
-                             'grid': 3 * architecture['grid'] * grid_status,
+                             'grid': int(3 * architecture['grid'] * grid_status),
                              'genset': 4 * architecture['genset']}
 
         return priority_dict
@@ -1127,8 +1118,8 @@ class Microgrid:
         pv_not_curtailed = 0
         self_consumed_pv = 0
 
-        sorted_priority = sorted(priority_dict.items(), key=operator.itemgetter(1))
 
+        sorted_priority = priority_dict
         min_load = 0
         if self.architecture['genset'] == 1:
             #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
@@ -1141,12 +1132,13 @@ class Microgrid:
 
             if self.architecture['grid'] == 1 and sorted_priority['grid'] < sorted_priority['genset'] and sorted_priority['grid']>0:
                 grid_first=1
+
             if temp_load > pv + capa_to_discharge and grid_first ==0:
 
                 min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
                 temp_load = temp_load - min_load
 
-
+        sorted_priority = sorted(priority_dict.items(), key=operator.itemgetter(1))
         # for gen with prio i in 1:max(priority_dict)
         # we sort the priority list
         # probably we should force the PV to be number one, the min_power should be absorbed by genset, grid?
