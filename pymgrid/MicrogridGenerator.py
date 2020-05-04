@@ -76,28 +76,6 @@ class MicrogridGenerator:
     ###########################################
     #utility functions
     ###########################################
-
-
-    #function to plot the parameters of all the microgrid generated
-    def print_mg_parameters(self, id = 'all'):
-        """ This function is used to print the parameters of all the generated microgrids."""
-
-
-        if id == 'all':
-
-            if self.microgrids != []:
-                parameters = pd.DataFrame()
-                for i in range(self.nb_microgrids):
-
-                    parameters = parameters.append(self.microgrids[i].parameters, ignore_index=True)
-
-                pd.options.display.max_columns = None
-                display(parameters)
-
-        elif isinstance(id, int) and id < self.nb_microgrids:
-            display(self.microgrids[id].parameters)
-
-
     def _get_random_file(self, path):
         """ Based on a path, and a folder containing data files, return a file chosen randomly."""
 
@@ -517,3 +495,58 @@ class MicrogridGenerator:
         microgrid = Microgrid.Microgrid(microgrid_spec)
 
         return microgrid
+    ########################################################
+    # PRINT / PLOT FUNCTIONS
+    ########################################################
+
+    # function to plot the parameters of all the microgrid generated
+    def print_mg_parameters(self, id='all'):
+        """ This function is used to print the parameters of all the generated microgrids."""
+
+        if id == 'all':
+
+            if self.microgrids != []:
+                parameters = pd.DataFrame()
+                for i in range(self.nb_microgrids):
+                    parameters = parameters.append(self.microgrids[i].parameters, ignore_index=True)
+
+                pd.options.display.max_columns = None
+                display(parameters)
+
+        elif isinstance(id, int) and id < self.nb_microgrids:
+            display(self.microgrids[id].parameters)
+
+    def print_all_costs(self):
+
+        #one column ID, one run cost, one rule based, one mpc
+        #if train test split, for each train and test
+        df_cost = pd.DataFrame()
+        for i in range(self.nb_microgrids):
+
+            if self.microgrids[i]._has_train_test_split == False:
+
+                cost_run = self.microgrids[i]._df_record_cost.sum()
+                cost_mpc = np.nan
+                cost_rule_based = np.nan
+
+                if self.microgrids[i]._has_run_mpc_baseline == True:
+                    cost_mpc = self.microgrids[i]._baseline_linprog_cost.sum()
+
+                if self.microgrids[i]._has_run_rule_based_baseline == True:
+                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.sum()
+
+
+            else:
+                cost_run = self.microgrids[i]._df_record_cost.sum()
+                cost_mpc = np.nan
+                cost_rule_based = np.nan
+
+                if self.microgrids[i]._has_run_mpc_baseline == True:
+                    cost_mpc = self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum()
+
+                if self.microgrids[i]._has_run_rule_based_baseline == True:
+                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum()
+
+            df_cost.append({'ID':i, 'Cost': cost_run, 'Cost (MPC)': cost_mpc, 'Cost (rule-based)':cost_rule_based})
+
+            display(df_cost)

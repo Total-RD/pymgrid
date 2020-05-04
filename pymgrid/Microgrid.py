@@ -6,6 +6,8 @@ import operator
 import math
 import time
 import sys
+from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+import matplotlib.pyplot as plt
 
 
 DEFAULT_HORIZON = 24 #in hours
@@ -529,14 +531,20 @@ class Microgrid:
 
             self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
                                                                self._df_record_cost, self.grid.price_import, self.grid.price_export)
+            self._df_record_state = self._update_status(control_dict,
+                                                        self._df_record_state, self._next_load, self._next_pv,
+                                                        self._next_grid_status, self._next_grid_price_import,
+                                                        self._next_grid_price_export)
+
+
         else:
             self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1, :].to_dict(),
                                                      self._df_record_cost)
+            self._df_record_state = self._update_status(control_dict,
+                                                        self._df_record_state, self._next_load, self._next_pv)
 
 
-        self._df_record_state = self._update_status(control_dict,
-                                                    self._df_record_state, self._next_load, self._next_pv,
-                                                    self._next_grid_status, self._next_grid_price_import, self._next_grid_price_export)
+
 
         self._tracking_timestep += 1
         self.update_variables()
@@ -987,6 +995,28 @@ class Microgrid:
     ########################################################
     # PRINT FUNCTIONS
     ########################################################
+
+
+    def print_load_pv(self):
+        fig1 = self._load_ts.iplot(asFigure=True)
+        iplot(fig1)
+
+        fig2 =self._pv_tsiplot(asFigure=True)
+        iplot(fig2)
+
+    def print_actual_production(self):
+        fig1 = self._df_record_actual_production.iplot(asFigure=True)
+        iplot(fig1)
+
+    def print_control(self):
+        fig1 = self._df_record_control_dict.iplot(asFigure=True)
+        iplot(fig1)
+
+    def print_cumsum_cost(self):
+        plt.plot(self._df_record_cost.cumsum())
+        plt.show()
+
+
 
     def print_benchmark_cost(self):
         """
