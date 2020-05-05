@@ -525,28 +525,28 @@ class MicrogridGenerator:
 
             if self.microgrids[i]._has_train_test_split == False:
 
-                cost_run = self.microgrids[i]._df_record_cost.sum()
+                cost_run = self.microgrids[i]._df_record_cost.sum().values
                 cost_mpc = np.nan
                 cost_rule_based = np.nan
 
                 if self.microgrids[i]._has_run_mpc_baseline == True:
-                    cost_mpc = self.microgrids[i]._baseline_linprog_cost.sum()
+                    cost_mpc = self.microgrids[i]._baseline_linprog_cost.sum().values
 
                 if self.microgrids[i]._has_run_rule_based_baseline == True:
-                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.sum()
+                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.sum().values
 
 
             else:
-                cost_run = self.microgrids[i]._df_record_cost.sum()
+                cost_run = self.microgrids[i]._df_record_cost.sum().values
                 cost_mpc = np.nan
                 cost_rule_based = np.nan
 
                 if self.microgrids[i]._has_run_mpc_baseline == True:
-                    cost_mpc = self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum()
+                    cost_mpc = self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum().values
 
                 if self.microgrids[i]._has_run_rule_based_baseline == True:
-                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum()
+                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum().values
 
-            df_cost.append({'ID':i, 'Cost': cost_run, 'Cost (MPC)': cost_mpc, 'Cost (rule-based)':cost_rule_based})
+            df_cost =df_cost.append({'ID':i, 'Cost': cost_run, 'Cost (MPC)': cost_mpc, 'Cost (rule-based)':cost_rule_based}, ignore_index=True)
 
-            display(df_cost)
+        display(df_cost)

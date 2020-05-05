@@ -6,9 +6,14 @@ import operator
 import math
 import time
 import sys
+import seaborn as sns
 from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 import matplotlib.pyplot as plt
+import cufflinks as cf
 
+init_notebook_mode(connected=False)
+np.random.seed(123)
+cf.set_config_file(theme='pearl')
 
 DEFAULT_HORIZON = 24 #in hours
 DEFAULT_TIMESTEP = 1 #in hours
@@ -998,10 +1003,13 @@ class Microgrid:
 
 
     def print_load_pv(self):
+
+        print('Load')
         fig1 = self._load_ts.iplot(asFigure=True)
         iplot(fig1)
 
-        fig2 =self._pv_tsiplot(asFigure=True)
+        print('PV')
+        fig2 =self._pv_ts.iplot(asFigure=True)
         iplot(fig2)
 
     def print_actual_production(self):
