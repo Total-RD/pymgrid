@@ -70,7 +70,7 @@ m_gen.load('pymgrid10') #or 'pymgrid25'
 
 ## Data
 
-Data in pymgrid are based on TMY3 (data based on representative weather). The PV data comes from NREL (https://rredc.nrel.gov/solar/old_data/nsrdb/1991-2005/tmy3/) and the load data comes from OpenEI (https://openei.org/doe-opendata/dataset/commercial-and-residential-hourly-load-profiles-for-all-tmy3-locations-in-the-united-states)
+Data in pymgrid are based on TMY3 (data based on representative weather). The PV data comes from DOE/NREL/ALLIANCE (https://rredc.nrel.gov/solar/old_data/nsrdb/1991-2005/tmy3/) and the load data comes from OpenEI (https://openei.org/doe-opendata/dataset/commercial-and-residential-hourly-load-profiles-for-all-tmy3-locations-in-the-united-states)
 
 ## Contributing
 Pull requests are welcome for bug fixes. For new features, please open an issue first to discuss what you would like to add.
