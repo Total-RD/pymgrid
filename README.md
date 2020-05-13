@@ -10,15 +10,6 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid
 pip install pymgrid
 ```
 
-## Benchmarks datasets
-
-We pre-computed two microgrids datasets for researchers to compare their algorithms on:
-1. pymgrid10: ten microgrids with the same architecture (PV + battery + genset), the main goal of this dataset if for user to beging running simulations on pymgrid
-2. pymgrid25: 25 microgrids with diverse architecture, we propose this dataset as the main way to compare algorithms.
-
-If you have ideas for new benchmark dataset, feel free to contact us!
-
-
 ## Usage
 
 You can easily import the library from pip, and then import MicrogridGenerator from pymgrid.
@@ -61,6 +52,21 @@ You can swith to the testing set with:
 m_gen.microgrids[0].reset(testing=True)
 ```
 
+## Benchmarks datasets
+
+We pre-computed two microgrids datasets for researchers to compare their algorithms on:
+1. pymgrid10: ten microgrids with the same architecture (PV + battery + genset), the main goal of this dataset if for user to beging running simulations on pymgrid
+2. pymgrid25: 25 microgrids with diverse architecture, we propose this dataset as the main way to compare algorithms.
+
+If you have ideas for new benchmark dataset, feel free to contact us!
+
+You can load these datasets with:
+```python
+from pymgrid import MicrogridGenerator as mg
+
+m_gen=mg.MicrogridGenerator()
+m_gen.load('pymgrid10') #or 'pymgrid25'
+```
 
 ## Data
 
