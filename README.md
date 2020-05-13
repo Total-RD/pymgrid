@@ -10,7 +10,7 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid
 pip install pymgrid
 ```
 
-## Usage
+## Getting Started
 
 You can easily import the library from pip, and then import MicrogridGenerator from pymgrid.
 
