@@ -38,3 +38,5 @@ Pull requests are welcome for bug fixes. For new features, please open an issue 
 Please make sure to update tests as appropriate.
 
 ## License
+
+This repo is under a GNU GPL 2.1 (https://github.com/total-sa/pymgrid/edit/master/LICENSE)
