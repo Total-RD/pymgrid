@@ -44,7 +44,7 @@ m_gen.microgrids[0].train_test_split() # you will automatically be using the tra
 If you want to run your training algorithm through multiple epochs you can reset the microgrid once the simulation reaches the last timestep:
 ```python
 if m_gen.microgrids[0].done == True: #the done argument becomes true once you reache the last timestep of your simulation
-  m_gen.microgrids[0].reset() 
+    m_gen.microgrids[0].reset() 
 ```
 
 You can swith to the testing set with:
