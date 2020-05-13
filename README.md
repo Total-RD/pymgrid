@@ -33,13 +33,13 @@ m_gen.generate_microgrid()
 By default, this command will let you generate 10 microgrids. The object m_gen will have a list of microgrids that you can use.
 
 First, you can get the control information with this command:
-```
+```python
 m_gen.microgrids[0].get_control_info()
 ```
 The control_dict dictionnary it the main way you will interact with the microgrid class. It will allow you to pass control commands to the microgrids. Using get_control_info() will let you know what fields you need to fill based on the microgrids architecture.
 
 Now you know what fields in control_dict, you can fill it up and pass it to your microgrid:
-```
+```python
 ctrl = # your own control actions
 m_gen.microgrids[0].run(ctrl)
 ```
@@ -47,17 +47,17 @@ All the management of the timesteps, and verifiying that the control actions res
 
 If you are interested in using pymgrid for machine learning or reinforcement learning, you will find this command useful.
 You can split your dataset in two with:
-```
+```python
 m_gen.microgrids[0].train_test_split() # you will automatically be using the training set with this command
 ```
 If you want to run your training algorithm through multiple epochs you can reset the microgrid once the simulation reaches the last timestep:
-```
+```python
 if m_gen.microgrids[0].done == True: #the done argument becomes true once you reache the last timestep of your simulation
   m_gen.microgrids[0].reset() 
 ```
 
 You can swith to the testing set with:
-```
+```python
 m_gen.microgrids[0].reset(testing=True)
 ```
 
