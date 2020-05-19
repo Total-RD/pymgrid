@@ -785,7 +785,7 @@ class Microgrid:
             p_genset =0
             print('error, genset power cannot be lower than 0')
     
-        if p_genset < self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]:
+        if p_genset < self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0] and p_genset >1:
             p_genset = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
         
         if p_genset > self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmax'].values[0]:
@@ -983,8 +983,8 @@ class Microgrid:
         if self.architecture['grid'] ==1:
 
 
-            cost +=( cost_import * self.grid.price_import
-                     - cost_export * self.grid.price_export)
+            cost +=( cost_import * control_dict['grid_import']
+                     - cost_export * control_dict['grid_export'])
 
 
         if self.architecture['battery'] ==1 :
@@ -1097,7 +1097,7 @@ class Microgrid:
         # compute marginal cost of each ressource
         # construct priority list
         # should receive fuel cost and cost curve, price of electricity
-        if architecture['battery'] != 0 and architecture['grid'] == 1:
+        if  architecture['grid'] == 1:
 
 
             if price_export / (parameters['battery_efficiency'].values[0]**2) < price_import:
@@ -1118,7 +1118,7 @@ class Microgrid:
         else:
             priority_dict = {'PV': 1 * architecture['PV'],
                              'battery': 2 * architecture['battery'],
-                             'grid': int(3 * architecture['grid'] * grid_status),
+                             'grid': 0,
                              'genset': 4 * architecture['genset']}
 
         return priority_dict
@@ -1174,7 +1174,14 @@ class Microgrid:
             if temp_load > pv + capa_to_discharge and grid_first ==0:
 
                 min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
-                temp_load = temp_load - min_load
+                if min_load <= temp_load:
+                    temp_load = temp_load - min_load
+                else:
+                    temp_load = min_load
+                    priority_dict = {'PV': 0,
+                                     'battery': 0,
+                                     'grid': 0,
+                                     'genset': 1}
 
         sorted_priority = sorted(priority_dict.items(), key=operator.itemgetter(1))
         # for gen with prio i in 1:max(priority_dict)
@@ -1264,32 +1271,21 @@ class Microgrid:
 
         # todo switch to a matrix structure
         load = np.reshape(load, (horizon,))
-        # todo mip to choose which generators are online
-        fuel_cost_polynom = 0
-        if self.architecture['genset'] == 1:
-            fuel_cost_polynom = []
-            fuel_cost_polynom_order = self.parameters['genset_polynom_order'].values[0]
-            for i in range(fuel_cost_polynom_order):
-                fuel_cost_polynom.append(self.parameters['genset_polynom_' + str(i)].values[0])
 
         # variables
         # if self.architecture['genset'] ==1:
         p_genset = cp.Variable((horizon,), pos=True)
-        u_genset = cp.Variable((horizon,), boolean = True)
+        u_genset = cp.Variable((horizon,), boolean=True)
 
         # if self.architecture['grid']==1:
         p_grid_import = cp.Variable((horizon,), pos=True)
         p_grid_export = cp.Variable((horizon,), pos=True)
-        u_import = cp.Variable((horizon,), pos=True)  # boolean=True)
-        u_export = cp.Variable((horizon,), pos=True)  # boolean=True)
-        u_genset = cp.Variable((horizon,), boolean = True)
+
 
         # if self.architecture['battery'] == 1:
         p_charge = cp.Variable((horizon,), pos=True)
         p_discharge = cp.Variable((horizon,), pos=True)
-        u_charge = cp.Variable((horizon,), pos=True)  # boolean=True)
-        u_discharge = cp.Variable((horizon,), pos=True)  # boolean=True)
-        nb_battery_cycle = cp.Variable((horizon,), pos=True)
+
 
         # if self.architecture['pv']==1:
         p_curtail_pv = cp.Variable((horizon,), pos=True)
@@ -1297,11 +1293,6 @@ class Microgrid:
         p_loss_load = cp.Variable((horizon,), pos=True)
 
         # parameters
-        fuel_cost = np.zeros(horizon)
-        p_price_import = np.zeros(horizon)
-        p_price_export = np.zeros(horizon)
-        cost_battery_cycle = np.zeros(horizon)
-
         cost_loss_load = parameters['cost_loss_load'].values[0] * np.ones(horizon)
 
         # Constraints
@@ -1309,15 +1300,13 @@ class Microgrid:
         total_cost = 0.0
         constraints += [p_loss_load <= load]
         if self.architecture['genset'] == 1:
-            # p_genset_min = parameters['genset_pmin'].values[0] * np.ones(horizon)
-            # p_genset_max = parameters['genset_pmax'].values[0] * np.ones(horizon)
             p_genset_min = parameters['genset_pmin'].values[0] * parameters['genset_rated_power'].values[0]
             p_genset_max = parameters['genset_pmax'].values[0] * parameters['genset_rated_power'].values[0]
             fuel_cost = parameters['fuel_cost'].values[0] * np.ones(horizon)
 
             for t in range(horizon):
-                constraints += [p_genset[t] >= u_genset*p_genset_min,
-                                p_genset[t] <= u_genset*p_genset_max]
+                constraints += [p_genset[t] >= u_genset[t]*p_genset_min,
+                                p_genset[t] <= u_genset[t]*p_genset_max]
 
                 total_cost += (p_genset[t] * fuel_cost[t])
 
@@ -1350,19 +1339,16 @@ class Microgrid:
                                 p_grid_export[t] == 0]
 
         if self.architecture['battery'] == 1:
-            nb_battery_cycle = cp.Variable((horizon,), pos=True)
             battery_soc = cp.Variable((horizon,), pos=True)
 
-            cost_battery_cycle = parameters['battery_cost_cycle'].values[0] / (
-                        2 * parameters['battery_capacity'].values[0]) * np.ones(horizon)
+            cost_battery_cycle = parameters['battery_cost_cycle'].values[0] * np.ones(horizon)
 
             p_charge_max = parameters['battery_power_charge'].values[0]
             p_discharge_max = parameters['battery_power_discharge'].values[0]
 
             for t in range(horizon):
                 constraints += [p_charge[t] <= p_charge_max,
-                                p_discharge[t] <= p_discharge_max,
-                                u_charge[t] + u_discharge[t] <= 1]
+                                p_discharge[t] <= p_discharge_max,]
 
                 constraints += [battery_soc[t] >= parameters['battery_soc_min'].values[0],
                                 battery_soc[t] <= parameters['battery_soc_max'].values[0]]
@@ -1410,21 +1396,6 @@ class Microgrid:
 
         # Objective function
         obj = cp.Minimize(total_cost)
-
-        # todo fuel cost to consider polynom
-
-        # set fuel consumption times price, elect * price, battery degradation
-        # if fuel_cost_polynom_order == 0:
-        #     obj = cp.Minimize(cp.sum(p_grid_import*p_price_import-p_grid_export*p_price_export))
-        #
-        # if fuel_cost_polynom_order == 1:
-        #     obj = cp.Minimize(cp.sum(fuel_cost_polynom[0] +fuel_cost_polynom[1] * p_genset +
-        #                              p_grid_import * p_price_import - p_grid_export * p_price_export))
-        #
-        # if fuel_cost_polynom_order == 2:
-        #     obj = cp.Minimize(cp.sum(fuel_cost_polynom[0] +fuel_cost_polynom[1] * p_genset +
-        #                              fuel_cost_polynom[2] * p_genset**2 +
-        #                              p_grid_import * p_price_import - p_grid_export * p_price_export))
 
         prob = cp.Problem(obj, constraints)
         prob.solve()  # verbose=True)#, solver=cp.ECOS,)
@@ -1603,7 +1574,7 @@ class Microgrid:
 
 
 
-    def compute_benchmark(self, benchmark_to_compute='all'):
+    def compute_benchmark(self, benchmark_to_compute='all', length=9760):
         """
         This function can be used to run all the benchmarks, or one at a time depending on the argument being
         passed.
@@ -1611,15 +1582,15 @@ class Microgrid:
 
         if benchmark_to_compute == 'all':
             if self._has_run_rule_based_baseline == False:
-                self._baseline_rule_based()
+                self._baseline_rule_based(length=length)
             if self._has_run_mpc_baseline == False:
-                self._baseline_linprog()
+                self._baseline_linprog(length=length)
 
         if benchmark_to_compute == 'rule_based' and self._has_run_rule_based_baseline == False:
-            self._baseline_rule_based()
+            self._baseline_rule_based(length=length)
 
         if benchmark_to_compute == 'mpc_linprog' and self._has_run_mpc_baseline == False:
-            self._baseline_linprog()
+            self._baseline_linprog(length=length)
 
     ########################################################
     # RL UTILITY FUNCTIONS

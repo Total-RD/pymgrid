@@ -6,6 +6,7 @@ from os import listdir
 from os.path import isfile, join
 import os
 import sys
+import pickle
 
 
 class MicrogridGenerator:
@@ -175,7 +176,7 @@ class MicrogridGenerator:
             'soc_min':soc_min,
             'efficiency':efficiency,
             'soc_0':min(max(np.random.randn(), soc_min),soc_max),
-            'cost_cycle':0.3
+            'cost_cycle':0.1
 
         }
         return battery
@@ -337,6 +338,14 @@ class MicrogridGenerator:
         
         if verbose == True:
             self.print_mg_parameters()
+
+
+    def load(self, scenario):
+
+        with open(self.path+'/data/scenario/'+scenario+'.pkl', 'rb') as input:
+            temp_mgen = pickle.load(input)
+
+        return temp_mgen
 
     def _create_microgrid(self):
         """
@@ -530,10 +539,10 @@ class MicrogridGenerator:
                 cost_rule_based = np.nan
 
                 if self.microgrids[i]._has_run_mpc_baseline == True:
-                    cost_mpc = self.microgrids[i]._baseline_linprog_cost.sum().values
+                    cost_mpc = np.around(self.microgrids[i]._baseline_linprog_cost.sum().values[0], 1)
 
                 if self.microgrids[i]._has_run_rule_based_baseline == True:
-                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.sum().values
+                    cost_rule_based = np.around(self.microgrids[i]._baseline_priority_list_cost.sum().values[0],1)
 
 
             else:
@@ -542,10 +551,10 @@ class MicrogridGenerator:
                 cost_rule_based = np.nan
 
                 if self.microgrids[i]._has_run_mpc_baseline == True:
-                    cost_mpc = self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum().values
+                    cost_mpc = np.around(self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum().values[0],1)
 
                 if self.microgrids[i]._has_run_rule_based_baseline == True:
-                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum().values
+                    cost_rule_based = np.around(self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum().values[0],1)
 
             df_cost =df_cost.append({'ID':i, 'Cost': cost_run, 'Cost (MPC)': cost_mpc, 'Cost (rule-based)':cost_rule_based}, ignore_index=True)
 
