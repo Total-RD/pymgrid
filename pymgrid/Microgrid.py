@@ -1470,6 +1470,7 @@ class Microgrid:
 
                 sys.stdout.write("\nRules Based Calculation Finished")
                 sys.stdout.flush()
+                sys.stdout.write("\n")
 
 
             if self.architecture['grid'] == 1:
@@ -1546,7 +1547,8 @@ class Microgrid:
             if e == 100:
 
                 sys.stdout.write("\nMPC Calculation Finished")
-                sys.stdout.flush()
+                sys.stdout.flush()  
+                sys.stdout.write("\n")
         	
             if self.architecture['grid'] == 0:
                 temp_grid = np.zeros(self.horizon)
