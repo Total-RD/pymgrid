@@ -1576,7 +1576,7 @@ class Microgrid:
 
 
 
-    def compute_benchmark(self, benchmark_to_compute='all', length=9760):
+    def compute_benchmark(self, benchmark_to_compute='all', length=8760):
         """
         This function can be used to run all the benchmarks, or one at a time depending on the argument being
         passed.
