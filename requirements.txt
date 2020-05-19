@@ -6,3 +6,6 @@ sys
 operator
 copy
 matplotlib
+plotly
+seaborn
+cufflinks
