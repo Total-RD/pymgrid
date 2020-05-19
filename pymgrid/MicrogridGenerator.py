@@ -76,28 +76,6 @@ class MicrogridGenerator:
     ###########################################
     #utility functions
     ###########################################
-
-
-    #function to plot the parameters of all the microgrid generated
-    def print_mg_parameters(self, id = 'all'):
-        """ This function is used to print the parameters of all the generated microgrids."""
-
-
-        if id == 'all':
-
-            if self.microgrids != []:
-                parameters = pd.DataFrame()
-                for i in range(self.nb_microgrids):
-
-                    parameters = parameters.append(self.microgrids[i].parameters, ignore_index=True)
-
-                pd.options.display.max_columns = None
-                display(parameters)
-
-        elif isinstance(id, int) and id < self.nb_microgrids:
-            display(self.microgrids[id].parameters)
-
-
     def _get_random_file(self, path):
         """ Based on a path, and a folder containing data files, return a file chosen randomly."""
 
@@ -122,13 +100,12 @@ class MicrogridGenerator:
             actual_ratio = size/df_ts.sum()#.values[0]
 
         if scaling_method == 'max':
-            actual_ratio=df_ts.max().values[0]/size
-
+            actual_ratio=size / df_ts.max()
         df_ts = df_ts * actual_ratio
 
         return df_ts
 
-    def _resize_timeseries(timeserie, current_time_step, new_time_step):
+    def _resize_timeseries(self, timeserie, current_time_step, new_time_step):
         """ Change the frequency of a time series. """
 
         index = pd.date_range('1/1/2015 00:00:00', freq=str(int(current_time_step * 60)) + 'Min',
@@ -204,14 +181,50 @@ class MicrogridGenerator:
         return battery
 
 
-    def _get_grid_price_ts(self, price, nb_time_step_per_year, tou=0, rt=0):
+    def _get_grid_price_ts(self, nb_time_step_per_year, tou=0, rt=0, price=0):
         """ This functions is used to generate time series of import and export prices."""
         if tou == 0  and rt ==0:
             price_ts = [price for i in range(nb_time_step_per_year)]
 
+
         return price_ts
 
-    def _get_grid(self, rated_power=1000, weak_grid=0, pmin=0.2, price_export = 0, price_import =0.3):
+    def _get_electricity_tariff(self, scenario):
+        """
+        Function to generate price time series based on existing tariffs.
+        scenario == 1 representes the TOU A-6 2020 summer from PG&E (https://www.pge.com/tariffs/electric.shtml)
+        scenario == 2 represents the commercial tariff from France, with a Marseille TOU plage 5 (
+        times: https://www.fournisseurs-electricite.com/edf/tarifs/heures-creuses-heures-pleines,
+        prices: https://www.cre.fr/Electricite/marche-de-detail-de-l-electricite
+        )
+        """
+        price_import = []
+        price_export = np.zeros((8760,))
+
+        if scenario == 1: # PGE A-6 TOU 2020 summer
+
+            for i in range(8760):
+                if (i% 24 >= 12 and i%24 <18):
+                    price_import.append(0.59)
+                elif (i% 24 < 8 or i%24 >=21):
+                    price_import.append(0.22)
+                else:
+                    price_import.append(0.29)
+
+
+        if scenario == 2: # France Commercial TOU Marseille plage 5
+            for i in range(8760):
+                if (i% 24 >= 0 and i%24 <5) or (i%24>=14 and i%24<17):
+                    price_import.append(0.08)
+                else:
+                    price_import.append(0.11)
+
+        # if scenario == 3: Belgium
+
+        return price_import, price_export
+
+
+    def _get_grid(self, rated_power=1000, weak_grid=0, pmin=0.2, price_scenario=0, price_export = 0, price_import =0.3):
         """ Function generates a dictionnary with the grid information. """
 
         if weak_grid == 1:
@@ -225,17 +238,19 @@ class MicrogridGenerator:
                                    columns=['grid_status'])
 
 
-        price_export = pd.DataFrame(self._get_grid_price_ts(price_export,8760),
-                                   columns=['grid_price_export'])
-        price_import = pd.DataFrame(self._get_grid_price_ts(price_import, 8760),
-                                   columns=['grid_price_import'])
+        # price_export = pd.DataFrame(self._get_grid_price_ts(price_export,8760),
+        #                            columns=['grid_price_export'])
+        # price_import = pd.DataFrame(self._get_grid_price_ts(price_import, 8760),
+        #                            columns=['grid_price_import'])
+
+        price_import, price_export = self._get_electricity_tariff(price_scenario)
 
         grid={
             'grid_power_import':rated_power,
             'grid_power_export':rated_power,
             'grid_ts':grid_ts,
-            'grid_price_export':price_export,
-            'grid_price_import': price_import,
+            'grid_price_export':pd.DataFrame(price_export),
+            'grid_price_import': pd.DataFrame(price_import),
         }
 
         return grid
@@ -266,10 +281,17 @@ class MicrogridGenerator:
     # sizing functions
     ###########################################
     def _size_mg(self, load, size_load=1):
-        ''' Function that returns a dictionnary with the size of each component of a microgrid.'''
+        '''
+         Function that returns a dictionnary with the size of each component of a microgrid. We chose to define PV
+         penetration as defined by NREL (https://www.nrel.gov/docs/fy12osti/55094.pdf)
+         PV penetration = peak PV power / peak load power
+         '''
         # generate a list of size based on the number of architecture  generated
         # 2 size the other generators based on the load
-        pv=size_load*(np.random.randint(low=30, high=121)/100)
+
+        #PV penetration definition by NREL: https: // www.nrel.gov/docs/fy12osti/55094.pdf
+        # penetragion = peak pv / peak load
+        pv=load.max().values[0]*(np.random.randint(low=30, high=151)/100)
 
         #battery_size = self._size_battery(load)
         # return a dataframe with the power of each generator, and if applicable the number of generator
@@ -344,10 +366,9 @@ class MicrogridGenerator:
             bin_grid=1
 
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
-        size_load = np.random.randint(low=876000,high=10000001)
-        load = self._scale_ts(self._get_load_ts(), size_load) #obtain dataframe of loads
+        size_load = np.random.randint(low=100,high=100001)
+        load = self._scale_ts(self._get_load_ts(), size_load, scaling_method='max') #obtain dataframe of loads
         size = self._size_mg(load, size_load) #obtain a dictionary of mg sizing components
-
         column_actions=[]
         column_actual_production=[]
         grid_ts=[]
@@ -368,11 +389,11 @@ class MicrogridGenerator:
         column_actual_production.append('overgeneration')
         if architecture['PV'] == 1:
 
-            df_parameters['PV_rated_power'] = np.around(size['pv'],1)
+            df_parameters['PV_rated_power'] = np.around(size['pv'],2)
             column_actual_production.append('pv_consummed')
             column_actual_production.append('pv_curtailed')
             column_actions.append('pv_consummed')
-            pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv']))           
+            pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv'], scaling_method='max'))
             df_status['pv'] = np.around( pv.iloc[0].values,1)
 
         if architecture['battery']==1:
@@ -407,27 +428,18 @@ class MicrogridGenerator:
             df_status['capa_to_charge'] = np.around(capa_to_charge,1)
             df_status['capa_to_discharge'] = np.around(capa_to_discharge,1)
 
-        if architecture['genset']==1:
-            genset = self._get_genset(rated_power=size['genset'])
-            df_parameters['genset_polynom_order'] = len(genset['polynom'])
 
-            for i in range(len(genset['polynom'])):
-                df_parameters['genset_polynom_'+str(i)]=genset['polynom'][i]
-
-            df_parameters['genset_rated_power'] = genset['rated_power']
-            df_parameters['genset_pmin'] = genset['pmin']
-            df_parameters['genset_pmax'] = genset['pmax']
-            df_parameters['fuel_cost'] = genset['fuel_cost']
-            column_actual_production.append('genset')
-            column_actions.append('genset')
 
         grid_spec=0
 
         if architecture['grid']==1:
 
             rand_weak_grid = np.random.randint(low=0, high=2)
-
-            grid = self._get_grid(rated_power=size['grid'], weak_grid=rand_weak_grid)
+            price_scenario = np.random.randint(low=1, high=3)
+            if rand_weak_grid == 1:
+                architecture['genset'] = 1
+            grid = self._get_grid(rated_power=size['grid'], weak_grid=rand_weak_grid, price_scenario=price_scenario)
+            df_parameters['grid_weak'] = rand_weak_grid
             df_parameters['grid_power_import'] = grid['grid_power_import']
             df_parameters['grid_power_export'] = grid['grid_power_export']
             grid_ts = grid['grid_ts']
@@ -444,6 +456,20 @@ class MicrogridGenerator:
             grid_price_export_ts = grid['grid_price_export']
             df_status['grid_price_import'] = grid_price_import_ts.iloc[0, 0]
             df_status['grid_price_export'] = grid_price_export_ts.iloc[0, 0]
+
+        if architecture['genset']==1:
+            genset = self._get_genset(rated_power=size['genset'])
+            df_parameters['genset_polynom_order'] = len(genset['polynom'])
+
+            for i in range(len(genset['polynom'])):
+                df_parameters['genset_polynom_'+str(i)]=genset['polynom'][i]
+
+            df_parameters['genset_rated_power'] = genset['rated_power']
+            df_parameters['genset_pmin'] = genset['pmin']
+            df_parameters['genset_pmax'] = genset['pmax']
+            df_parameters['fuel_cost'] = genset['fuel_cost']
+            column_actual_production.append('genset')
+            column_actions.append('genset')
 
 
         df_actions= pd.DataFrame(columns = column_actions, )
@@ -469,3 +495,58 @@ class MicrogridGenerator:
         microgrid = Microgrid.Microgrid(microgrid_spec)
 
         return microgrid
+    ########################################################
+    # PRINT / PLOT FUNCTIONS
+    ########################################################
+
+    # function to plot the parameters of all the microgrid generated
+    def print_mg_parameters(self, id='all'):
+        """ This function is used to print the parameters of all the generated microgrids."""
+
+        if id == 'all':
+
+            if self.microgrids != []:
+                parameters = pd.DataFrame()
+                for i in range(self.nb_microgrids):
+                    parameters = parameters.append(self.microgrids[i].parameters, ignore_index=True)
+
+                pd.options.display.max_columns = None
+                display(parameters)
+
+        elif isinstance(id, int) and id < self.nb_microgrids:
+            display(self.microgrids[id].parameters)
+
+    def print_all_costs(self):
+
+        #one column ID, one run cost, one rule based, one mpc
+        #if train test split, for each train and test
+        df_cost = pd.DataFrame()
+        for i in range(self.nb_microgrids):
+
+            if self.microgrids[i]._has_train_test_split == False:
+
+                cost_run = self.microgrids[i]._df_record_cost.sum().values
+                cost_mpc = np.nan
+                cost_rule_based = np.nan
+
+                if self.microgrids[i]._has_run_mpc_baseline == True:
+                    cost_mpc = self.microgrids[i]._baseline_linprog_cost.sum().values
+
+                if self.microgrids[i]._has_run_rule_based_baseline == True:
+                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.sum().values
+
+
+            else:
+                cost_run = self.microgrids[i]._df_record_cost.sum().values
+                cost_mpc = np.nan
+                cost_rule_based = np.nan
+
+                if self.microgrids[i]._has_run_mpc_baseline == True:
+                    cost_mpc = self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum().values
+
+                if self.microgrids[i]._has_run_rule_based_baseline == True:
+                    cost_rule_based = self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum().values
+
+            df_cost =df_cost.append({'ID':i, 'Cost': cost_run, 'Cost (MPC)': cost_mpc, 'Cost (rule-based)':cost_rule_based}, ignore_index=True)
+
+        display(df_cost)
