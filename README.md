@@ -67,6 +67,9 @@ from pymgrid import MicrogridGenerator as mg
 m_gen=mg.MicrogridGenerator()
 m_gen.load('pymgrid10') #or 'pymgrid25'
 ```
+## Citation
+
+If you use this package for your research, please cite the following paper:
 
 ## Data
 
