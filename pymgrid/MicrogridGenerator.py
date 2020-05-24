@@ -374,6 +374,7 @@ class MicrogridGenerator:
             bin_genset=1
             bin_grid=1
 
+
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
         size_load = np.random.randint(low=100,high=100001)
         load = self._scale_ts(self._get_load_ts(), size_load, scaling_method='max') #obtain dataframe of loads
