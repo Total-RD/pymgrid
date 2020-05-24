@@ -9,3 +9,4 @@ matplotlib
 plotly
 seaborn
 cufflinks
+pickle
