@@ -4,3 +4,4 @@ data/
 .DS_STORE
 .idea
 pymgrid/__pycache__/
+*.pkl
