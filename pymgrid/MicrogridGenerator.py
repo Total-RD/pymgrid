@@ -8,7 +8,6 @@ import os
 import sys
 import pickle
 
-
 class MicrogridGenerator:
     """
         The class MicrogridGenerator generates a number of microgrids with differerent and randomized paramters based on
