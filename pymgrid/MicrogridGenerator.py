@@ -552,7 +552,7 @@ class MicrogridGenerator:
                 cost_rule_based = np.nan
 
                 if self.microgrids[i]._has_run_mpc_baseline == True:
-                    cost_mpc = np.around(self._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum().values[0],1)
+                    cost_mpc = np.around(self.microgrids[i]._baseline_linprog_cost.iloc[self.microgrids[i]._limit_index:].sum().values[0],1)
 
                 if self.microgrids[i]._has_run_rule_based_baseline == True:
                     cost_rule_based = np.around(self.microgrids[i]._baseline_priority_list_cost.iloc[self.microgrids[i]._limit_index:].sum().values[0],1)
