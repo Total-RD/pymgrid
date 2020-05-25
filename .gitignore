@@ -3,5 +3,6 @@ notebooks/
 data/
 .DS_STORE
 .idea
+*.pkl
 pymgrid/__pycache__/
 *.pkl
