@@ -561,7 +561,7 @@ class Microgrid:
         return self.get_updated_values()
 
 
-    def train_test_split(self, train_size=0.67, shuffle = False, ):
+    def train_test_split(self, train_size=0.67, shuffle = False, cancel=False):
         """
         Function to split our data between a training and testing set.
 
@@ -572,6 +572,8 @@ class Microgrid:
         shuffle: boolean
             Variable to know if the training and testing sets should be shuffled or in the 'temporal' order
             Not implemented yet for shuffle = True
+        cancel: boolean
+            Variable indicating if the split needs to be reverted, and the data brought back into one dataset
 
         Attributes
         ----------
@@ -622,7 +624,7 @@ class Microgrid:
             self._data_set_to_use_default = 'training'
             self._data_set_to_use = 'training'
 
-        elif self._has_train_test_split ==  True:
+        elif self._has_train_test_split ==  True and cancel == True:
             self._has_train_test_split = False
             self._data_set_to_use_default = 'all'
             self._data_set_to_use = 'all'
@@ -1162,11 +1164,11 @@ class Microgrid:
         if self.architecture['genset'] == 1:
             #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
             grid_first = 0
-            capa_to_discharge = max((status['battery_soc'].iloc[-1] *
+            capa_to_discharge = max(min((status['battery_soc'].iloc[-1] *
                                      parameters['battery_capacity'].values[0]
                                      - parameters['battery_soc_min'].values[0] *
                                      parameters['battery_capacity'].values[0]
-                                     ) * parameters['battery_efficiency'].values[0], 0)
+                                     ) * parameters['battery_efficiency'].values[0], self.battery.p_discharge_max), 0)
 
             if self.architecture['grid'] == 1 and sorted_priority['grid'] < sorted_priority['genset'] and sorted_priority['grid']>0:
                 grid_first=1
