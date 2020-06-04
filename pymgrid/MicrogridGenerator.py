@@ -1,3 +1,13 @@
+"""
+Copyright 2020 Total S.A., Tanguy Levent all rights reserved,
+Authors:Gonzague Henri <gonzague.henri@total.com>, Tanguy Levent <>
+Permission to use, modify, and distribute this software is given under the
+terms of the pymgrid License.
+NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
+$Date: 2020/06/04 14:54 $
+Gonzague Henri
+"""
+
 
 import numpy as np
 import pandas as pd
