@@ -380,7 +380,7 @@ class Microgrid:
 
         # Check parameters
         if not isinstance(parameters, dict):
-            raise TypeError('parameters must be of type pd.DataFrame, is ({})'.format(type(parameters)))
+            raise TypeError('parameters must be of type dict, is ({})'.format(type(parameters)))
 
 
         # Check architecture
