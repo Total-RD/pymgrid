@@ -319,6 +319,9 @@ class Microgrid:
 
         #list of parameters
         #this is a static dataframe: parameters of the microgrid that do not change with time
+
+        self._param_check(parameters)
+
         self.parameters = parameters['parameters']
         self.architecture =  parameters['architecture']
 
@@ -326,7 +329,7 @@ class Microgrid:
         self._load_ts=parameters['load']
         self._pv_ts=parameters['pv']
 
-        self.pv=self._pv_ts.iloc[0,0]
+        self.pv = self._pv_ts.iloc[0,0]
         self.load = self._load_ts.iloc[0, 0]
         self._next_load = self._load_ts.iloc[1,0]
         self._next_pv = self._pv_ts.iloc[1,0]
@@ -341,7 +344,7 @@ class Microgrid:
             self._next_grid_price_export = self._grid_price_export.iloc[0, 0]
             self._next_grid_price_import = self._grid_price_import.iloc[0, 0]
 
-        # those dataframe record what is hapepning at each time step
+        # those dataframe record what is happening at each time step
         self._df_record_control_dict=parameters['df_actions']
         self._df_record_state = parameters['df_status']
         self._df_record_actual_production = parameters['df_actual_generation']
@@ -370,6 +373,47 @@ class Microgrid:
             self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0, 0],
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0])
+
+
+    def _param_check(self,parameters):
+        """Simple parameter checks"""
+
+        # Check parameters
+        if not isinstance(parameters, dict):
+            raise TypeError('parameters must be of type dict, is ({})'.format(type(parameters)))
+
+
+        # Check architecture
+        try:
+            architecture = parameters['architecture']
+        except KeyError:
+            print('Dict of parameters does not appear to contain architecture key')
+            raise
+        if not isinstance(architecture, dict):
+            raise TypeError('parameters[\'architecture\'] must be of type dict, is ({})'.format(type(architecture)))
+
+        for key, val in architecture.items():
+            if isinstance(val,bool):
+                continue
+            elif isinstance(val,int) and (val == 0 or val == 1):
+                continue
+            else:
+                raise TypeError('Value ({}) of key ({}) in architecture is of unrecognizable type, '
+                                'must be bool or in {{0,1}}, is ({})'.format(val, key, type(val)))
+
+        # Ensure various DataFrames exist and are in fact DataFrames
+
+        keys = ('parameters','load', 'pv', 'df_actions', 'df_status', 'df_actual_generation', 'df_cost')
+
+        for key in keys:
+            try:
+                df = parameters[key]
+            except KeyError:
+                print('Dict of parameters does not appear to contain {} key'.format(key))
+                raise
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError('parameters[\'{}\'] must be of type pd.DataFrame, is ({})'.format(key, type(df)))
+
 
 
     def set_horizon(self, horizon):
@@ -790,21 +834,21 @@ class Microgrid:
 
 
     #now we consider all the generators on all the time (mainly concern genset)
-    
+
     def _check_constraints_genset(self, p_genset):
         """ This function checks that the constraints of the genset are respected."""
         if p_genset < 0:
             p_genset =0
             print('error, genset power cannot be lower than 0')
-    
+
         if p_genset < self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0] and p_genset >1:
             p_genset = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
-        
+
         if p_genset > self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmax'].values[0]:
             p_genset = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmax'].values[0]
-        
+
         return p_genset
-        
+
     def _check_constraints_grid(self, p_import, p_export):
         """ This function checks that the constraints of the grid are respected."""
         if p_import < 0:
@@ -817,15 +861,15 @@ class Microgrid:
         	pass
             #print ('cannot import and export at the same time')
             #todo how to deal with that?
-            
+
         if p_import > self.parameters['grid_power_import'].values[0]:
             p_import = self.parameters['grid_power_import'].values[0]
 
         if p_export > self.parameters['grid_power_export'].values[0]:
             p_export = self.parameters['grid_power_export'].values[0]
-        
+
         return p_import, p_export
-        
+
     def _check_constraints_battery(self, p_charge, p_discharge, status):
         """ This function checks that the constraints of the battery are respected."""
 
@@ -1530,9 +1574,9 @@ class Microgrid:
             if e == 100:
 
                 sys.stdout.write("\nMPC Calculation Finished")
-                sys.stdout.flush()  
+                sys.stdout.flush()
                 sys.stdout.write("\n")
-        	
+
             if self.architecture['grid'] == 0:
                 temp_grid = np.zeros(self.horizon)
                 price_import =np.zeros(self.horizon)
@@ -1621,3 +1665,4 @@ class Microgrid:
             penalty += abs(self._df_record_control_dict[i].iloc[-1] - self._df_record_actual_production[i].iloc[-1])
 
         return penalty*coef
+
