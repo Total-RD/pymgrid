@@ -496,10 +496,10 @@ class MicrogridGenerator:
 
 
         microgrid_spec={
-            'parameters':df_parameters, #Dictionnary
+            'parameters':df_parameters, #Dictionary
             'df_actions':df_actions, #Dataframe
-            'architecture':architecture, #Dictionnary
-            'df_status':df_status, #Dictionnary
+            'architecture':architecture, #Dictionary
+            'df_status':df_status, #Dictionary
             'df_actual_generation':df_actual_production,#Dataframe
             'grid_spec':grid_spec, #value = 0
             'df_cost':df_cost, #Dataframe of 1 value = 0.0

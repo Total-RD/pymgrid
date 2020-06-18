@@ -4,11 +4,11 @@ import pandas as pd
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from pymgrid import MicrogridGenerator
+from pymgrid.MicrogridGenerator import MicrogridGenerator
 
 import unittest
 
-class TesttMicogrid(unittest.TestCase):
+class TestMicrogrid(unittest.TestCase):
 
     def setUp(self):
         mgen = MicrogridGenerator()
