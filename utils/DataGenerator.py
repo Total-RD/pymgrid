@@ -278,22 +278,6 @@ class NoisyPVData:
                       verbose=False
                       ):
 
-        ''' Actually, using uniform distribution:
-            If t is hour, then pick val: (where curve(t) is black line and y(t) is actual value)
-
-                Suppose curve(t)>y_t:
-                    Then pick val uniformly on [curve(t)-2(curve(t)-y(t)),curve(t)]
-                    unless curve(t)-2(curve(t)-y(t)<0, in which case [0,curve(t)]
-
-                If curve(t)<y_t:
-                    Pick val uniformly on [curve(t)-(y(t)-curve(t)),y(t)]
-
-                This val is the max. Then, interpolate a parabola, using the x-intercepts and this max
-                That's yo curve.
-
-                Finally, add Gaussian noise to individual points on this curve,
-                    variance equal to some (small) percentage of value
-        '''
         potential_noises = {0: ('uniform', 'triangular'),
                             1: (None, 'gaussian')}
 
