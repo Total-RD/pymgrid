@@ -272,7 +272,7 @@ class NoisyPVData:
     def simulate_data(self,
                       noise_types=('uniform', None),
                       noise_params=({'lower': 0, 'upper': 0}, {'std_ratio': 0.05}),
-                      return_format = 'stacked',
+                      return_stacked_data = True,
                       plot_noisy=False,
                       days_to_plot=(0, 5),
                       verbose=False
@@ -390,10 +390,19 @@ class NoisyPVData:
         if noise_types[1] == 'gaussian':
             noisy_data += np.random.normal(scale=noise_parameters[1]['std_ratio'] * noisy_data)
 
-        if plot_noisy:
+        if plot_noisy or return_stacked_data:
             stacked_data = noisy_data.transpose().stack()
             stacked_data = stacked_data.reset_index()
             stacked_data = stacked_data.drop(columns=['hour', 'day'])
+
+            assert len(stacked_data.columns)==1, 'stacked data should only have one column here'
+
+            for name in stacked_data.columns:
+                stacked_data.rename(columns={name:'PV'},inplace=True)
+
+
+        if plot_noisy:
+
             indices = slice(24 * days_to_plot[0],24 * days_to_plot[1])
             daily_slice = slice(*days_to_plot)
 
@@ -412,8 +421,9 @@ class NoisyPVData:
             plt.legend()
             plt.show()
 
-        if return_format == 'stacked':
+        if return_stacked_data:
             return stacked_data
+
         return noisy_data
 
 
@@ -454,7 +464,7 @@ class NoisyLoadData:
 
         self.munged = True
 
-    def sample(self, distribution='gaussian', variance_scale=1.):
+    def sample(self, distribution='gaussian', variance_scale=1., return_stacked = True):
 
         possible_distributions = ('gaussian',)
         if distribution not in possible_distributions:
@@ -466,23 +476,37 @@ class NoisyLoadData:
             copied_mean = copied_mean.set_index([copied_mean.index, 'day_of_week'])
             copied_std = copied_mean.copy()
 
+
             for ind in copied_mean.index:
                 copied_mean.loc[ind] = self.load_mean.loc[ind[1]]
                 copied_std.loc[ind] = self.load_std.loc[ind[1]]
 
+        else:
+            raise RuntimeError('Unsupported')
+
         data_sample = pd.DataFrame(data=np.random.normal(loc=copied_mean, scale=variance_scale * copied_std),
                                    index=self.data.index,
                                    columns=self.data.columns[:-1])
+        if return_stacked:
+            stacked_data = data_sample.stack()
+            stacked_data = stacked_data.reset_index()
+            stacked_data = stacked_data.drop(columns=['day', 'hour'])
+
+            assert len(stacked_data.columns) == 1, 'stacked data should only have one column here'
+
+            for name in stacked_data.columns:
+                stacked_data.rename(columns={name: 'load'}, inplace=True)
+
+            return stacked_data
+
         return data_sample
 
     def plot_sample_v_original(self, sample, days_to_plot=(0, 10)):
-        stacked_data = sample.stack()
-        stacked_data = stacked_data.reset_index()
-        cols_list = list(stacked_data.columns.values)
 
-        stacked_data = stacked_data.drop(columns=['day', 'hour'])
+        if not sample.shape[1]==1:
+            raise ValueError('sample must be in stacked form')
 
-        plt.plot(stacked_data[24 * days_to_plot[0]:24 * days_to_plot[1]].values, label='sample')
+        plt.plot(sample[24 * days_to_plot[0]:24 * days_to_plot[1]].values, label='sample')
         plt.plot(self.unmunged_data[24 * days_to_plot[0]:24 * days_to_plot[1]].values, label='original')
         plt.title('Load Sample')
         plt.legend()
