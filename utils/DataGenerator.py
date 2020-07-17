@@ -515,36 +515,112 @@ class NoisyPVData:
 
         if plot_noisy:
 
-            indices = slice(24 * days_to_plot[0],24 * days_to_plot[1])
-            daily_slice = slice(*days_to_plot)
-
-            plt.plot(stacked_data[indices].index, stacked_data[indices].values, label='noisy')
-            plt.plot(stacked_data[indices].index, self.unmunged_data[indices].values, label='original')
-
             if 'plot_ub_lb' in kwargs.keys() and kwargs['plot_ub_lb']:
-                plt.plot(stacked_data[indices].index,
-                         self.most_light_curve_eval('max',cumulative_hours=stacked_data[indices].index),color='k',label='UB')
-
-                plt.plot(stacked_data[indices].index,
-                         self.most_light_curve_eval('min', cumulative_hours=stacked_data[indices].index), color='c',
-                         label='LB')
+                plot_upper_lower_bounds=True
+            else:
+                plot_upper_lower_bounds=False
 
             if 'plot_points_of_dist' in kwargs.keys() and kwargs['plot_points_of_dist']:
-                plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice],lower_distribution_bounds[daily_slice],
-                            marker='.', color='r')
-                plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice], upper_distribution_bounds[daily_slice],
-                            marker='.', color='r')
-            plt.legend()
-            plt.show()
+                plot_points_of_distribution = True
+            else:
+                plot_points_of_distribution = False
+
+            self.plot(stacked_data, days_to_plot=days_to_plot, plot_original=True,
+                      plot_upper_lower_bounds=plot_upper_lower_bounds,
+                      plot_points_of_distribution=plot_points_of_distribution)
+
+            # indices = slice(24 * days_to_plot[0],24 * days_to_plot[1])
+            # daily_slice = slice(*days_to_plot)
+            #
+            # plt.plot(stacked_data[indices].index, stacked_data[indices].values, label='noisy')
+            # plt.plot(stacked_data[indices].index, self.unmunged_data[indices].values, label='original')
+            #
+            # if 'plot_ub_lb' in kwargs.keys() and kwargs['plot_ub_lb']:
+            #     plt.plot(stacked_data[indices].index,
+            #              self.most_light_curve_eval('max',cumulative_hours=stacked_data[indices].index),color='k',label='UB')
+            #
+            #     plt.plot(stacked_data[indices].index,
+            #              self.most_light_curve_eval('min', cumulative_hours=stacked_data[indices].index), color='c',
+            #              label='LB')
+            #
+            # if 'plot_points_of_dist' in kwargs.keys() and kwargs['plot_points_of_dist']:
+            #     plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice],lower_distribution_bounds[daily_slice],
+            #                 marker='.', color='r')
+            #     plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice], upper_distribution_bounds[daily_slice],
+            #                 marker='.', color='r')
+            # plt.legend()
+            # plt.show()
 
         if return_stacked_data:
+            stacked_data = self._check_sample(stacked_data,verbose=verbose)
             return stacked_data
 
         return noisy_data
 
+    def _check_sample(self, stacked_data, verbose=False):
+        temp_data = stacked_data.copy()
+        temp_data = temp_data.squeeze()
+        if not isinstance(temp_data, pd.Series):
+            raise ValueError('stacked_data needs to be a series or a single column DataFrame, has shape {}'.format(
+                stacked_data.shape))
+
+        negative_indices = temp_data < 0
+
+        if negative_indices.sum() > 0 and verbose:
+            print('Found {} negative values in pv_data sample, forcing them to be 0'.format(
+                negative_indices.sum()))
+
+        value = 0
+
+        temp_data.loc[negative_indices] = value
+
+        assert (temp_data >= 0).all(), 'There are still negative numbers in temp_data when checking sample of pv_data'
+
+        if isinstance(stacked_data, pd.Series):
+            return temp_data
+
+        elif isinstance(stacked_data, pd.DataFrame):
+            new_stacked_data = stacked_data.copy()
+            new_stacked_data[new_stacked_data.columns[0]] = temp_data
+            return new_stacked_data
+
+
+    def plot(self, stacked_data, days_to_plot=(0,10),
+             plot_original=True, plot_upper_lower_bounds=True, plot_points_of_distribution=False):
+
+        indices = slice(24 * days_to_plot[0], 24 * days_to_plot[1])
+        daily_slice = slice(*days_to_plot)
+
+        plt.plot(stacked_data[indices].index, stacked_data[indices].values, label='noisy')
+
+        if plot_original:
+            plt.plot(stacked_data[indices].index, self.unmunged_data[indices].values, label='original')
+
+        if plot_upper_lower_bounds:
+            plt.plot(stacked_data[indices].index,
+                     self.most_light_curve_eval('max', cumulative_hours=stacked_data[indices].index), color='k',
+                     label='UB')
+
+            plt.plot(stacked_data[indices].index,
+                     self.most_light_curve_eval('min', cumulative_hours=stacked_data[indices].index), color='c',
+                     label='LB')
+
+        if plot_points_of_distribution:
+            if self.distribution_bounds is None:
+                raise RuntimeError('Cound not find distribution bounds, must have sampled at least once to plot')
+            else:
+                lower_distribution_bounds, upper_distribution_bounds = self.distribution_bounds
+
+            plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice], lower_distribution_bounds[daily_slice],
+                        marker='.', color='r')
+            plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice], upper_distribution_bounds[daily_slice],
+                        marker='.', color='r')
+        plt.legend()
+        plt.show()
+
 
 class NoisyLoadData:
-    def __init__(self, load_data = None, file_name = None):
+    def __init__(self, load_data=None, file_name=None):
         if load_data is not None:
             if isinstance(load_data,pd.Series):
                 self.unmunged_data = load_data.to_frame()
@@ -595,7 +671,7 @@ class NoisyLoadData:
 
         self.munged = True
 
-    def sample(self, distribution='gaussian', load_variance_scale=1., return_stacked = True, **kwargs):
+    def sample(self, distribution='gaussian', load_variance_scale=1., return_stacked = True, verbose=False, **kwargs):
 
         if not self.munged:
             self.data_munge()
@@ -631,11 +707,38 @@ class NoisyLoadData:
             for name in stacked_data.columns:
                 stacked_data.rename(columns={name: 'load'}, inplace=True)
 
+            stacked_data = self._check_sample(stacked_data, verbose=verbose)
+
             return stacked_data
 
         return data_sample
 
-    def plot_sample_v_original(self, sample, days_to_plot=(0, 10)):
+    def _check_sample(self,stacked_data,verbose=False):
+        temp_data = stacked_data.copy()
+        temp_data = temp_data.squeeze()
+        if not isinstance(temp_data,pd.Series):
+            raise ValueError('stacked_data needs to be a series or a single column DataFrame, has shape {}'.format(stacked_data.shape))
+
+        negative_indices = temp_data < 0
+
+        if negative_indices.sum() > 0 and verbose:
+            print('Found {} negative values in load_data, forcing them to be min of underlying data'.format(negative_indices.sum()))
+
+        value = self.unmunged_data.min().squeeze()
+
+        temp_data.loc[negative_indices] = value
+
+        assert (temp_data>=0).all(), 'There are still negative numbers in temp_data when checking load_data sample'
+
+        if isinstance(stacked_data, pd.Series):
+            return temp_data
+
+        elif isinstance(stacked_data, pd.DataFrame):
+            new_stacked_data = stacked_data.copy()
+            new_stacked_data[new_stacked_data.columns[0]] = temp_data
+            return new_stacked_data
+
+    def plot(self, sample, days_to_plot=(0, 10)):
 
         if not sample.shape[1]==1:
             raise ValueError('sample must be in stacked form')
