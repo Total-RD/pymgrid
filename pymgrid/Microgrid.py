@@ -20,6 +20,7 @@ import seaborn as sns
 from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 import matplotlib.pyplot as plt
 import cufflinks as cf
+from IPython.display import display
 
 init_notebook_mode(connected=False)
 np.random.seed(123)
@@ -1320,7 +1321,6 @@ class Microgrid:
         # 'nb_gen_min': nb_gen_min}
 
         return control_dict
-
 
     def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, price_import, price_export, horizon=24):
         """ This function implements one loop of the MPC, optimizing the microgrid over the next horizon."""
