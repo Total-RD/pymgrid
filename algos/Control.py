@@ -7,11 +7,12 @@ import time, sys
 from matplotlib import pyplot as plt
 import cvxpy as cp
 from scipy.sparse import csr_matrix
-import logging
-import fenics
+# import logging
+from pymgrid import MicrogridGenerator
+import operator
 
-logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+# logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
 
 
 def return_underlying_data(microgrid):
@@ -239,8 +240,8 @@ class SampleAverageApproximation:
         :param verbose: bool, default False
             verbosity
         :return:
-            outputs, list of MPCOutput
-                list of MPCOutputs for each sample. See MPCOutput or run_mpc_on_sample for details.
+            outputs, list of ControlOutput
+                list of ControlOutputs for each sample. See ControlOutput or run_mpc_on_sample for details.
         """
         if self.samples is None or not use_previous_samples:
             self.samples = self.sample_from_forecasts(n_samples=n_samples)
@@ -261,20 +262,20 @@ class SampleAverageApproximation:
 
         return outputs
 
-    def determine_optimal_actions(self, outputs, percentile = 0.5):
+    def determine_optimal_actions(self, outputs, percentile=0.5):
         """
         Given a list of samples from run(), determines which one has cost at the percentile in percentile.
 
-        :param outputs: list of MPCOutput
-            list of MPCOutputs from run()
+        :param outputs: list of ControlOutput
+            list of ControlOutputs from run()
         :param percentile: float, default 0.5
             which percentile to return as optimal.
         :return:
-            optimal_output, MPCOutput
+            optimal_output, ControlOutput
                 output at optimal percentile
         """
 
-        if percentile<0. or percentile>1.:
+        if percentile < 0. or percentile > 1.:
             raise ValueError('percentile must be in [0,1]')
 
         partition_val = int(np.floor(len(outputs)*percentile))
@@ -284,7 +285,7 @@ class SampleAverageApproximation:
         return partition[partition_val]
 
 
-class MPCOutput(dict):
+class ControlOutput(dict):
     """
     Helper class that allows comparisons between controls by comparing the sum of their resultant costs
     Parameters:
@@ -298,7 +299,7 @@ class MPCOutput(dict):
      >>>  names = ('action', 'status', 'production', 'cost')
      >>>  dfs = (baseline_linprog_action, baseline_linprog_update_status,
      >>>          baseline_linprog_record_production, baseline_linprog_cost) # From MPC
-     >>> M = MPCOutput(names, dfs)
+     >>> M = ControlOutput(names, dfs)
      >>> actions = M['action'] # returns the dataframe baseline_linprog_action
 
     """
@@ -308,7 +309,7 @@ class MPCOutput(dict):
         if any([needed not in names for needed in names_needed]):
             raise ValueError('Unable to parse names, values are missing')
 
-        super(MPCOutput, self).__init__(zip(names, dfs))
+        super(ControlOutput, self).__init__(zip(names, dfs))
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -789,7 +790,7 @@ class ModelPredictiveControl:
         :param verbose: bool
             Whether to discuss progress
         :return:
-            output, MPCOutput
+            output, ControlOutput
                 dict-like containing the DataFrames ('action', 'status', 'production', 'cost'),
                 but with an ordering defined via comparing the costs.
         """
@@ -909,51 +910,425 @@ class ModelPredictiveControl:
         if verbose:
             print('Total time: {} minutes'.format(round((time.time()-t0)/60, 2)))
 
-        return MPCOutput(names, dfs)
+        return ControlOutput(names, dfs)
 
-    def run_mpc_on_microgrid(self,microgrid=None, forecast_steps=None, verbose=False):
+    def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False):
         """
-        Function that allows MPC to be run on a microgrid by first parsing its data
+        Function that allows MPC to be run on self.microgrid by first parsing its data
 
-        :param microgrid: Microgrid.Microgrid or None, default None
-            microgrid to run MPC on. If None, uses self.microgrid
         :param forecast_steps: int, default None
             Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
         :param verbose: bool
             Whether to discuss progress
         :return:
-            output, MPCOutput
+            output, ControlOutput
                 dict-like containing the DataFrames ('action', 'status', 'production', 'cost'),
                 but with an ordering defined via comparing the costs.
         """
-        if microgrid is None:
-            sample = return_underlying_data(self.microgrid)
-        elif isinstance(microgrid, Microgrid.Microgrid):
-            sample = return_underlying_data(microgrid)
-        else:
-            raise RuntimeError('microgrid must be None (to use underlying microgrid) or of type Microgrid.Microgrid,'
-                               ' not {}'.format(type(microgrid)))
+
+        sample = return_underlying_data(self.microgrid)
 
         return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
 
+    def run_mpc_on_baseline(self, microgrid_number = 0):
+        """
+        Runs MPC on one of the microgrids in pymgrid25 and returns the 'test' cost (cost of the last 2/3 steps)
+        :param microgrid_number: int, default 0
+            Which microgrid in pymgrid25 to run
+        :return:
+            comparable_cost, float
+                cost of the last 2/3 steps
+        """
+        raise RuntimeError('This function is broken and does not ensure that parameters in the generated microgrid are used')
+        # TODO this function needs to redo the initialization to use the correct parameters/architecture
+        if not (isinstance(microgrid_number, int) and 0<=microgrid_number < 25):
+            raise ValueError('microgrid_number must be an int in [0,25).')
+
+        m_gen = MicrogridGenerator.MicrogridGenerator()
+        m_gen.load('pymgrid25')
+        microgrid = m_gen.microgrids[microgrid_number]
+        output = self.run_mpc_on_microgrid(microgrid)
+        costs = output['cost']
+        comparable_cost = costs.iloc[int(np.ceil(8760 * 0.67)):].sum()
+
+        return comparable_cost
+
+# TODO Set up continuous action space RL for MG
+
+class RuleBasedControl:
+    def __init__(self, microgrid):
+        if not isinstance(microgrid, Microgrid.Microgrid):
+            raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
+
+        self.microgrid = microgrid
+
+    def _generate_priority_list(self, architecture, parameters, grid_status=0, price_import=0, price_export=0):
+        """
+        Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
+        priority list to be run in the rule based benchmark.
+        """
+        # compute marginal cost of each resource
+        # construct priority list
+        # should receive fuel cost and cost curve, price of electricity
+        if architecture['grid'] == 1:
+
+            if price_export / (parameters['battery_efficiency'].values[0]**2) < price_import:
+
+                # should return something like ['gen', starting at in MW]?
+                priority_dict = {'PV': 1 * architecture['PV'],
+                                 'battery': 2 * architecture['battery'],
+                                 'grid': int(3 * architecture['grid'] * grid_status),
+                                 'genset': 4 * architecture['genset']}
+
+            else:
+                # should return something like ['gen', starting at in MW]?
+                priority_dict = {'PV': 1 * architecture['PV'],
+                                 'battery': 3 * architecture['battery'],
+                                 'grid': int(2 * architecture['grid'] * grid_status),
+                                 'genset': 4 * architecture['genset']}
+
+        else:
+            priority_dict = {'PV': 1 * architecture['PV'],
+                             'battery': 2 * architecture['battery'],
+                             'grid': 0,
+                             'genset': 4 * architecture['genset']}
+
+        return priority_dict
+
+    def _run_priority_based(self, load, pv, parameters, status, priority_dict):
+        """
+        This function runs one loop of rule based control, based on a priority list, load and pv, dispatch the
+        generators
+
+        Parameters
+        ----------
+        load: float
+            Demand value
+        PV: float
+            PV generation
+        parameters: dataframe
+            The fixed parameters of the mircrogrid
+        status: dataframe
+            The parameters of the microgrid changing with time.
+        priority_dict: dictionnary
+            Dictionnary representing the priority with which run each generator.
+
+        """
+
+        temp_load = load
+        # todo add reserves to pymgrid
+        excess_gen = 0
+
+        p_charge = 0
+        p_discharge = 0
+        p_import = 0
+        p_export = 0
+        p_genset = 0
+        load_not_matched = 0
+        pv_not_curtailed = 0
+        self_consumed_pv = 0
+
+
+        sorted_priority = priority_dict
+        min_load = 0
+        if self.microgrid.architecture['genset'] == 1:
+            #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
+            grid_first = 0
+            capa_to_discharge = max(min((status['battery_soc'].iloc[-1] *
+                                     parameters['battery_capacity'].values[0]
+                                     - parameters['battery_soc_min'].values[0] *
+                                     parameters['battery_capacity'].values[0]
+                                     ) * parameters['battery_efficiency'].values[0], self.microgrid.battery.p_discharge_max), 0)
+
+            if self.microgrid.architecture['grid'] == 1 and sorted_priority['grid'] < sorted_priority['genset'] and sorted_priority['grid']>0:
+                grid_first=1
+
+            if temp_load > pv + capa_to_discharge and grid_first ==0:
+
+                min_load = self.microgrid.parameters['genset_rated_power'].values[0] * self.microgrid.parameters['genset_pmin'].values[0]
+                if min_load <= temp_load:
+                    temp_load = temp_load - min_load
+                else:
+                    temp_load = min_load
+                    priority_dict = {'PV': 0,
+                                     'battery': 0,
+                                     'grid': 0,
+                                     'genset': 1}
+
+        sorted_priority = sorted(priority_dict.items(), key=operator.itemgetter(1))
+        # for gen with prio i in 1:max(priority_dict)
+        # we sort the priority list
+        # probably we should force the PV to be number one, the min_power should be absorbed by genset, grid?
+        # print (sorted_priority)
+        for gen, priority in sorted_priority:  # .iteritems():
+
+            if priority > 0:
+
+                if gen == 'PV':
+                    temp_load_for_excess = copy(temp_load)
+                    # print (temp_load * self.maximum_instantaneous_pv_penetration - run_dict['next_pv'])
+                    self_consumed_pv = min(temp_load, pv)  # self.maximum_instantaneous_pv_penetration,
+                    temp_load = max(0, temp_load - self_consumed_pv)
+                    excess_gen = pv - self_consumed_pv
+                    # temp_load = max(0, temp_load * self.maximum_instantaneous_pv_penetration - run_dict['next_pv'])
+                    # excess_gen = abs(min(0, temp_load_for_excess * self.maximum_instantaneous_pv_penetration - run_dict['next_pv']))
+
+                    # print (temp_load)
+                    pv_not_curtailed = pv_not_curtailed + pv - excess_gen
+
+                if gen == 'battery':
+
+                    capa_to_charge = max(
+                        (parameters['battery_soc_max'].values[0] * parameters['battery_capacity'].values[0] -
+                         status['battery_soc'].iloc[-1] *
+                         parameters['battery_capacity'].values[0]
+                         ) / self.microgrid.parameters['battery_efficiency'].values[0], 0)
+                    capa_to_discharge = max((status['battery_soc'].iloc[-1] *
+                                             parameters['battery_capacity'].values[0]
+                                             - parameters['battery_soc_min'].values[0] *
+                                             parameters['battery_capacity'].values[0]
+                                             ) * parameters['battery_efficiency'].values[0], 0)
+                    if temp_load > 0:
+                        p_discharge = max(0, min(capa_to_discharge, parameters['battery_power_discharge'].values[0],
+                                                temp_load))
+                        temp_load = temp_load - p_discharge
+
+                    elif excess_gen > 0:
+                        p_charge = max(0, min(capa_to_charge, parameters['battery_power_charge'].values[0],
+                                             excess_gen))
+                        excess_gen = excess_gen - p_charge
+
+                        pv_not_curtailed = pv_not_curtailed + p_charge
+
+                if gen == 'grid':
+                    if temp_load > 0:
+                        p_import = temp_load
+                        temp_load = 0
+
+
+
+                    elif excess_gen > 0:
+                        p_export = excess_gen
+                        excess_gen = 0
+
+                        pv_not_curtailed = pv_not_curtailed + p_export
+
+                if gen == 'genset':
+                    if temp_load > 0:
+                        p_genset = temp_load + min_load
+                        temp_load = 0
+                        # p_genset = p_genset + min_load
+                        min_load = 0
+
+        if temp_load > 0:
+            load_not_matched = 1
+
+        control_dict = {'battery_charge': p_charge,
+                        'battery_discharge': p_discharge,
+                        'genset': p_genset,
+                        'grid_import': p_import,
+                        'grid_export': p_export,
+                        'loss_load': load_not_matched,
+                        'pv_consummed': pv_not_curtailed,
+                        'pv_curtailed': pv - pv_not_curtailed,
+                        'load': load,
+                        'pv': pv}
+        # 'nb_gen_min': nb_gen_min}
+
+        return control_dict
+
+    def run_rule_based(self, priority_list=0, length=8760):
+        # TODO: update this to be able to run on a sample?
+        """ This function runs the rule based benchmark over the datasets (load and pv profiles) in the microgrid."""
+
+        baseline_priority_list_action = copy(self.microgrid._df_record_control_dict)
+        baseline_priority_list_update_status = copy(self.microgrid._df_record_state)
+        baseline_priority_list_record_production = copy(self.microgrid._df_record_actual_production)
+        baseline_priority_list_cost = copy(self.microgrid._df_record_cost)
+
+        n = length - self.microgrid.horizon
+        print_ratio = n/100
+
+        for i in range(length - self.microgrid.horizon):
+
+            e = i
+
+            if e == (n-1):
+
+               e = n
+
+            e = e/print_ratio
+
+            sys.stdout.write("\rIn Progress %d%% " % e)
+            sys.stdout.flush()
+
+            if e == 100:
+
+                sys.stdout.write("\nRules Based Calculation Finished")
+                sys.stdout.flush()
+                sys.stdout.write("\n")
+
+
+            if self.microgrid.architecture['grid'] == 1:
+                priority_dict = self._generate_priority_list(self.microgrid.architecture, self.microgrid.parameters,
+                                                             self.microgrid._grid_status_ts.iloc[i].values[0],
+                                                             self.microgrid._grid_price_import.iloc[i].values[0],
+                                                             self.microgrid._grid_price_export.iloc[i].values[0])
+            else:
+                priority_dict = self._generate_priority_list(self.microgrid.architecture, self.microgrid.parameters)
+
+            control_dict = self._run_priority_based(self.microgrid._load_ts.iloc[i].values[0], self.microgrid._pv_ts.iloc[i].values[0],
+                                                    self.microgrid.parameters,
+                                                    baseline_priority_list_update_status, priority_dict)
+
+            baseline_priority_list_action = self.microgrid._record_action(control_dict,
+                                                                      baseline_priority_list_action)
+
+            baseline_priority_list_record_production = self.microgrid._record_production(control_dict,
+                                                                                     baseline_priority_list_record_production,
+                                                                                     baseline_priority_list_update_status)
+
+
+            if self.microgrid.architecture['grid']==1:
+
+                baseline_priority_list_update_status = self.microgrid._update_status(
+                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    baseline_priority_list_update_status, self.microgrid._load_ts.iloc[i + 1].values[0],
+                    self.microgrid._pv_ts.iloc[i + 1].values[0],
+                    self.microgrid._grid_status_ts.iloc[i + 1].values[0],
+                    self.microgrid._grid_price_import.iloc[i + 1].values[0],
+                    self.microgrid._grid_price_export.iloc[i + 1].values[0])
+
+
+                baseline_priority_list_cost = self.microgrid._record_cost(
+                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    baseline_priority_list_cost, self.microgrid._grid_price_import.iloc[i,0], self.microgrid._grid_price_export.iloc[i,0])
+            else:
+
+                baseline_priority_list_update_status = self.microgrid._update_status(
+                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    baseline_priority_list_update_status, self.microgrid._load_ts.iloc[i + 1].values[0],
+                    self.microgrid._pv_ts.iloc[i + 1].values[0])
+
+                baseline_priority_list_cost = self.microgrid._record_cost(
+                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    baseline_priority_list_cost)
+
+        names = ('action', 'status', 'production', 'cost')
+
+        dfs = (baseline_priority_list_action, baseline_priority_list_update_status,
+               baseline_priority_list_record_production, baseline_priority_list_cost)
+
+        # if verbose:
+        #     print('Total time: {} minutes'.format(round((time.time() - t0) / 60, 2)))
+
+        return ControlOutput(names, dfs)
+
+
+class Benchmarks:
+    """
+    Class to run various control algorithms. Currently supports MPC and rule-based control.
+
+    Parameters
+    -----------
+    microgrid: Microgrid.Microgrid
+        microgrid on which to run the benchmarks
+
+    Attributes
+    -----------
+    microgrid, Microgrid.Microgrid
+        microgrid on which to run the benchmarks
+    mpc_output: ControlOutput or None, default None
+        output of MPC if it has been run, otherwise None
+    has_mpc_benchmark: bool, default False
+        whether the MPC benchmark has been run or not
+    rule_based_output: ControlOutput or None, default None
+        output of rule basded control if it has been run, otherwise None
+    has_rule_based_benchmark: bool, default False
+        whether the rule based benchmark has been run or not
+    """
+    def __init__(self, microgrid):
+        if not isinstance(microgrid, Microgrid.Microgrid):
+            raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
+
+        self.microgrid = microgrid
+        self.mpc_output = None
+        self.has_mpc_benchmark = False
+        self.rule_based_output = None
+        self.has_rule_based_benchmark = False
+
+    def run_mpc_benchmark(self, verbose=False):
+        """
+        Run the MPC benchmark and store the output in self.mpc_output
+        :return:
+            None
+        """
+        MPC = ModelPredictiveControl(self.microgrid)
+        self.mpc_output = MPC.run_mpc_on_microgrid(verbose=verbose)
+        self.has_mpc_benchmark = True
+
+    def run_rule_based_benchmark(self):
+        """
+        Run the rule based benchmark and store the output in self.rule_based_output
+        :return:
+            None
+        """
+        RBC = RuleBasedControl(self.microgrid)
+        self.rule_based_output = RBC.run_rule_based()
+        self.has_rule_based_benchmark = True
+
+    def run_benchmarks(self, verbose=False):
+        """
+        Runs both run_mpc_benchmark() and self.run_mpc_benchmark() and stores the results.
+        :param verbose: bool, default False
+            Whether to describe benchmarks after running.
+        :return:
+            None
+        """
+        self.run_mpc_benchmark(verbose=verbose)
+        self.run_rule_based_benchmark()
+
+        if verbose:
+            self.describe_benchmarks()
+
+    def describe_benchmarks(self, test_split=False, test_ratio=0.33):
+        """
+        Prints the cost of any and all benchmarks that have been run.
+        :param test_split: bool, default False
+            Whether to report the cost of the partial tail (e.g. the last third steps) or all steps.
+        :param test_ratio: float, default 0.33
+            If test_split, the percentage of the data set to report on.
+        :return:
+            None
+        """
+        if test_split and not (0 <= test_ratio <= 1):
+            raise ValueError('test split must be in [0,1]')
+
+        T = len(self.mpc_output['cost'])
+
+        if T != 8736:
+            print('length of MPCOutput cost is {}, not 8736, may be invalid'.format(T))
+
+        if not test_split:
+            test_ratio = 1
+
+        steps = T - int(np.ceil(T * (1 - test_ratio)))
+        percent = round(test_ratio * 100, 1)
+
+        if self.has_mpc_benchmark:
+            cost = round(self.mpc_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+            print('Cost of the last {} steps ({} percent of all steps) using MPC: {}'.format(steps, percent, cost))
+
+        if self.has_rule_based_benchmark:
+            cost = round(self.rule_based_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+            print('Cost of the last {} steps ({} percent of all steps) using rule-based control: {}'.format(steps, percent, cost))
 
 if __name__=='__main__':
-    import pymgrid.MicrogridGenerator as mg
 
-    m_gen = mg.MicrogridGenerator(nb_microgrid=100,
+    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=100,
                                   path='/Users/ahalev/Dropbox/Avishai/gradSchool/internships/totalInternship/pymgrid_git')
     m_gen = m_gen.load('pymgrid25')
+    microgrid = m_gen.microgrids[0]
 
-    sampling_args = dict(load_variance_scale=1.2, noise_params=(None, {'std_ratio': 0.3}))
-
-    microgrid = m_gen.microgrids[1]
-
-    if microgrid.architecture['genset'] != 1:
-        raise Exception('no')
-
-    SAA = SampleAverageApproximation(microgrid)
-    SAA.sample_from_forecasts(n_samples=5, **sampling_args)
-
-    outputs = SAA.run(verbose=True)
-
-
+    RBC = RuleBasedControl(microgrid)
+    rbc_output = RBC.run_rule_based()

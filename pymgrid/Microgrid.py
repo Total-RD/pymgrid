@@ -1151,7 +1151,7 @@ class Microgrid:
         Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
         priority list to be run in the rule based benchmark.
         """
-        # compute marginal cost of each ressource
+        # compute marginal cost of each resource
         # construct priority list
         # should receive fuel cost and cost curve, price of electricity
         if  architecture['grid'] == 1:
