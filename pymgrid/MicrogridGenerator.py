@@ -355,7 +355,7 @@ class MicrogridGenerator:
 
         with open(self.path+'/data/scenario/'+scenario+'.pkl', 'rb') as input:
             temp_mgen = pickle.load(input)
-
+        temp_mgen.path = os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]
         return temp_mgen
 
     def _create_microgrid(self):

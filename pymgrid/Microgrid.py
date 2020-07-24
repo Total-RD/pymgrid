@@ -885,7 +885,7 @@ class Microgrid:
             p_discharge = 0
 
         if p_charge > self._zero and p_discharge > self._zero:
-        	pass
+            pass
             #print ('cannot import and export at the same time')
             #todo how to deal with that?
 
@@ -1049,7 +1049,7 @@ class Microgrid:
 
 
         if self.architecture['battery'] ==1 :
-            cost+= (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
+            cost += (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
 
         cost_dict= {'cost': cost}
 
@@ -1610,7 +1610,6 @@ class Microgrid:
                 self._baseline_linprog_cost = self._record_cost(
                     self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
                     self._baseline_linprog_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
-
 
 
             else:
