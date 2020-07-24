@@ -7,12 +7,10 @@ import time, sys
 from matplotlib import pyplot as plt
 import cvxpy as cp
 from scipy.sparse import csr_matrix
-# import logging
 from pymgrid import MicrogridGenerator
 import operator
+from IPython.display import display
 
-# logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
-# logger = logging.getLogger(__name__)
 
 
 def return_underlying_data(microgrid):
@@ -128,27 +126,7 @@ class SampleAverageApproximation:
             data: pd.DataFrame, shape (8760,3)
                 DataFrame with columns 'pv', 'load', 'grid', values of these respectively at each timestep.
         """
-        # pv_data = self.microgrid._pv_ts
-        # load_data = self.microgrid._load_ts
-        #
-        # pv_data = pv_data[pv_data.columns[0]]
-        # load_data = load_data[load_data.columns[0]]
-        # pv_data.name = 'pv'
-        # load_data.name = 'load'
-        #
-        # if self.microgrid.architecture['grid'] != 0:
-        #     grid_data = self.microgrid._grid_status_ts
-        #     if isinstance(grid_data, pd.DataFrame):
-        #         grid_data = grid_data[grid_data.columns[0]]
-        #         grid_data.name = 'grid'
-        #     elif isinstance(grid_data, pd.Series):
-        #         grid_data.name = 'grid'
-        #     else:
-        #         raise RuntimeError('Unable to handle microgrid._grid_status_ts of type {}.'.format(type(grid_data)))
-        # else:
-        #     grid_data = pd.Series(data=[0] * len(self.microgrid._load_ts), name='grid')
-        #
-        # return pd.concat([pv_data, load_data, grid_data], axis=1)
+
         return return_underlying_data(self.microgrid)
 
     def sample_from_forecasts(self, n_samples=100, **sampling_args):
@@ -215,10 +193,6 @@ class SampleAverageApproximation:
             plt.plot(underlying_data.loc[indices, var].index, underlying_data.loc[indices, var].values,
                      label='original', color='b')
         if forecast:
-            # print('index')
-            # print(self.forecasts.index)
-            # print('columns')
-            # print(self.forecasts.columns)
             plt.plot(self.forecasts.loc[indices, var].index, self.forecasts.loc[indices, var].values, label='forecast',
                      color='r')
         if samples:
@@ -293,23 +267,25 @@ class ControlOutput(dict):
             names of each of the dataframes output in MPC
         dfs: tuple, len 4
             DataFrames of the outputs of MPC
-
+        alg_name: str
+            Name of the algorithm that produced the output
     Usage: dict-like, e.g.:
 
      >>>  names = ('action', 'status', 'production', 'cost')
      >>>  dfs = (baseline_linprog_action, baseline_linprog_update_status,
      >>>          baseline_linprog_record_production, baseline_linprog_cost) # From MPC
-     >>> M = ControlOutput(names, dfs)
+     >>> M = ControlOutput(names, dfs,'mpc')
      >>> actions = M['action'] # returns the dataframe baseline_linprog_action
 
     """
-    def __init__(self, names, dfs):
-        names_needed = ('action', 'status', 'production', 'cost')
+    def __init__(self, names, dfs, alg_name):
 
+        names_needed = ('action', 'status', 'production', 'cost')
         if any([needed not in names for needed in names_needed]):
             raise ValueError('Unable to parse names, values are missing')
 
         super(ControlOutput, self).__init__(zip(names, dfs))
+        self.alg_name = alg_name
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -563,7 +539,6 @@ class ModelPredictiveControl:
         C = csr_matrix(C)
 
         # Inequality rhs
-        # inequality_rhs = cp.Parameter(10 * self.horizon)
 
         constraints = [A @ self.p_vars == self.equality_rhs, C @ self.p_vars <= self.inequality_rhs]
 
@@ -740,7 +715,6 @@ class ModelPredictiveControl:
                         p_max_import, p_max_export, soc_0, p_genset_max)
 
         self.problem.solve(warm_start = True)
-        # print('iters', self.problem.solver_stats.num_iters)
 
         if self.problem.status == 'infeasible':
             print(self.problem.status)
@@ -798,7 +772,6 @@ class ModelPredictiveControl:
             raise TypeError('sample must be of type pd.DataFrame, is {}'.format(type(sample)))
         if sample.shape != (8760, 3):
             sample = sample.iloc[:8760]
-            # raise ValueError('sample must have shape (8760,3), is of shape {}'.format(sample.shape))
 
         # dataframes, copied API from _baseline_linprog
         baseline_linprog_action = copy(self.microgrid._df_record_control_dict)
@@ -823,7 +796,6 @@ class ModelPredictiveControl:
             if verbose and i % 100 == 0:
                 ratio = i / num_iter
                 sys.stdout.write("\r Progress of current MPC: %d%%\n" % (100 * ratio))
-                # sys.stdout.write("Cumulative running time: %d minutes" % ((time.time()-t0)/60))
                 sys.stdout.flush()
 
             if self.microgrid.architecture['grid'] == 0:
@@ -910,7 +882,7 @@ class ModelPredictiveControl:
         if verbose:
             print('Total time: {} minutes'.format(round((time.time()-t0)/60, 2)))
 
-        return ControlOutput(names, dfs)
+        return ControlOutput(names, dfs, 'mpc')
 
     def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False):
         """
@@ -929,29 +901,6 @@ class ModelPredictiveControl:
         sample = return_underlying_data(self.microgrid)
 
         return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
-
-    def run_mpc_on_baseline(self, microgrid_number = 0):
-        """
-        Runs MPC on one of the microgrids in pymgrid25 and returns the 'test' cost (cost of the last 2/3 steps)
-        :param microgrid_number: int, default 0
-            Which microgrid in pymgrid25 to run
-        :return:
-            comparable_cost, float
-                cost of the last 2/3 steps
-        """
-        raise RuntimeError('This function is broken and does not ensure that parameters in the generated microgrid are used')
-        # TODO this function needs to redo the initialization to use the correct parameters/architecture
-        if not (isinstance(microgrid_number, int) and 0<=microgrid_number < 25):
-            raise ValueError('microgrid_number must be an int in [0,25).')
-
-        m_gen = MicrogridGenerator.MicrogridGenerator()
-        m_gen.load('pymgrid25')
-        microgrid = m_gen.microgrids[microgrid_number]
-        output = self.run_mpc_on_microgrid(microgrid)
-        costs = output['cost']
-        comparable_cost = costs.iloc[int(np.ceil(8760 * 0.67)):].sum()
-
-        return comparable_cost
 
 # TODO Set up continuous action space RL for MG
 
@@ -1065,15 +1014,9 @@ class RuleBasedControl:
             if priority > 0:
 
                 if gen == 'PV':
-                    temp_load_for_excess = copy(temp_load)
-                    # print (temp_load * self.maximum_instantaneous_pv_penetration - run_dict['next_pv'])
                     self_consumed_pv = min(temp_load, pv)  # self.maximum_instantaneous_pv_penetration,
                     temp_load = max(0, temp_load - self_consumed_pv)
                     excess_gen = pv - self_consumed_pv
-                    # temp_load = max(0, temp_load * self.maximum_instantaneous_pv_penetration - run_dict['next_pv'])
-                    # excess_gen = abs(min(0, temp_load_for_excess * self.maximum_instantaneous_pv_penetration - run_dict['next_pv']))
-
-                    # print (temp_load)
                     pv_not_curtailed = pv_not_curtailed + pv - excess_gen
 
                 if gen == 'battery':
@@ -1117,7 +1060,6 @@ class RuleBasedControl:
                     if temp_load > 0:
                         p_genset = temp_load + min_load
                         temp_load = 0
-                        # p_genset = p_genset + min_load
                         min_load = 0
 
         if temp_load > 0:
@@ -1133,7 +1075,6 @@ class RuleBasedControl:
                         'pv_curtailed': pv - pv_not_curtailed,
                         'load': load,
                         'pv': pv}
-        # 'nb_gen_min': nb_gen_min}
 
         return control_dict
 
@@ -1219,10 +1160,7 @@ class RuleBasedControl:
         dfs = (baseline_priority_list_action, baseline_priority_list_update_status,
                baseline_priority_list_record_production, baseline_priority_list_cost)
 
-        # if verbose:
-        #     print('Total time: {} minutes'.format(round((time.time() - t0) / 60, 2)))
-
-        return ControlOutput(names, dfs)
+        return ControlOutput(names, dfs, 'rbc')
 
 
 class Benchmarks:
@@ -1240,18 +1178,23 @@ class Benchmarks:
         microgrid on which to run the benchmarks
     mpc_output: ControlOutput or None, default None
         output of MPC if it has been run, otherwise None
+    outputs_dict: dict
+        Dictionary of the outputs of all run algorithm. Keys are names of algorithms, any or all of 'mpc' or 'rbc' as of now.
     has_mpc_benchmark: bool, default False
         whether the MPC benchmark has been run or not
     rule_based_output: ControlOutput or None, default None
         output of rule basded control if it has been run, otherwise None
     has_rule_based_benchmark: bool, default False
         whether the rule based benchmark has been run or not
+
     """
     def __init__(self, microgrid):
         if not isinstance(microgrid, Microgrid.Microgrid):
             raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
 
         self.microgrid = microgrid
+        self.outputs_dict = dict()
+
         self.mpc_output = None
         self.has_mpc_benchmark = False
         self.rule_based_output = None
@@ -1266,6 +1209,7 @@ class Benchmarks:
         MPC = ModelPredictiveControl(self.microgrid)
         self.mpc_output = MPC.run_mpc_on_microgrid(verbose=verbose)
         self.has_mpc_benchmark = True
+        self.outputs_dict[self.mpc_output.alg_name] = self.mpc_output
 
     def run_rule_based_benchmark(self):
         """
@@ -1276,6 +1220,7 @@ class Benchmarks:
         RBC = RuleBasedControl(self.microgrid)
         self.rule_based_output = RBC.run_rule_based()
         self.has_rule_based_benchmark = True
+        self.outputs_dict[self.rule_based_output.alg_name] = self.rule_based_output
 
     def run_benchmarks(self, verbose=False):
         """
@@ -1291,37 +1236,69 @@ class Benchmarks:
         if verbose:
             self.describe_benchmarks()
 
-    def describe_benchmarks(self, test_split=False, test_ratio=0.33):
+    def describe_benchmarks(self, test_split=False, test_ratio=None, test_index=None):
         """
         Prints the cost of any and all benchmarks that have been run.
+        If test_split==True, must have either a test_ratio or a test_index but not both.
+
         :param test_split: bool, default False
             Whether to report the cost of the partial tail (e.g. the last third steps) or all steps.
-        :param test_ratio: float, default 0.33
+        :param test_ratio: float, default None
             If test_split, the percentage of the data set to report on.
+        :param test_index: int, default None
+            If test_split, the index to split the data into train/test sets
         :return:
             None
         """
-        if test_split and not (0 <= test_ratio <= 1):
-            raise ValueError('test split must be in [0,1]')
 
         T = len(self.mpc_output['cost'])
+
+        if test_split:
+            if test_ratio is None and test_index is None:
+                raise ValueError('If test_split, must have either a test_ratio or test_index')
+            elif test_ratio is not None and test_index is not None:
+                raise ValueError('Cannot have both test_ratio and test_split')
+            elif test_ratio is not None and not (0 <= test_ratio <= 1):
+                raise ValueError('test_ratio must be in [0,1], is {}'.format(test_ratio))
+            elif test_index is not None and test_index > T:
+                raise ValueError('test_index cannot be larger than length of output')
 
         if T != 8736:
             print('length of MPCOutput cost is {}, not 8736, may be invalid'.format(T))
 
-        if not test_split:
-            test_ratio = 1
+        if not test_split or test_ratio is not None:
+            if not test_split:
+                test_ratio = 1
 
-        steps = T - int(np.ceil(T * (1 - test_ratio)))
-        percent = round(test_ratio * 100, 1)
+            steps = T - int(np.ceil(T * (1 - test_ratio)))
+            percent = round(test_ratio * 100, 1)
 
-        if self.has_mpc_benchmark:
-            cost = round(self.mpc_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
-            print('Cost of the last {} steps ({} percent of all steps) using MPC: {}'.format(steps, percent, cost))
+            if self.has_mpc_benchmark:
+                cost = round(self.mpc_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+                print('Cost of the last {} steps ({} percent of all steps) using MPC: {}'.format(steps, percent, cost))
 
-        if self.has_rule_based_benchmark:
-            cost = round(self.rule_based_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
-            print('Cost of the last {} steps ({} percent of all steps) using rule-based control: {}'.format(steps, percent, cost))
+            if self.has_rule_based_benchmark:
+                cost = round(self.rule_based_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+                print('Cost of the last {} steps ({} percent of all steps) using rule-based control: {}'.format(steps, percent, cost))
+
+        else:
+
+            if self.has_mpc_benchmark:
+                cost_train = round(self.mpc_output['cost'].iloc[:test_index].sum().squeeze(), 2)
+                cost_test = round(self.mpc_output['cost'].iloc[test_index:].sum().squeeze(), 2)
+
+                print('Test set cost using MPC: {}'.format(cost_test))
+                print('Train set cost using MPC: {}'.format(cost_train))
+
+            if self.has_rule_based_benchmark:
+                cost_train = round(self.rule_based_output['cost'].iloc[:test_index].sum().squeeze(),
+                             2)
+                cost_test = round(self.rule_based_output['cost'].iloc[test_index:].sum().squeeze(),
+                             2)
+
+                print('Test set cost using MPC: {}'.format(cost_test))
+                print('Train set cost using MPC: {}'.format(cost_train))
+
 
 if __name__=='__main__':
 
