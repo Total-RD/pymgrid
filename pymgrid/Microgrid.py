@@ -20,6 +20,8 @@ import seaborn as sns
 from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 import matplotlib.pyplot as plt
 import cufflinks as cf
+from IPython.display import display
+from algos.Control import *
 
 init_notebook_mode(connected=False)
 np.random.seed(123)
@@ -227,8 +229,8 @@ class Microgrid:
     ----------
         parameters: dataframe
             A dataframe containing all the fixed (not changing with time ) parameters of the microgrid
-        architecture : dictionnary
-            A dictionnary containing a binary variable for each possible generator and indicating if
+        architecture : dictionary
+            A dictionary containing a binary variable for each possible generator and indicating if
             this microgrid has one of them
         _load_ts: dataframe
             The time series of load
@@ -284,6 +286,8 @@ class Microgrid:
         grid: object
             Represents all the parameter of the grid, including the value changing with time (in this case it is the
             value at _run_timestep).
+        benchmarks: algos.Control.Benchmarks
+            Benchmark object with the ability to run benchmark algorithms and store/print the results.
 
     Notes
     -----
@@ -363,6 +367,8 @@ class Microgrid:
         self._data_set_to_use_default = 'all'
         self._data_set_to_use = 'all'
 
+        self.benchmarks = Benchmarks(self)
+
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
                                    self._df_record_state.capa_to_charge.iloc[0],
@@ -373,7 +379,6 @@ class Microgrid:
             self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0, 0],
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0])
-
 
     def _param_check(self,parameters):
         """Simple parameter checks"""
@@ -1087,22 +1092,16 @@ class Microgrid:
         This function prints the cumulative cost of the different benchmark ran and different part of the dataset
         depending on if split it in train/test or not.
         """
-        if self._has_train_test_split == False:
-            if self._has_run_rule_based_baseline == True:
-                print('Rule based cost: ', self._baseline_priority_list_cost.sum())
 
-            if self._has_run_mpc_baseline == True:
-                print('MPC cost: ', self._baseline_linprog_cost.sum())
+        if len(self.benchmarks.outputs_dict) == 0:
+            print('No benchmark algorithms have been run, running all.')
+            self.benchmarks.run_benchmarks()
+
+        if self._has_train_test_split:
+            self.benchmarks.describe_benchmarks(test_split=self._has_train_test_split, test_index=self._limit_index)
 
         else:
-            if self._has_run_rule_based_baseline == True:
-                print('Training rule based cost: ', self._baseline_priority_list_cost.iloc[:self._limit_index].sum())
-                print('Testing rule based cost: ', self._baseline_priority_list_cost.iloc[self._limit_index:].sum())
-
-            if self._has_run_mpc_baseline == True:
-                print('Training MPC cost: ', self._baseline_linprog_cost.iloc[:self._limit_index].sum())
-                print('Testing MPC cost: ', self._baseline_linprog_cost.iloc[self._limit_index:].sum())
-
+            self.benchmarks.describe_benchmarks(test_split=False)
 
     def print_info(self):
         """ This function prints the main information regarding the microgrid."""
@@ -1150,7 +1149,7 @@ class Microgrid:
         Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
         priority list to be run in the rule based benchmark.
         """
-        # compute marginal cost of each ressource
+        # compute marginal cost of each resource
         # construct priority list
         # should receive fuel cost and cost curve, price of electricity
         if  architecture['grid'] == 1:
@@ -1320,7 +1319,6 @@ class Microgrid:
         # 'nb_gen_min': nb_gen_min}
 
         return control_dict
-
 
     def _mpc_lin_prog_cvxpy(self, parameters, load, pv, grid, status, price_import, price_export, horizon=24):
         """ This function implements one loop of the MPC, optimizing the microgrid over the next horizon."""

@@ -247,6 +247,8 @@ class MicrogridGenerator:
             grid_ts = pd.DataFrame(np.ones(int(np.floor(8760 / self.timestep))),
                                    columns=['grid_status'])
 
+        # Make sure grid_ts is of length 8760
+        grid_ts = grid_ts.iloc[:8760]
 
         # price_export = pd.DataFrame(self._get_grid_price_ts(price_export,8760),
         #                            columns=['grid_price_export'])
