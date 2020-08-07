@@ -1053,7 +1053,6 @@ class Microgrid:
 
         cost_dict= {'cost': cost}
 
-
         df = df.append({'cost': cost}, ignore_index=True)
 
         return df

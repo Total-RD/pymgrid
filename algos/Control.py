@@ -11,7 +11,7 @@ from pymgrid import MicrogridGenerator
 import operator
 from IPython.display import display
 
-
+np.random.seed(0)
 
 def return_underlying_data(microgrid):
     """
@@ -75,7 +75,7 @@ class SampleAverageApproximation:
             list of samples created from sampling from distributions defined in forecasts.
                 See sample_from_forecasts for details. None if sample_from_forecasts hasn't been called
     """
-    def __init__(self, microgrid, control_duration=8760):
+    def __init__(self, microgrid, control_duration=8760, **forecast_args):
         if control_duration > 8760:
             raise ValueError('control_duration must be less than 8760')
 
@@ -93,13 +93,14 @@ class SampleAverageApproximation:
         else:
             self.NG = None
 
-        self.forecasts = self.create_forecasts()
+        self.underlying_data = return_underlying_data(self.microgrid)
+        self.forecasts = self.create_forecasts(**forecast_args)
         self.samples = None
 
         # TODO: Then aggregate controls: 2) learn a function
         # TODO: Use these in sample average approximation to learn a policy
 
-    def create_forecasts(self):
+    def create_forecasts(self, pv_args=None, load_args=None, preset_to_use=None, print_mape=False, **forecast_args):
         """
         Creates pv, load, and grid forecasts that are then used to create samples.
 
@@ -107,29 +108,92 @@ class SampleAverageApproximation:
             df, pd.DataFrame,  shape (8760,3)
                 DataFrame with columns of 'pv', 'load', and 'grid', containing values for each at all 8760 timesteps
         """
-        # TODO: modify this to allow for different amounts of noise in forecasts
+        if pv_args is None and load_args is None and preset_to_use is not None:
+            print('Using preset forecast arguments')
+            args = ForecastArgSet(preset_to_use=preset_to_use)
+            pv_args = args['pv_args']
+            load_args = args['load_args']
+        else:
+            if pv_args is None:
+                pv_args = dict()
+            if load_args is None:
+                load_args = dict()
 
-        pv_forecast = self.NPV.sample()
-        load_forecast = self.NL.sample()
+        pv_forecast = self.NPV.sample(**pv_args)
+        load_forecast = self.NL.sample(**load_args)
 
         if self.microgrid.architecture['grid'] != 0:
             grid_forecast = self.NG.sample()
         else:
             grid_forecast = pd.Series(data=[0] * len(self.microgrid._load_ts), name='grid')
 
-        return pd.concat([pv_forecast, load_forecast, grid_forecast], axis=1)
+        forecast = pd.concat([pv_forecast, load_forecast, grid_forecast], axis=1)
 
-    def _return_underlying_data(self):
-        """
-        Returns the pv, load, and grid data from the underlying microgrid in the same format as samples.
-        :return:
-            data: pd.DataFrame, shape (8760,3)
-                DataFrame with columns 'pv', 'load', 'grid', values of these respectively at each timestep.
-        """
+        if print_mape:
+            mape = self.validate_forecasts(forecasts=forecast, aggregate=True)
+            print('MAPE: {}'.format(mape))
 
-        return return_underlying_data(self.microgrid)
+        if hasattr(self, 'forecasts'):
+            self.forecasts = forecast
+        else:
+            return forecast
 
-    def sample_from_forecasts(self, n_samples=100, **sampling_args):
+    def test_args(self, iters_per_set = 3):
+        num_pv_noise_params_0 = 3
+        num_pv_std_ratio = 3
+        num_load_variance_scale = 3
+        max_load_var_scale = 2.
+        max_pv_std_ratio = 0.5
+        num_push_peak_ratio = 3
+        num_push_individual_ratio = 3
+
+        forecast_args = ForecastArgs(num_pv_noise_params_0, num_pv_std_ratio, num_load_variance_scale,
+                                     num_push_peak_ratio, num_push_individual_ratio,
+                                     max_load_var_scale=max_load_var_scale, max_pv_std_ratio=max_pv_std_ratio)
+
+        for j, arg_set in enumerate(forecast_args.param_sets):
+            for k in range(iters_per_set):
+                print('iter {}.{}'.format(j, k))
+                forecasts = self.create_forecasts(**arg_set)
+                mape = self.validate_forecasts(forecasts, aggregate=True)
+                arg_set.update_with_mape(mape)
+
+        return forecast_args
+
+    def validate_forecasts(self, forecasts=None, aggregate=False):
+
+        if forecasts is None:
+            forecasts = self.forecasts
+
+        mape_vals = dict()
+
+        for col in ('pv', 'load'):
+            mape_vals[col] = self.mape(self.underlying_data[col], forecasts[col])
+
+        if aggregate:
+            return np.sqrt(np.mean(np.array(list(mape_vals.values()))**2))
+        return mape_vals
+
+    def mape(self, actual_vals, forecast_vals):
+        if isinstance(actual_vals.squeeze(), pd.Series):
+            actual_vals = actual_vals.to_numpy()
+        elif isinstance(actual_vals, np.ndarray):
+            pass
+        else:
+            raise TypeError('actual_vals must be squeezable to single column, has shape {}'.format(actual_vals.shape))
+        if isinstance(forecast_vals.squeeze(), pd.Series):
+            forecast_vals = forecast_vals.to_numpy()
+        elif isinstance(forecast_vals, np.ndarray):
+            pass
+        else:
+            raise TypeError('forecast_vals must be squeezable to single column, has shape {}'.format(forecast_vals.shape))
+
+        ratios = np.abs(((actual_vals-forecast_vals)/actual_vals))
+        mape = np.mean(ratios[~np.isnan(ratios)])
+
+        return mape
+
+    def sample_from_forecasts(self, n_samples=10, **sampling_args):
         """
             Generates samples of load, grid, pv data by sampling from the distributions defined by using self.forecasts
                 as a baseline in NoisyLoadData, NoisyPVData, NoisyGridData.
@@ -148,11 +212,13 @@ class SampleAverageApproximation:
         NG = dg.NoisyGridData(grid_data=self.forecasts['grid'])
 
         samples = []
-        samples = []
+
+        if 'noise_types' not in sampling_args.keys():
+            sampling_args['noise_types'] = (None,'gaussian')
 
         for j in range(n_samples):
             print('Creating sample {}'.format(j))
-            pv_forecast = NPV.sample(noise_types=(None, 'gaussian'), **sampling_args)
+            pv_forecast = NPV.sample(**sampling_args)
             load_forecast = NL.sample(**sampling_args)
 
             grid_forecast = NG.sample()
@@ -163,7 +229,7 @@ class SampleAverageApproximation:
             sample = sample.iloc[:truncated_index]
             samples.append(sample)
 
-        # self.samples = samples
+        self.samples = samples
         return samples
 
     def plot(self, var='load', days_to_plot=(0, 10), original=True, forecast=True, samples=True):
@@ -189,8 +255,7 @@ class SampleAverageApproximation:
         indices = slice(24 * days_to_plot[0], 24 * days_to_plot[1])
 
         if original:
-            underlying_data = self._return_underlying_data()
-            plt.plot(underlying_data.loc[indices, var].index, underlying_data.loc[indices, var].values,
+            plt.plot(self.underlying_data.loc[indices, var].index, self.underlying_data.loc[indices, var].values,
                      label='original', color='b')
         if forecast:
             plt.plot(self.forecasts.loc[indices, var].index, self.forecasts.loc[indices, var].values, label='forecast',
@@ -202,10 +267,10 @@ class SampleAverageApproximation:
         plt.legend()
         plt.show()
 
-    def run(self, n_samples=100, forecast_steps=None, use_previous_samples=True, verbose=False):
+    def run(self, n_samples=10, forecast_steps=None, optimal_percentile=0.5, use_previous_samples=True, verbose=False, **kwargs):
         """
         Runs MPC over a number of samples for to average out for SAA
-        :param n_samples: int, default 100
+        :param n_samples: int, default 25
             number of samples to run
         :param forecast_steps: int or None, default None
             number of steps to use in forecast. If None, uses 8760-self.horizon
@@ -218,25 +283,21 @@ class SampleAverageApproximation:
                 list of ControlOutputs for each sample. See ControlOutput or run_mpc_on_sample for details.
         """
         if self.samples is None or not use_previous_samples:
-            self.samples = self.sample_from_forecasts(n_samples=n_samples)
+            self.samples = self.sample_from_forecasts(n_samples=n_samples, **kwargs)
 
         outputs = []
 
         t0 = time.time()
 
-        for i, sample in enumerate(self.samples):
-            if verbose:
-                ratio = 100 * (i / len(self.samples))
-                sys.stdout.write("\r Overall progress: %d%%\n" % ratio)
-                sys.stdout.write("Cumulative running time: %d minutes" % ((time.time() - t0) / 60))
-                sys.stdout.flush()
+        output = self.run_mpc_on_group(self.samples, forecast_steps=forecast_steps,
+                                        optimal_percentile=optimal_percentile, verbose=verbose)
 
-            output = self.mpc.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
-            outputs.append(output)
+        if verbose:
+            print('Running time: {}'.format(round(time.time()-t0)))
 
-        return outputs
+        return output
 
-    def determine_optimal_actions(self, outputs, percentile=0.5):
+    def determine_optimal_actions(self, outputs=None, percentile=0.5, verbose=False):
         """
         Given a list of samples from run(), determines which one has cost at the percentile in percentile.
 
@@ -248,15 +309,257 @@ class SampleAverageApproximation:
             optimal_output, ControlOutput
                 output at optimal percentile
         """
-
         if percentile < 0. or percentile > 1.:
             raise ValueError('percentile must be in [0,1]')
 
         partition_val = int(np.floor(len(outputs)*percentile))
-
         partition = np.partition(outputs, partition_val)
 
+        if verbose:
+            sorted_outputs = np.sort(outputs)
+            selected_output = partition[partition_val]
+            print()
+            for j, output in enumerate(sorted_outputs):
+                print('Output {}, cost: {}, battery charge {}, discharge {}:'.format(
+                    j, round(output.cost,2) , round(output.first_dict['battery_charge'],2), round(output.first_dict['battery_discharge'],2)))
+                if output is selected_output:
+                    print('Selected output {} with percentile {}'.format(j, percentile))
+
         return partition[partition_val]
+
+    def run_mpc_on_group(self, samples, forecast_steps=None, optimal_percentile=0.5, verbose=False):
+        columns_needed = ('pv', 'load', 'grid')
+
+        output = ControlOutput(alg_name='saa', empty=True, microgrid=self.microgrid)
+
+        T = min([len(sample) for sample in samples])
+        if forecast_steps is None:
+            forecast_steps = T-self.microgrid.horizon
+        elif forecast_steps>T-self.microgrid.horizon:
+            raise ValueError('forecast steps must be less than length of samples minus horizon')
+
+        for j in range(forecast_steps):
+            if verbose:
+                print('iter {}'.format(j))
+
+            horizon_outputs = []
+
+            for sample in samples:
+                if not isinstance(sample, pd.DataFrame):
+                    raise TypeError('samples must be pd.DataFrame')
+                if not all([needed in sample.columns.values for needed in columns_needed]):
+                    raise KeyError('samples must contain columns {}, currently contains {}'.format(
+                        columns_needed, sample.columns.values))
+
+                sample.iloc[j] = self.underlying_data.iloc[j]  # overwrite with actual data
+
+                # TODO return controls of all steps in horizon
+                # TODO then, pick 0th step controls of sample with 'percentile' cost over horizon
+
+                horizon_output = self.mpc.mpc_single_step(sample, output, j)
+
+                horizon_outputs.append(horizon_output)
+
+            # return horizon_outputs
+
+            optimal_output = self.determine_optimal_actions(outputs=horizon_outputs, percentile=optimal_percentile)
+            output.append(optimal_output)
+
+        return output
+
+    def run_deterministic_on_forecast(self, forecast_steps=None, verbose=False):
+
+        sample = self.forecasts.copy()
+        output = ControlOutput(alg_name='mpc', empty=True, microgrid=self.microgrid)
+
+        T = len(sample)
+
+        if forecast_steps is None:
+            forecast_steps = T - self.microgrid.horizon
+        elif forecast_steps > T - self.microgrid.horizon:
+            raise ValueError('forecast steps must be less than length of samples minus horizon')
+
+        for j in range(forecast_steps):
+            if verbose:
+                print('iter {}'.format(j))
+
+                sample.iloc[j] = self.underlying_data.iloc[j]  # overwrite with actual data
+
+                # TODO return controls of all steps in horizon
+                # TODO then, pick 0th step controls of sample with 'percentile' cost over horizon
+
+                horizon_output = self.mpc.mpc_single_step(sample, output, j)
+
+                output.append(horizon_output)
+
+            return output
+
+class ForecastArgs:
+    def __init__(self, num_pv_noise_params_0, num_pv_std_ratio, num_load_variance_scale, num_push_peak_ratio,
+                 num_push_individual_ratio, max_load_var_scale=2., max_pv_std_ratio=0.5):
+
+        pv_params = self.pv_parameters(num_pv_noise_params_0, num_pv_std_ratio, num_push_peak_ratio, num_push_individual_ratio,
+                                       max_std_ratio=max_pv_std_ratio)
+        load_params = self.load_parameters(num_load_variance_scale, max_load_var_scale=max_load_var_scale)
+
+        self.param_sets = self.combine_sets(pv_params, load_params)
+
+    def pv_parameters(self,num_noise_params_0, num_std_ratio, num_push_peak_ratio,  num_push_individual_ratio,
+                      max_std_ratio=0.5):
+
+        pv_params = []
+        for individual_ratio in np.linspace(0,1,num_push_individual_ratio):
+            for peak_ratio in np.linspace(0,1,num_push_peak_ratio):
+                for std_ratio in np.linspace(0,max_std_ratio, num_std_ratio):
+                    for lower in np.linspace(0,1,num_noise_params_0):
+                        for upper in np.linspace(1,lower,num_noise_params_0):
+                            if upper >= lower:
+                                pv_params.append(dict(noise_params=(dict(lower=lower, upper=upper), dict(std_ratio=std_ratio)),
+                                                      push_peak_val=True, push_peak_ratio=peak_ratio,
+                                                      push_individual_vals=True, push_individual_ratio=individual_ratio))
+                            else:
+                                print('upper not geq lower')
+
+        return pv_params
+
+    def load_parameters(self,num_load_variance_scale, max_load_var_scale=2.):
+        load_params = []
+        for var_scale in np.linspace(0,max_load_var_scale,num_load_variance_scale):
+            load_params.append(dict(load_variance_scale=var_scale))
+
+        return load_params
+
+    def combine_sets(self, pv_params, load_params):
+
+        sets = []
+
+        for pv_param in pv_params:
+            for load_param in load_params:
+                sets.append(ForecastArgSet(pv_param_set = pv_param, load_param_set = load_param))
+
+        return sets
+
+
+class ForecastArgSet(dict):
+    def __init__(self, pv_param_set=None, load_param_set=None, preset_to_use=None):
+
+        if pv_param_set is None and load_param_set is None and preset_to_use is not None:
+            saved_dict = self.get_preset(preset_to_use)
+            super(ForecastArgSet, self).__init__(saved_dict)
+
+        elif pv_param_set is not None and load_param_set is not None and preset_to_use is None:
+            super(ForecastArgSet, self).__init__(pv_args=pv_param_set, load_args=load_param_set)
+
+        else:
+            raise KeyError('Unable to parse inputs')
+
+        self.mape_vals = []
+        self.mape_mean = None
+        self.mape_std = None
+
+    def update_with_mape(self, mape):
+
+        self.mape_vals.append(mape)
+        self.mape_mean = np.mean(self.mape_vals)
+        self.mape_std = np.std(self.mape_vals)
+
+    def get_preset(self,forecast_accuracy=50):
+        potential_forecast_accuracies = (50, 70, 85)
+        if forecast_accuracy not in potential_forecast_accuracies:
+            raise ValueError('do not have relevant sampling parameters for forecast accuracy {}, must be one of {}'.format(
+                forecast_accuracy, potential_forecast_accuracies))
+
+        if forecast_accuracy == 50:
+             return {'pv_args': {'noise_params': ({'lower': 0.0, 'upper': 0.5},
+                        {'std_ratio': 0.25}),
+                         'push_peak_val': True,
+                         'push_peak_ratio': 0.0,
+                         'push_individual_vals': True,
+                         'push_individual_ratio': 0.5},
+             'load_args': {'load_variance_scale': 2.0}}
+
+        if forecast_accuracy == 70:
+            return {'pv_args': {'noise_params': ({'lower': 0.0, 'upper': 0.5},
+                        {'std_ratio': 0.25}),
+                         'push_peak_val': True,
+                         'push_peak_ratio': 0.0,
+                         'push_individual_vals': True,
+                         'push_individual_ratio': 0.65},
+             'load_args': {'load_variance_scale': 2.0}}
+
+        elif forecast_accuracy == 85:
+            return {'pv_args': {'noise_params': ({'lower': 0.0, 'upper': 0.5},
+                       {'std_ratio': 0.25}),
+                      'push_peak_val': True,
+                      'push_peak_ratio': 0.0,
+                      'push_individual_vals': True,
+                      'push_individual_ratio': 1.0},
+                     'load_args': {'load_variance_scale': 2.0}}
+
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.mape_mean == other.mape_mean
+
+    def __lt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.mape_mean < other.mape_mean
+
+    def __gt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.mape_mean > other.mape_mean
+
+class HorizonOutput:
+
+    def __init__(self,control_dicts, microgrid, current_step):
+        self.df = pd.DataFrame(control_dicts)
+        self.microgrid = microgrid
+        self.current_step = current_step
+        self.cost = self.compute_cost_over_horizon(current_step)
+        self.first_dict = control_dicts[0]
+
+    def compute_cost_over_horizon(self, current_step):
+
+        horizon = self.microgrid.horizon
+        cost = 0.0
+
+        cost += self.df['loss_load'].sum()*self.microgrid.parameters['cost_loss_load'].values[0]  # loss load
+
+        if self.microgrid.architecture['genset'] == 1:
+            cost += self.df['genset'].sum() * self.microgrid.parameters['fuel_cost'].values[0]
+
+        if self.microgrid.architecture['grid'] == 1:
+            price_import = self.microgrid._grid_price_import.iloc[current_step:current_step + horizon].values
+            price_export = self.microgrid._grid_price_export.iloc[current_step:current_step + horizon].values
+
+            import_cost_vec = price_import.reshape(-1)*self.df['grid_import']
+            export_cost_vec = price_export.reshape(-1)*self.df['grid_export']
+            grid_cost = import_cost_vec.sum()-export_cost_vec.sum()
+
+            cost += grid_cost
+
+        return cost
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+        return self.cost == other.cost
+
+    def __lt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+        return self.cost < other.cost
+
+    def __gt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+        return self.cost > other.cost
 
 
 class ControlOutput(dict):
@@ -278,14 +581,113 @@ class ControlOutput(dict):
      >>> actions = M['action'] # returns the dataframe baseline_linprog_action
 
     """
-    def __init__(self, names, dfs, alg_name):
+    def __init__(self, names=None, dfs=None, alg_name=None, empty=False, microgrid=None):
 
-        names_needed = ('action', 'status', 'production', 'cost')
-        if any([needed not in names for needed in names_needed]):
-            raise ValueError('Unable to parse names, values are missing')
+        if not empty:
+            if names is None:
+                raise TypeError('names cannot be None unless initializing empty and empty=True')
+            if dfs is None:
+                raise TypeError('dfs cannot be None unless initializing empty and empty=True')
+            if alg_name is None:
+                raise TypeError('alg_name cannot be None unless initializing empty and empty=True')
+        else:
+            if not isinstance(microgrid,Microgrid.Microgrid):
+                raise TypeError('microgrid must be a Microgrid if empty is True')
 
-        super(ControlOutput, self).__init__(zip(names, dfs))
-        self.alg_name = alg_name
+        if not empty:
+            names_needed = ('action', 'status', 'production', 'cost')
+            if any([needed not in names for needed in names_needed]):
+                raise ValueError('Names must contain {}, currently contains {}'.format(names,names_needed))
+
+            super(ControlOutput, self).__init__(zip(names, dfs))
+            self.alg_name = alg_name
+            self.microgrid = microgrid
+
+        else:
+            names = ('action', 'status', 'production', 'cost')
+            baseline_linprog_action = copy(microgrid._df_record_control_dict)
+            baseline_linprog_update_status = copy(microgrid._df_record_state)
+            baseline_linprog_record_production = copy(microgrid._df_record_actual_production)
+            baseline_linprog_cost = copy(microgrid._df_record_cost)
+
+            dfs = (baseline_linprog_action, baseline_linprog_update_status,
+               baseline_linprog_record_production, baseline_linprog_cost)
+
+            super(ControlOutput, self).__init__(zip(names, dfs))
+            self.alg_name = alg_name
+            self.microgrid = microgrid
+
+    def append(self, other_output, actual_load=None, actual_pv=None, actual_grid = None, slice_to_use=0):
+        if isinstance(other_output, ControlOutput):
+            for name in self.keys():
+                if name not in other_output.keys():
+                    raise KeyError('name {} not founds in other_output keys'.format(name))
+
+                self[name].append(other_output[name].iloc[slice_to_use], ignore_index=True)
+
+        elif isinstance(other_output, HorizonOutput):
+            action = self['action']
+            production = self['production']
+            cost = self['cost']
+            status = self['status']
+
+            action = self.microgrid._record_action(other_output.first_dict, action)
+            production = self.microgrid._record_production(other_output.first_dict, production, status)
+
+            i = other_output.current_step
+
+            if self.microgrid.architecture['grid'] == 1:
+                status = self.microgrid._update_status(
+                    production.iloc[-1, :].to_dict(),
+                    status,
+                    actual_load,
+                    actual_pv,
+                    actual_grid,
+                    self.microgrid._grid_price_import.iloc[i + 1].values[0],
+                    self.microgrid._grid_price_export.iloc[i + 1].values[0]
+                )
+
+                cost = self.microgrid._record_cost(
+                    production.iloc[-1, :].to_dict(),
+                    cost, self.microgrid._grid_price_import.iloc[i, 0],
+                    self.microgrid._grid_price_export.iloc[i, 0])
+            else:
+                status = self.microgrid._update_status(
+                    production.iloc[-1, :].to_dict(),
+                    status,
+                    actual_load,
+                    actual_pv
+                )
+                cost = self.microgrid._record_cost(
+                    production.iloc[-1, :].to_dict(),
+                    cost
+                )
+            try:
+                if (action == self['action']).all():
+                    raise RuntimeError('Did not record actions')
+            except ValueError:
+                pass
+            try:
+                if (production == self['production']).all():
+                    raise RuntimeError('Did not record production')
+            except ValueError:
+                pass
+            try:
+                if (cost == self['cost']).all():
+                    raise RuntimeError('Did not record cost')
+            except ValueError:
+                pass
+            try:
+                if (status == self['status']).all():
+                    raise RuntimeError('Did not record status')
+            except ValueError:
+                pass
+
+            self['action'] = action
+            self['production'] = production
+            self['cost'] = cost
+            self['status'] = status
+
 
     def __eq__(self, other):
         if type(self) != type(other):
@@ -391,7 +793,6 @@ class ModelPredictiveControl:
                 minimum production of the genset
             p_genset_max: float
                 maximum production of the genset
-
         """
 
         parameters = self.microgrid.parameters
@@ -598,7 +999,6 @@ class ModelPredictiveControl:
             None
         """
 
-
         if not isinstance(load_vector,np.ndarray):
             raise TypeError('load_vector must be np.ndarray')
         if not isinstance(pv_vector,np.ndarray):
@@ -667,7 +1067,7 @@ class ModelPredictiveControl:
             raise RuntimeError('There are still nan values in self.costs.value, something is wrong')
 
     def set_and_solve(self, load_vector, pv_vector, grid_vector, import_price, export_price, e_max, e_min, p_max_charge,
-                      p_max_discharge, p_max_import, p_max_export, soc_0, p_genset_max, iteration=None, total_iterations=None):
+                      p_max_discharge, p_max_import, p_max_export, soc_0, p_genset_max, iteration=None, total_iterations=None, return_steps=0):
         """
         Sets the parameters in the problem and then solves the problem.
             Specifically, sets the right-hand sides b and d from the paper of the
@@ -725,7 +1125,7 @@ class ModelPredictiveControl:
             else:
                 print('Optimizer found with GLPK_MI solver')
 
-        try:
+        if return_steps == 0:
             if self.has_genset:
                 control_dict = {'battery_charge': self.p_vars.value[3],
                                 'battery_discharge': self.p_vars.value[4],
@@ -748,10 +1148,49 @@ class ModelPredictiveControl:
                                 'load': load_vector[0],
                                 'pv': pv_vector[0]}
 
-        except Exception:
-            control_dict = None
+            return control_dict
 
-        return control_dict
+        else:
+            if return_steps > self.microgrid.horizon:
+                raise ValueError('return_steps cannot be greater than horizon')
+
+            control_dicts = []
+
+            if self.has_genset:
+                for j in range(return_steps):
+                    start_index = j*8
+
+                    control_dict = {'battery_charge': self.p_vars.value[start_index+3],
+                                    'battery_discharge': self.p_vars.value[start_index+4],
+                                    'genset': self.p_vars.value[start_index],
+                                    'grid_import': self.p_vars.value[start_index+1],
+                                    'grid_export': self.p_vars.value[start_index+2],
+                                    'loss_load': self.p_vars.value[start_index+6],
+                                    'pv_consummed': pv_vector[j] - self.p_vars.value[start_index+5],
+                                    'pv_curtailed': self.p_vars.value[start_index+5],
+                                    'load': load_vector[j],
+                                    'pv': pv_vector[j]}
+
+                    control_dicts.append(control_dict)
+
+            else:
+                for j in range(return_steps):
+                    start_index = j * 7
+
+                    control_dict = {'battery_charge': self.p_vars.value[start_index + 2],
+                                    'battery_discharge': self.p_vars.value[start_index + 3],
+                                    'grid_import': self.p_vars.value[start_index],
+                                    'grid_export': self.p_vars.value[start_index + 1],
+                                    'loss_load': self.p_vars.value[start_index + 5],
+                                    'pv_consummed': pv_vector[j] - self.p_vars.value[start_index + 4],
+                                    'pv_curtailed': self.p_vars.value[start_index + 4],
+                                    'load': load_vector[j],
+                                    'pv': pv_vector[j]}
+
+                    control_dicts.append(control_dict)
+
+            return control_dicts
+
 
     def run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
         """
@@ -884,7 +1323,7 @@ class ModelPredictiveControl:
 
         return ControlOutput(names, dfs, 'mpc')
 
-    def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False):
+    def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False, **kwargs):
         """
         Function that allows MPC to be run on self.microgrid by first parsing its data
 
@@ -901,6 +1340,101 @@ class ModelPredictiveControl:
         sample = return_underlying_data(self.microgrid)
 
         return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
+
+    def mpc_single_step(self, sample, previous_output, current_step):
+
+        if not isinstance(previous_output, ControlOutput):
+            raise TypeError('previous_output must be ControlOutput, unless first_step is True')
+
+        baseline_linprog_update_status = pd.DataFrame(previous_output['status'].iloc[-1].squeeze()).transpose()
+
+        horizon = self.microgrid.horizon
+
+        if self.microgrid.architecture['grid'] == 0:
+            temp_grid = np.zeros(horizon)
+            price_import = np.zeros(horizon)
+            price_export = np.zeros(horizon)
+        else:
+            temp_grid = sample.loc[current_step:current_step + horizon - 1, 'grid'].values
+            price_import = self.microgrid._grid_price_import.iloc[current_step:current_step + horizon].values
+            price_export = self.microgrid._grid_price_export.iloc[current_step:current_step + horizon].values
+
+            if temp_grid.shape != price_export.shape and price_export.shape != price_import.shape:
+                raise RuntimeError('I think this is a problem')
+
+        e_min = self.microgrid.parameters['battery_soc_min'].values[0]
+        e_max = self.microgrid.parameters['battery_soc_max'].values[0]
+        p_max_charge = self.microgrid.parameters['battery_power_charge'].values[0]
+        p_max_discharge = self.microgrid.parameters['battery_power_discharge'].values[0]
+        p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
+        p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
+        soc_0 = baseline_linprog_update_status.iloc[-1]['battery_soc']
+
+        if self.has_genset:
+            p_genset_max = self.microgrid.parameters['genset_pmax'].values[0] * \
+                           self.microgrid.parameters['genset_rated_power'].values[0]
+        else:
+            p_genset_max = None
+
+        # Solve one step of MPC
+        control_dicts = self.set_and_solve(sample.loc[current_step:current_step + horizon - 1, 'load'].values,
+                                          sample.loc[current_step:current_step + horizon - 1, 'pv'].values, temp_grid, price_import,
+                                          price_export, e_max, e_min, p_max_charge, p_max_discharge, p_max_import,
+                                          p_max_export, soc_0, p_genset_max, iteration=current_step, return_steps=self.microgrid.horizon)
+
+        if any([d is None for d in control_dicts]):
+            for j, d in enumerate(control_dicts):
+                if d is None:
+                    raise TypeError('control_dict number {} is None'.format(j))
+
+        return HorizonOutput(control_dicts, self.microgrid, current_step)
+
+        action = baseline_linprog_action.copy()
+        status = baseline_linprog_update_status.copy()
+        production = baseline_linprog_record_production.copy()
+        cost = baseline_linprog_cost.copy()
+
+        for i, control_dict in enumerate(control_dicts):
+
+            action = self.microgrid._record_action(control_dict, action)
+            production = self.microgrid._record_production(control_dict, production, status)
+
+            if self.microgrid.architecture['grid'] == 1:
+                status = self.microgrid._update_status(
+                    production.iloc[-1, :].to_dict(),
+                    status,
+                    actual_data.at[i + 1, 'load'],
+                    actual_data.at[i + 1, 'pv'],
+                    actual_data.at[i + 1, 'grid'],
+                    self.microgrid._grid_price_import.iloc[i + 1].values[0],
+                    self.microgrid._grid_price_export.iloc[i + 1].values[0]
+                )
+
+                cost = self.microgrid._record_cost(
+                    production.iloc[-1, :].to_dict(),
+                    cost, self.microgrid._grid_price_import.iloc[i, 0],
+                    self.microgrid._grid_price_export.iloc[i, 0])
+            else:
+                status = self.microgrid._update_status(
+                    production.iloc[-1, :].to_dict(),
+                    status,
+                    actual_data.at[i + 1, 'load'],
+                    actual_data.at[i + 1, 'pv']
+                )
+                cost = self.microgrid._record_cost(
+                    production.iloc[-1, :].to_dict(),
+                    cost
+                )
+
+        names = ('action', 'status', 'production', 'cost')
+
+        dfs = (action, status,
+                production, cost)
+
+        return ControlOutput(names, dfs, 'mpc_single_horizon')
+
+
+
 
 # TODO Set up continuous action space RL for MG
 
@@ -1079,7 +1613,7 @@ class RuleBasedControl:
         return control_dict
 
     def run_rule_based(self, priority_list=0, length=8760):
-        # TODO: update this to be able to run on a sample?
+
         """ This function runs the rule based benchmark over the datasets (load and pv profiles) in the microgrid."""
 
         baseline_priority_list_action = copy(self.microgrid._df_record_control_dict)
@@ -1199,15 +1733,17 @@ class Benchmarks:
         self.has_mpc_benchmark = False
         self.rule_based_output = None
         self.has_rule_based_benchmark = False
+        self.saa_output = None
+        self.has_saa_benchmark = False
 
-    def run_mpc_benchmark(self, verbose=False):
+    def run_mpc_benchmark(self, verbose=False, **kwargs):
         """
         Run the MPC benchmark and store the output in self.mpc_output
         :return:
             None
         """
         MPC = ModelPredictiveControl(self.microgrid)
-        self.mpc_output = MPC.run_mpc_on_microgrid(verbose=verbose)
+        self.mpc_output = MPC.run_mpc_on_microgrid(verbose=verbose, **kwargs)
         self.has_mpc_benchmark = True
         self.outputs_dict[self.mpc_output.alg_name] = self.mpc_output
 
@@ -1222,7 +1758,12 @@ class Benchmarks:
         self.has_rule_based_benchmark = True
         self.outputs_dict[self.rule_based_output.alg_name] = self.rule_based_output
 
-    def run_benchmarks(self, verbose=False):
+    def run_saa_benchmark(self, preset_to_use=85, **kwargs):
+        SAA = SampleAverageApproximation(self.microgrid, preset_to_use=preset_to_use, **kwargs)
+        self.saa_output = SAA.run(**kwargs)
+        self.has_saa_benchmark = True
+
+    def run_benchmarks(self, verbose=False, **kwargs):
         """
         Runs both run_mpc_benchmark() and self.run_mpc_benchmark() and stores the results.
         :param verbose: bool, default False
@@ -1230,13 +1771,14 @@ class Benchmarks:
         :return:
             None
         """
-        self.run_mpc_benchmark(verbose=verbose)
+        self.run_mpc_benchmark(verbose=verbose, **kwargs)
         self.run_rule_based_benchmark()
+        self.run_saa_benchmark(verbose=verbose, **kwargs)
 
         if verbose:
             self.describe_benchmarks()
 
-    def describe_benchmarks(self, test_split=False, test_ratio=None, test_index=None):
+    def describe_benchmarks(self, test_split=False, test_ratio=None, test_index=None, algorithms=None):
         """
         Prints the cost of any and all benchmarks that have been run.
         If test_split==True, must have either a test_ratio or a test_index but not both.
@@ -1250,6 +1792,14 @@ class Benchmarks:
         :return:
             None
         """
+        possible_benchmarks = ('saa', 'mpc', 'rbc')
+
+        if algorithms is not None:
+            if any([b_name not in possible_benchmarks for b_name in algorithms]):
+                raise ValueError('Unable to recognize one or multiple of list_of_benchmarks: {}, can only contain {}'.format(
+                    algorithms, possible_benchmarks))
+        else:
+            algorithms = possible_benchmarks
 
         T = len(self.mpc_output['cost'])
 
@@ -1273,39 +1823,61 @@ class Benchmarks:
             steps = T - int(np.ceil(T * (1 - test_ratio)))
             percent = round(test_ratio * 100, 1)
 
-            if self.has_mpc_benchmark:
+            if self.has_mpc_benchmark and 'mpc' in algorithms:
                 cost = round(self.mpc_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
                 print('Cost of the last {} steps ({} percent of all steps) using MPC: {}'.format(steps, percent, cost))
 
-            if self.has_rule_based_benchmark:
+            if self.has_rule_based_benchmark and 'rbc' in algorithms:
                 cost = round(self.rule_based_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
                 print('Cost of the last {} steps ({} percent of all steps) using rule-based control: {}'.format(steps, percent, cost))
 
+            if self.has_saa_benchmark and 'saa' in algorithms:
+                cost = round(self.saa_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+                print('Cost of the last {} steps ({} percent of all steps) using sample-average MPC control: {}'.format(steps, percent, cost))
+
         else:
 
-            if self.has_mpc_benchmark:
+            if self.has_mpc_benchmark and 'mpc' in algorithms:
                 cost_train = round(self.mpc_output['cost'].iloc[:test_index].sum().squeeze(), 2)
                 cost_test = round(self.mpc_output['cost'].iloc[test_index:].sum().squeeze(), 2)
 
                 print('Test set cost using MPC: {}'.format(cost_test))
                 print('Train set cost using MPC: {}'.format(cost_train))
 
-            if self.has_rule_based_benchmark:
-                cost_train = round(self.rule_based_output['cost'].iloc[:test_index].sum().squeeze(),
-                             2)
-                cost_test = round(self.rule_based_output['cost'].iloc[test_index:].sum().squeeze(),
-                             2)
+            if self.has_rule_based_benchmark and 'rbc' in algorithms:
+                cost_train = round(self.rule_based_output['cost'].iloc[:test_index].sum().squeeze(), 2)
+                cost_test = round(self.rule_based_output['cost'].iloc[test_index:].sum().squeeze(), 2)
 
-                print('Test set cost using MPC: {}'.format(cost_test))
-                print('Train set cost using MPC: {}'.format(cost_train))
+                print('Test set cost using RBC: {}'.format(cost_test))
+                print('Train set cost using RBC: {}'.format(cost_train))
+
+            if self.has_saa_benchmark and 'saa' in algorithms:
+                cost_train = round(self.saa_output['cost'].iloc[:test_index].sum().squeeze(), 2)
+                cost_test = round(self.saa_output['cost'].iloc[test_index:].sum().squeeze(), 2)
+
+                print('Test set cost using SAA: {}'.format(cost_test))
+                print('Train set cost using SAA: {}'.format(cost_train))
 
 
 if __name__=='__main__':
+
+    import cProfile
 
     m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=100,
                                   path='/Users/ahalev/Dropbox/Avishai/gradSchool/internships/totalInternship/pymgrid_git')
     m_gen = m_gen.load('pymgrid25')
     microgrid = m_gen.microgrids[0]
 
-    RBC = RuleBasedControl(microgrid)
-    rbc_output = RBC.run_rule_based()
+    sampling_args = dict(load_variance_scale=1.2, noise_params=(None, {'std_ratio': 0.3}), verbose=False)
+
+    SAA = SampleAverageApproximation(microgrid)
+    samples = SAA.sample_from_forecasts(n_samples=3, **sampling_args)
+
+    underlying_data_list = [SAA.underlying_data]*3
+
+    t0 = time.time()
+    # output = SAA.run_mpc_on_group(samples, verbose=True)
+
+    cProfile.run('SAA.test_args()', sort='cumtime')
+
+    print(time.time()-t0,' seconds')
