@@ -5,27 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 import statsmodels.regression.quantile_regression as quantile_regression
-
-# Have start of exp. distribution be max(y_actual, y_predicted) where y_predicted is via interpolated curve
-
-''' Actually, using uniform distribution:
-If t is hour, then pick val: (where curve(t) is black line and y(t) is actual value)
-
-    Suppose curve(t)>y_t:
-        Then pick val uniformly on [curve(t)-2(curve(t)-y(t)),curve(t)]
-        unless curve(t)-2(curve(t)-y(t)<0, in which case [0,curve(t)]
-
-    If curve(t)<y_t:
-        Pick val uniformly on [curve(t)-(y(t)-curve(t)),y(t)]
-
-    This val is the max. Then, interpolate a parabola, using the x-intercepts and this max
-    That's yo curve.
-
-    Finally, add Gaussian noise to noise, variance equal to some (small) percentage of curve value
-
-
-'''
-
+from IPython.display import display
 
 class NoisyPVData:
     def __init__(self, pv_data = None,file_name = None):
@@ -116,9 +96,7 @@ class NoisyPVData:
 
                 def f(x):
                     return np.cos(2 * num * np.pi / 8760. * period_scale * (x - 173 * 24))
-            #                 x_v = np.arange(8760)
-            #                 plt.plot(x_v,f(x_v))
-            #                 plt.show()
+
                 assert all((f(self.daily_maxes['cumulative_hr']) == self.daily_maxes[name])), \
                     'Function declaration failed'
 
@@ -245,7 +223,7 @@ class NoisyPVData:
                 y += interpolated_coef[name] * feature_function(cumul_times)
 
             if len(y) == 1:
-                y =  y[0]
+                y = y[0]
             to_return.append(y)
 
         if day_hour_pairs is not None:
@@ -274,7 +252,7 @@ class NoisyPVData:
 
         return to_return
 
-    def _sample_parabola(self,noise_type, noise_parameters, verbose):
+    def _sample_parabola(self,noise_type, noise_parameters, verbose, push_peak_val=False, push_peak_ratio=0.5):
         noisy_data = self.data.copy()  # Columns are days, index is hours
 
         # Need three points for interpolation: two zeros
@@ -348,6 +326,9 @@ class NoisyPVData:
             else:
                 raise RuntimeError('Fell through in noise_types, unable to recognize ({})'.format(noise_type))
 
+            if push_peak_val:
+                peak_val = peak_val+push_peak_ratio*(self.daily_maxes.loc[day, 'max_GHI']-peak_val)
+
             daytime_x = np.array([dawn_time, time_of_most_light, dusk_time])
             daytime_y = np.array([0, peak_val, 0])
             if any(np.diff(daytime_x) <= 0):
@@ -370,8 +351,14 @@ class NoisyPVData:
                plot_noisy=False,
                days_to_plot=(0, 10),
                verbose=False,
+               push_peak_val=False,
+               push_peak_ratio=0.5,
+               push_individual_vals=False,
+               push_individual_ratio=0.5,
                **kwargs
                ):
+
+        # TODO add param to push peak toward actual peak
 
         potential_noises = {0: (None, 'uniform', 'triangular'),
                             1: (None, 'gaussian')}
@@ -403,7 +390,6 @@ class NoisyPVData:
                     if key in v.keys():
                         noise_parameters[j][key] = v[key]
 
-
         if noise_types[0] is None:
             if self.parabolic_baseline is None:
                 raise ValueError('noise_types[0] was None, but there is no stored baseline')
@@ -412,93 +398,8 @@ class NoisyPVData:
                 lower_distribution_bounds, upper_distribution_bounds = self.distribution_bounds
         else:
             noisy_data, lower_distribution_bounds, \
-                upper_distribution_bounds = self._sample_parabola(noise_types[0], noise_parameters[0], verbose)
-        """
-        noisy_data = self.data.copy()  # Columns are days, index is hours
-
-        # Need three points for interpolation: two zeros
-        # Get points for each day:
-        
-        lower_distribution_bounds = []
-        upper_distribution_bounds = []
-
-        for day in noisy_data.columns:
-            if noisy_data[day][0] != 0:
-                raise RuntimeError('It appears that it is sunny at midnight of day ({}). No good.'.format(day))
-            if noisy_data[day][23] != 0:
-                raise RuntimeError('It appears that it is sunny at 11PM of day ({}). No good.'.format(day))
-
-            night_hours = np.where(noisy_data[day] == 0)[0]
-            next_night_hours = np.roll(night_hours, -1)
-            index_of_dawn = np.where(night_hours + 1 != next_night_hours)[0][0]
-            dawn_time = night_hours[index_of_dawn]  # Gives a zero: (dawn_time,0)
-            dusk_time = night_hours[index_of_dawn + 1]  # Another zero: (dusk_time,0)
-
-            # time_of_most_light = self.daily_maxes.loc[day, 'time_of_max']
-            time_of_most_light = (dawn_time+dusk_time)/2.0
-            interpolated_least_light = self.most_light_curve_eval(max_min ='min',
-                                                                 day_hour_pairs=((day, time_of_most_light),))
-            interpolated_most_light = self.most_light_curve_eval(max_min ='max',
-                                                                day_hour_pairs=((day, time_of_most_light),))
-
-            lower_b = interpolated_least_light
-            upper_b = interpolated_most_light
-            spread = upper_b - lower_b
-
-            if noise_types[0] == 'uniform':
-                low = lower_b + noise_parameters[0]['lower'] * spread
-                high = upper_b + (noise_parameters[0]['upper']-1) * spread
-                lower_distribution_bounds.append(low)
-                upper_distribution_bounds.append(high)
-                peak_val = np.random.uniform(low=low, high=high)
-
-                if verbose:
-                    print('Day {}'.format(day))
-                    print('Using uniform distribution between {} and {}'.format(round(low, 1),
-                                                                                       round(high, 1)))
-                    print('Unscaled bounds: [{},{}]'.format(round(lower_b, 1), round(upper_b, 1)))
-                    print('Selected daily peak value {}'.format(peak_val))
-
-            elif noise_types[0] == 'triangular':
-                low = lower_b + noise_parameters[0]['lower'] * spread
-                high = upper_b + (noise_parameters[0]['upper']-1) * spread
-                if 'mode' in noise_parameters[0].keys():
-                    mode_param = noise_parameters[0]['mode']
-                    if not 0 <= mode_param <= 1:
-                        raise ValueError(
-                            'mode parameter ({}) invalid, must be scale value in [0,1]'.format(mode_param))
-                    mode = spread * mode_param + lower_b
-                    assert high >= mode >= low, 'mode computation did not work'
-                else:
-                    mode = 0.5 * (lower_b + upper_b)
-
-                lower_distribution_bounds.append(low)
-                upper_distribution_bounds.append(high)
-
-                peak_val = np.random.triangular(left=low, mode=mode, right=high)
-
-                if verbose:
-                    print('Day {}'.format(day))
-                    print('using triangular distribution with low {}, mode {}, high {}'.format(
-                        round(low, 1), round(mode, 1), round(high, 1)))
-                    print('Unscaled bounds: [{},{}]'.format(round(lower_b, 1), round(upper_b, 1)))
-                    print('Selected daily peak value {}'.format(peak_val))
-
-            else:
-                raise RuntimeError('Fell through in noise_types, unable to recognize ({})'.format(noise_types[0]))
-
-            daytime_x = np.array([dawn_time, time_of_most_light, dusk_time])
-            daytime_y = np.array([0, peak_val, 0])
-            if any(np.diff(daytime_x) <= 0):
-                raise RuntimeError('Something is wrong in interpolating daily curves, '
-                                   'have dawn/peak/dusk times as ({}), not in order'.format(daytime_x))
-
-            # Interpolate that
-            f = interp1d(daytime_x, daytime_y, kind='quadratic', bounds_error=False, fill_value=0)
-            noisy_data[day] = f(noisy_data.index)
-
-        # --------------
-        """
+                upper_distribution_bounds = self._sample_parabola(noise_types[0], noise_parameters[0], verbose,
+                                                                  push_peak_val=push_peak_val, push_peak_ratio=push_peak_ratio)
 
         if noise_types[1] == 'gaussian':
             noisy_data += np.random.normal(scale=noise_parameters[1]['std_ratio'] * noisy_data)
@@ -529,30 +430,12 @@ class NoisyPVData:
                       plot_upper_lower_bounds=plot_upper_lower_bounds,
                       plot_points_of_distribution=plot_points_of_distribution)
 
-            # indices = slice(24 * days_to_plot[0],24 * days_to_plot[1])
-            # daily_slice = slice(*days_to_plot)
-            #
-            # plt.plot(stacked_data[indices].index, stacked_data[indices].values, label='noisy')
-            # plt.plot(stacked_data[indices].index, self.unmunged_data[indices].values, label='original')
-            #
-            # if 'plot_ub_lb' in kwargs.keys() and kwargs['plot_ub_lb']:
-            #     plt.plot(stacked_data[indices].index,
-            #              self.most_light_curve_eval('max',cumulative_hours=stacked_data[indices].index),color='k',label='UB')
-            #
-            #     plt.plot(stacked_data[indices].index,
-            #              self.most_light_curve_eval('min', cumulative_hours=stacked_data[indices].index), color='c',
-            #              label='LB')
-            #
-            # if 'plot_points_of_dist' in kwargs.keys() and kwargs['plot_points_of_dist']:
-            #     plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice],lower_distribution_bounds[daily_slice],
-            #                 marker='.', color='r')
-            #     plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice], upper_distribution_bounds[daily_slice],
-            #                 marker='.', color='r')
-            # plt.legend()
-            # plt.show()
-
         if return_stacked_data:
-            stacked_data = self._check_sample(stacked_data,verbose=verbose)
+            stacked_data = self._check_sample(stacked_data, verbose=verbose)
+
+            if push_individual_vals:
+                stacked_data['pv'] += push_individual_ratio*(self.unmunged_data['GH illum (lx)']-stacked_data['pv'])
+
             return stacked_data
 
         return noisy_data
@@ -607,7 +490,7 @@ class NoisyPVData:
 
         if plot_points_of_distribution:
             if self.distribution_bounds is None:
-                raise RuntimeError('Cound not find distribution bounds, must have sampled at least once to plot')
+                raise RuntimeError('Could not find distribution bounds, must call \'sample\' at least once to plot')
             else:
                 lower_distribution_bounds, upper_distribution_bounds = self.distribution_bounds
 
@@ -687,6 +570,7 @@ class NoisyLoadData:
             copied_std = copied_mean.copy()
 
 
+
             for ind in copied_mean.index:
                 copied_mean.loc[ind] = self.load_mean.loc[ind[1]]
                 copied_std.loc[ind] = self.load_std.loc[ind[1]]
@@ -751,7 +635,7 @@ class NoisyLoadData:
 
 
 class NoisyGridData:
-    def __init__(self,grid_data,dist_type = 'naive'):
+    def __init__(self,grid_data,dist_type = 'markov'):
 
         if not (isinstance(grid_data,pd.DataFrame) or isinstance(grid_data,pd.Series)):
             raise TypeError('grid_data must be of type pd.DataFrame, is {}'.format(type(grid_data)))
@@ -759,7 +643,7 @@ class NoisyGridData:
         if not ((grid_data==1) | (grid_data==0)).all().item():
             raise ValueError('Nonbinary values found in grid_data')
 
-        possible_dist_types = ('naive',)
+        possible_dist_types = ('naive','markov')
         if dist_type not in possible_dist_types:
             raise TypeError('dist type ({}) not recognized, must be one of {}'.format(dist_type, possible_dist_types))
 
@@ -767,6 +651,8 @@ class NoisyGridData:
         self.data = grid_data.copy()
         self.unmunged_data = grid_data.copy()
         self.has_distribution = False
+        self.transition_prob_matrix = None
+        self.occurrences = None
 
     def learn_distribution(self):
 
@@ -775,6 +661,23 @@ class NoisyGridData:
             probability_of_one = self.data.mean()
             transition_prob_matrix[0] = 1-probability_of_one
             transition_prob_matrix[1] = probability_of_one
+
+        elif self.dist_type == 'markov':
+            grid_vals = self.data.values
+            transition_prob_matrix = np.zeros((2, 2))
+            occurrences = np.zeros(2)
+            for j, val in enumerate(grid_vals):
+                if j < len(grid_vals) - 1:
+                    transition_prob_matrix[int(val), int(grid_vals[j + 1])] += 1
+                    occurrences[int(val)] += 1
+
+            transition_prob_matrix[0, :] /= occurrences[0]
+            transition_prob_matrix[1, :] /= occurrences[1]
+
+            self.occurrences = occurrences
+
+        else:
+            raise RuntimeError('Should not be here')
 
         self.transition_prob_matrix = transition_prob_matrix
         self.has_distribution = True
@@ -787,8 +690,20 @@ class NoisyGridData:
         if self.dist_type =='naive':
             generated_sample = np.random.choice([0, 1], size = len(self.data), p=self.transition_prob_matrix)
             generated_sample = pd.Series(data=generated_sample, name='grid')
-            return generated_sample
+
+        elif self.dist_type == 'markov':
+            generated_sample = np.zeros(len(self.data))
+
+            probs = self.occurrences/np.sum(self.occurrences)
+            generated_sample[0] = np.random.choice([0,1], p=probs)
+
+            for j in range(1,len(self.data)):
+                probs = self.transition_prob_matrix[int(generated_sample[j-1]),:]
+                generated_sample[j] = np.random.choice([0,1], p=probs)
+
+            generated_sample = pd.Series(data=generated_sample, name='grid')
 
         else:
             raise RuntimeError('Should not be here')
 
+        return generated_sample
