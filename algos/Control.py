@@ -1241,10 +1241,14 @@ class ModelPredictiveControl:
                 temp_grid = np.zeros(horizon)
                 price_import = np.zeros(horizon)
                 price_export = np.zeros(horizon)
+                p_max_import = 0
+                p_max_export = 0
             else:
                 temp_grid = sample.loc[i:i + horizon - 1, 'grid'].values
                 price_import = self.microgrid._grid_price_import.iloc[i:i + horizon].values
                 price_export = self.microgrid._grid_price_export.iloc[i:i + horizon].values
+                p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
+                p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
 
                 if temp_grid.shape != price_export.shape and price_export.shape != price_import.shape:
                     raise RuntimeError('I think this is a problem')
@@ -1254,8 +1258,7 @@ class ModelPredictiveControl:
             e_max = self.microgrid.parameters['battery_soc_max'].values[0]
             p_max_charge = self.microgrid.parameters['battery_power_charge'].values[0]
             p_max_discharge = self.microgrid.parameters['battery_power_discharge'].values[0]
-            p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
-            p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
+
             soc_0 = baseline_linprog_update_status.iloc[-1]['battery_soc']
 
             if self.has_genset:
@@ -1354,10 +1357,14 @@ class ModelPredictiveControl:
             temp_grid = np.zeros(horizon)
             price_import = np.zeros(horizon)
             price_export = np.zeros(horizon)
+            p_max_import = 0
+            p_max_export = 0
         else:
             temp_grid = sample.loc[current_step:current_step + horizon - 1, 'grid'].values
             price_import = self.microgrid._grid_price_import.iloc[current_step:current_step + horizon].values
             price_export = self.microgrid._grid_price_export.iloc[current_step:current_step + horizon].values
+            p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
+            p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
 
             if temp_grid.shape != price_export.shape and price_export.shape != price_import.shape:
                 raise RuntimeError('I think this is a problem')
@@ -1366,8 +1373,6 @@ class ModelPredictiveControl:
         e_max = self.microgrid.parameters['battery_soc_max'].values[0]
         p_max_charge = self.microgrid.parameters['battery_power_charge'].values[0]
         p_max_discharge = self.microgrid.parameters['battery_power_discharge'].values[0]
-        p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
-        p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
         soc_0 = baseline_linprog_update_status.iloc[-1]['battery_soc']
 
         if self.has_genset:
