@@ -353,7 +353,7 @@ class Microgrid:
         self._df_record_state = parameters['df_status']
         self._df_record_actual_production = parameters['df_actual_generation']
         self._df_record_cost = parameters['df_cost']
-        self._df_cost_per_epochs = parameters['df_cost']
+        self._df_cost_per_epochs = []
         self.horizon = horizon
         self._tracking_timestep = 0
         self._data_length = min(self._load_ts.shape[0], self._pv_ts.shape[0])
@@ -450,7 +450,8 @@ class Microgrid:
 
     def get_cost(self):
         """ Function that returns the cost associated the operation of the last time step. """
-        return self._df_record_cost.iloc[-1].values[0]
+        print(self._df_record_cost['cost'][-1])
+        return self._df_record_cost['cost'][-1]
 
 
     def get_updated_values(self):
@@ -755,7 +756,7 @@ class Microgrid:
         if self._data_set_to_use == 'training':
             temp_cost = copy(self._df_record_cost)
             temp_cost['epoch'] = self._epoch
-            self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
+            self._df_cost_per_epochs.append(temp_cost)
 
         self._df_record_control_dict = {i:[] for i in self._df_record_control_dict}
         self._df_record_state = {i:[self._df_record_state[i][0]] for i in self._df_record_state}
@@ -1069,7 +1070,7 @@ class Microgrid:
 
         cost_dict= {'cost': cost}
 
-        df['cost'].append({'cost': cost})
+        df['cost'].append(cost)
 
         return df
 
@@ -1125,7 +1126,7 @@ class Microgrid:
 
         if len(self.benchmarks.outputs_dict) == 0:
             print('No benchmark algorithms have been run, running all.')
-            self.benchmarks.run_benchmarks()
+            #self.benchmarks.run_benchmarks()
 
         if self._has_train_test_split:
             self.benchmarks.describe_benchmarks(test_split=self._has_train_test_split, test_index=self._limit_index)
@@ -1688,8 +1689,8 @@ class Microgrid:
     def penalty(self, coef = 1):
         """Penalty that represents discrepancies between control dict and what really happens. """
         penalty = 0
-        for i in self._df_record_control_dict.columns:
-            penalty += abs(self._df_record_control_dict[i].iloc[-1] - self._df_record_actual_production[i].iloc[-1])
+        for i in self._df_record_control_dict:
+            penalty += abs(self._df_record_control_dict[i][-1] - self._df_record_actual_production[i][-1])
 
         return penalty*coef
 
