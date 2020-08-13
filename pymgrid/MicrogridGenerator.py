@@ -396,8 +396,8 @@ class MicrogridGenerator:
         grid_price_export_ts = []
         grid_price_import_ts = []
         df_parameters = pd.DataFrame()
-        df_cost = pd.DataFrame(columns=['cost'])
-        df_status = pd.DataFrame()
+        df_cost = {'cost':[]}
+        df_status = {}
 
 
         df_parameters['load'] = [size_load]
@@ -405,7 +405,7 @@ class MicrogridGenerator:
         df_parameters['cost_overgeneration'] = 1
         #df_cost['cost'] = [0.0]
         df_status['load'] = [np.around(load.iloc[0,0],1)]# --> il y a doublon pour l'instant avec l'architecture PV, -> non si pas de pv la net load est juste la load
-        df_status['hour'] = 0
+        df_status['hour'] = [0]
         column_actual_production.append('loss_load')
         column_actual_production.append('overgeneration')
         if architecture['PV'] == 1:
@@ -415,7 +415,7 @@ class MicrogridGenerator:
             column_actual_production.append('pv_curtailed')
             column_actions.append('pv_consummed')
             pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv'], scaling_method='max'))
-            df_status['pv'] = np.around( pv.iloc[0].values,1)
+            df_status['pv'] = [np.around( pv.iloc[0].values[0],1)]
 
         if architecture['battery']==1:
 
@@ -432,7 +432,7 @@ class MicrogridGenerator:
             column_actual_production.append('battery_discharge')
             column_actions.append('battery_charge')
             column_actions.append('battery_discharge')
-            df_status['battery_soc'] = battery['soc_0']
+            df_status['battery_soc'] = [battery['soc_0']]
 
             capa_to_charge = max(
                 (df_parameters['battery_soc_max'].values[0] * df_parameters['battery_capacity'].values[0] -
@@ -446,8 +446,8 @@ class MicrogridGenerator:
                                      df_parameters['battery_capacity'].values[0])
                                      * df_parameters['battery_efficiency'].values[0], 0)
 
-            df_status['capa_to_charge'] = np.around(capa_to_charge,1)
-            df_status['capa_to_discharge'] = np.around(capa_to_discharge,1)
+            df_status['capa_to_charge'] = [np.around(capa_to_charge,1)]
+            df_status['capa_to_discharge'] = [np.around(capa_to_discharge,1)]
 
 
 
@@ -470,13 +470,13 @@ class MicrogridGenerator:
             column_actual_production.append('grid_export')
             column_actions.append('grid_import')
             column_actions.append('grid_export')
-            df_status['grid_status'] = grid_ts.iloc[0,0]
+            df_status['grid_status'] = [grid_ts.iloc[0,0]]
 
 
             grid_price_import_ts = grid['grid_price_import']
             grid_price_export_ts = grid['grid_price_export']
-            df_status['grid_price_import'] = grid_price_import_ts.iloc[0, 0]
-            df_status['grid_price_export'] = grid_price_export_ts.iloc[0, 0]
+            df_status['grid_price_import'] = [grid_price_import_ts.iloc[0, 0]]
+            df_status['grid_price_export'] = [grid_price_export_ts.iloc[0, 0]]
 
         if architecture['genset']==1:
             genset = self._get_genset(rated_power=size['genset'])
@@ -493,9 +493,8 @@ class MicrogridGenerator:
             column_actions.append('genset')
 
 
-        df_actions= pd.DataFrame(columns = column_actions, )
-        df_actual_production = pd.DataFrame(columns=column_actual_production)
-
+        df_actions= {i:[] for i in column_actions}#pd.DataFrame(columns = column_actions, )
+        df_actual_production = {i:[] for i in column_actual_production}#pd.DataFrame(columns=column_actual_production)
 
         microgrid_spec={
             'parameters':df_parameters, #Dictionary
