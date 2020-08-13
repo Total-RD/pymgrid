@@ -48,7 +48,7 @@ class SampleAverageApproximation:
     """
     A class to run a Sample Average Approximation version of Stochastic MPC.
 
-    Parameters:
+    Parameters
 
         microgrid: pymgrid.Microgrid.Microgrid
             the underlying microgrid
@@ -1259,7 +1259,7 @@ class ModelPredictiveControl:
             p_max_charge = self.microgrid.parameters['battery_power_charge'].values[0]
             p_max_discharge = self.microgrid.parameters['battery_power_discharge'].values[0]
 
-            soc_0 = baseline_linprog_update_status.iloc[-1]['battery_soc']
+            soc_0 = baseline_linprog_update_status['battery_soc'][-1]
 
             if self.has_genset:
                 p_genset_max = self.microgrid.parameters['genset_pmax'].values[0] *\
@@ -1291,7 +1291,7 @@ class ModelPredictiveControl:
 
             if self.microgrid.architecture['grid'] == 1:
                 baseline_linprog_update_status = self.microgrid._update_status(
-                    baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
                     baseline_linprog_update_status,
                     sample.at[i + 1, 'load'],
                     sample.at[i + 1, 'pv'],
@@ -1301,18 +1301,18 @@ class ModelPredictiveControl:
                 )
 
                 baseline_linprog_cost = self.microgrid._record_cost(
-                    baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
                     baseline_linprog_cost, self.microgrid._grid_price_import.iloc[i, 0],
                     self.microgrid._grid_price_export.iloc[i, 0])
             else:
                 baseline_linprog_update_status = self.microgrid._update_status(
-                    baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
                     baseline_linprog_update_status,
                     sample.at[i + 1, 'load'],
                     sample.at[i + 1, 'pv']
                 )
                 baseline_linprog_cost = self.microgrid._record_cost(
-                    baseline_linprog_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
                     baseline_linprog_cost
                 )
 
@@ -1406,7 +1406,7 @@ class ModelPredictiveControl:
 
             if self.microgrid.architecture['grid'] == 1:
                 status = self.microgrid._update_status(
-                    production.iloc[-1, :].to_dict(),
+                    {i: production[i][-1] for i in production},
                     status,
                     actual_data.at[i + 1, 'load'],
                     actual_data.at[i + 1, 'pv'],
@@ -1416,18 +1416,18 @@ class ModelPredictiveControl:
                 )
 
                 cost = self.microgrid._record_cost(
-                    production.iloc[-1, :].to_dict(),
+                    {i: production[i][-1] for i in production},
                     cost, self.microgrid._grid_price_import.iloc[i, 0],
                     self.microgrid._grid_price_export.iloc[i, 0])
             else:
                 status = self.microgrid._update_status(
-                    production.iloc[-1, :].to_dict(),
+                    {i: production[i][-1] for i in production},
                     status,
                     actual_data.at[i + 1, 'load'],
                     actual_data.at[i + 1, 'pv']
                 )
                 cost = self.microgrid._record_cost(
-                    production.iloc[-1, :].to_dict(),
+                    {i: production[i][-1] for i in production},
                     cost
                 )
 
@@ -1522,7 +1522,7 @@ class RuleBasedControl:
         if self.microgrid.architecture['genset'] == 1:
             #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
             grid_first = 0
-            capa_to_discharge = max(min((status['battery_soc'].iloc[-1] *
+            capa_to_discharge = max(min((status['battery_soc'][-1] *
                                      parameters['battery_capacity'].values[0]
                                      - parameters['battery_soc_min'].values[0] *
                                      parameters['battery_capacity'].values[0]
@@ -1562,10 +1562,10 @@ class RuleBasedControl:
 
                     capa_to_charge = max(
                         (parameters['battery_soc_max'].values[0] * parameters['battery_capacity'].values[0] -
-                         status['battery_soc'].iloc[-1] *
+                         status['battery_soc'][-1] *
                          parameters['battery_capacity'].values[0]
                          ) / self.microgrid.parameters['battery_efficiency'].values[0], 0)
-                    capa_to_discharge = max((status['battery_soc'].iloc[-1] *
+                    capa_to_discharge = max((status['battery_soc'][-1] *
                                              parameters['battery_capacity'].values[0]
                                              - parameters['battery_soc_min'].values[0] *
                                              parameters['battery_capacity'].values[0]
@@ -1672,7 +1672,7 @@ class RuleBasedControl:
             if self.microgrid.architecture['grid']==1:
 
                 baseline_priority_list_update_status = self.microgrid._update_status(
-                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_priority_list_record_production[i][-1] for i in baseline_priority_list_record_production},
                     baseline_priority_list_update_status, self.microgrid._load_ts.iloc[i + 1].values[0],
                     self.microgrid._pv_ts.iloc[i + 1].values[0],
                     self.microgrid._grid_status_ts.iloc[i + 1].values[0],
@@ -1681,17 +1681,20 @@ class RuleBasedControl:
 
 
                 baseline_priority_list_cost = self.microgrid._record_cost(
-                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_priority_list_record_production[i][-1] for i in
+                     baseline_priority_list_record_production},
                     baseline_priority_list_cost, self.microgrid._grid_price_import.iloc[i,0], self.microgrid._grid_price_export.iloc[i,0])
             else:
 
                 baseline_priority_list_update_status = self.microgrid._update_status(
-                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_priority_list_record_production[i][-1] for i in
+                     baseline_priority_list_record_production},
                     baseline_priority_list_update_status, self.microgrid._load_ts.iloc[i + 1].values[0],
                     self.microgrid._pv_ts.iloc[i + 1].values[0])
 
                 baseline_priority_list_cost = self.microgrid._record_cost(
-                    baseline_priority_list_record_production.iloc[-1, :].to_dict(),
+                    {i: baseline_priority_list_record_production[i][-1] for i in
+                     baseline_priority_list_record_production},
                     baseline_priority_list_cost)
 
         names = ('action', 'status', 'production', 'cost')

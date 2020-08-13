@@ -324,7 +324,7 @@ class Microgrid:
         #list of parameters
         #this is a static dataframe: parameters of the microgrid that do not change with time
 
-        self._param_check(parameters)
+        #self._param_check(parameters)
 
         self.parameters = parameters['parameters']
         self.architecture =  parameters['architecture']
@@ -371,12 +371,12 @@ class Microgrid:
 
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
-                                   self._df_record_state.capa_to_charge.iloc[0],
-                                   self._df_record_state.capa_to_discharge.iloc[0])
+                                   self._df_record_state['capa_to_charge'][0],
+                                   self._df_record_state['capa_to_discharge'][0])
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
         if self.architecture['grid'] == 1:
-            self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0, 0],
+            self.grid = Grid(self.parameters, self._grid_status_ts,
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0])
 
@@ -465,8 +465,8 @@ class Microgrid:
         """
         mg_data = {}
 
-        for i in self._df_record_state.columns:
-            mg_data[i] = self._df_record_state[i].iloc[-1]
+        for i in self._df_record_state:
+            mg_data[i] = self._df_record_state[i][-1]
 
         return mg_data
 
@@ -593,7 +593,7 @@ class Microgrid:
 
         if self.architecture['grid'] == 1:
 
-            self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1,:].to_dict(),
+            self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
                                                                self._df_record_cost, self.grid.price_import, self.grid.price_export)
             self._df_record_state = self._update_status(control_dict,
                                                         self._df_record_state, self._next_load, self._next_pv,
@@ -602,7 +602,7 @@ class Microgrid:
 
 
         else:
-            self._df_record_cost = self._record_cost(self._df_record_actual_production.iloc[-1, :].to_dict(),
+            self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
                                                      self._df_record_cost)
             self._df_record_state = self._update_status(control_dict,
                                                         self._df_record_state, self._next_load, self._next_pv)
@@ -746,9 +746,9 @@ class Microgrid:
                 self._next_grid_price_export = self._grid_price_export.iloc[self._tracking_timestep + 1, 0]
 
         if self.architecture['battery'] == 1:
-            self.battery.soc = self._df_record_state.battery_soc.iloc[-1]
-            self.battery.capa_to_discharge = self._df_record_state.capa_to_discharge.iloc[-1]
-            self.battery.capa_to_charge = self._df_record_state.capa_to_charge.iloc[-1]
+            self.battery.soc = self._df_record_state['battery_soc'][-1]
+            self.battery.capa_to_discharge = self._df_record_state['capa_to_discharge'][-1]
+            self.battery.capa_to_charge = self._df_record_state['capa_to_charge'][-1]
 
     def reset(self, testing=False):
         """This function is used to reset the dataframes that track what is happening in simulation. Mainly used in RL."""
@@ -757,10 +757,10 @@ class Microgrid:
             temp_cost['epoch'] = self._epoch
             self._df_cost_per_epochs = self._df_cost_per_epochs.append(temp_cost, ignore_index=True)
 
-        self._df_record_control_dict = self._df_record_control_dict[0:0]
-        self._df_record_state = self._df_record_state.iloc[:1]
-        self._df_record_actual_production = self._df_record_actual_production[0:0]
-        self._df_record_cost = self._df_record_cost[0:0]
+        self._df_record_control_dict = {i:[] for i in self._df_record_control_dict}
+        self._df_record_state = {i:[self._df_record_state[i][0]] for i in self._df_record_state}
+        self._df_record_actual_production = {i:[] for i in self._df_record_actual_production}
+        self._df_record_cost = {i:[] for i in self._df_record_cost}
 
         self._tracking_timestep = 0
 
@@ -783,13 +783,18 @@ class Microgrid:
 
 
     ########################################################
-    # FUNCTIONS TO UPDATE THE INTERNAL DATAFRAMES
+    # FUNCTIONS TO UPDATE THE INTERNAL DICTIONARIES
     ########################################################
 
 
     def _record_action(self, control_dict, df):
         """ This function is used to record the actions taken, before being checked for feasability. """
-        df = df.append(control_dict,ignore_index=True)
+        for j in df:
+            if j in control_dict.keys():
+                df[j].append(control_dict[j])
+            else:
+                df[j].append({j:0})
+        #df = df.append(control_dict,ignore_index=True)
 
         return df
 
@@ -805,7 +810,7 @@ class Microgrid:
         }
         new_soc =np.nan
         if self.architecture['battery'] == 1:
-            new_soc = df['battery_soc'].iloc[-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
+            new_soc = df['battery_soc'][-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
                                                         - control_dict['battery_discharge']/self.parameters['battery_efficiency'].values[0])/self.parameters['battery_capacity'].values[0]
             #if col == 'net_load':
             capa_to_charge = max(
@@ -830,8 +835,10 @@ class Microgrid:
             dict['grid_price_export'] = next_price_export
 
 
+        for j in df:
+            df[j].append(dict[j])
 
-        df = df.append(dict,ignore_index=True)
+        #df = df.append(dict,ignore_index=True)
 
 
 
@@ -891,11 +898,11 @@ class Microgrid:
 
         capa_to_charge = max(
                         (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
-                         status['battery_soc'].iloc[-1] *
+                         status['battery_soc'][-1] *
                          self.parameters['battery_capacity'].values[0]
                          ) / self.parameters['battery_efficiency'].values[0], 0)
 
-        capa_to_discharge = max((status['battery_soc'].iloc[-1] *
+        capa_to_discharge = max((status['battery_soc'][-1] *
                                  self.parameters['battery_capacity'].values[0]
                                  - self.parameters['battery_soc_min'].values[0] *
                                  self.parameters['battery_capacity'].values[0]
@@ -1014,19 +1021,28 @@ class Microgrid:
             total_production -= control_dict['battery_charge']
 
         if abs(total_production - total_load) < threshold:
-            df = df.append(control_dict, ignore_index=True)
+            control_dict['overgeneration'] =0
+            control_dict['loss_load'] = 0
+            for j in df:
+                df[j].append(control_dict[j])
 
         elif total_production > total_load :
             # here we consider we produced more than needed ? we pay the price of the full cost proposed?
             # penalties ?
             control_dict['overgeneration'] = total_production-total_load
-            df = df.append(control_dict, ignore_index=True)
+            control_dict['loss_load'] = 0
+            for j in df:
+                df[j].append(control_dict[j])
+            #df = df.append(control_dict, ignore_index=True)
             #print('total_production > total_load')
             #print(control_dict)
 
         elif total_production < total_load :
             control_dict['loss_load']+= total_load-total_production
-            df = df.append(control_dict, ignore_index=True)
+            control_dict['overgeneration'] = 0
+            for j in df:
+                df[j].append(control_dict[j])
+            #df = df.append(control_dict, ignore_index=True)
             #print('total_production < total_load')
             #print(control_dict)
 
@@ -1053,7 +1069,7 @@ class Microgrid:
 
         cost_dict= {'cost': cost}
 
-        df = df.append({'cost': cost}, ignore_index=True)
+        df['cost'].append({'cost': cost})
 
         return df
 
@@ -1133,8 +1149,8 @@ class Microgrid:
     def print_updated_parameters(self):
         """ This function prints the last values for the parameters of the microgrid changing with time."""
         state={}
-        for i in self._df_record_state.columns:
-            state[i] = self._df_record_state[i].iloc[-1]
+        for i in self._df_record_state:
+            state[i] = self._df_record_state[i][-1]
 
         print(state)
 
