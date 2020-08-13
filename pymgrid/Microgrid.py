@@ -1089,7 +1089,7 @@ class Microgrid:
         iplot(fig2)
 
     def print_actual_production(self):
-        if self._df_record_actual_production.iplot != type(pd.DataFrame()):
+        if self._df_record_actual_production != type(pd.DataFrame()):
             df = pd.DataFrame(self._df_record_actual_production)
             fig1 = df.iplot(asFigure=True)
             iplot(fig1)
@@ -1098,7 +1098,7 @@ class Microgrid:
             iplot(fig1)
 
     def print_control(self):
-        if self._df_record_control_dict.iplot != type(pd.DataFrame()):
+        if self._df_record_control_dict != type(pd.DataFrame()):
             df = pd.DataFrame(self._df_record_control_dict)
             fig1 = df.iplot(asFigure=True)
             iplot(fig1)
@@ -1107,7 +1107,7 @@ class Microgrid:
             iplot(fig1)
 
     def print_cumsum_cost(self):
-        if self._df_record_cost.iplot != type(pd.DataFrame()):
+        if self._df_record_cost != type(pd.DataFrame()):
             df = pd.DataFrame(self._df_record_cost)
             plt.plot(df.cumsum())
             plt.show()
