@@ -1089,16 +1089,31 @@ class Microgrid:
         iplot(fig2)
 
     def print_actual_production(self):
-        fig1 = self._df_record_actual_production.iplot(asFigure=True)
-        iplot(fig1)
+        if self._df_record_actual_production.iplot != type(pd.DataFrame()):
+            df = pd.DataFrame(self._df_record_actual_production)
+            fig1 = df.iplot(asFigure=True)
+            iplot(fig1)
+        else:
+            fig1 = self._df_record_actual_production.iplot(asFigure=True)
+            iplot(fig1)
 
     def print_control(self):
-        fig1 = self._df_record_control_dict.iplot(asFigure=True)
-        iplot(fig1)
+        if self._df_record_control_dict.iplot != type(pd.DataFrame()):
+            df = pd.DataFrame(self._df_record_control_dict)
+            fig1 = df.iplot(asFigure=True)
+            iplot(fig1)
+        else:
+            fig1 = self._df_record_control_dict.iplot(asFigure=True)
+            iplot(fig1)
 
     def print_cumsum_cost(self):
-        plt.plot(self._df_record_cost.cumsum())
-        plt.show()
+        if self._df_record_cost.iplot != type(pd.DataFrame()):
+            df = pd.DataFrame(self._df_record_cost)
+            plt.plot(df.cumsum())
+            plt.show()
+        else:
+            plt.plot(self._df_record_cost.cumsum())
+            plt.show()
 
 
 
@@ -1126,11 +1141,11 @@ class Microgrid:
         print('Architecture:')
         print(self.architecture)
         print('Actions: ')
-        print(self._df_record_control_dict.columns)
+        print(self._df_record_control_dict.keys())
         print('Control dictionnary:')
         print(self.control_dict)
         print('Status: ')
-        print(self._df_record_state.columns)
+        print(self._df_record_state.keys())
         print('Has run mpc baseline:')
         print(self._has_run_mpc_baseline)
         print('Has run rule based baseline:')
