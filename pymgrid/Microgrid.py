@@ -450,7 +450,6 @@ class Microgrid:
 
     def get_cost(self):
         """ Function that returns the cost associated the operation of the last time step. """
-        print(self._df_record_cost['cost'][-1])
         return self._df_record_cost['cost'][-1]
 
 
