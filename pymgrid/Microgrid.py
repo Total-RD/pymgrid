@@ -789,6 +789,8 @@ class Microgrid:
 
     def _record_action(self, control_dict, df):
         """ This function is used to record the actions taken, before being checked for feasability. """
+        if not isinstance(df, dict):
+            raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
         for j in df:
             if j in control_dict.keys():
                 df[j].append(control_dict[j])
@@ -803,7 +805,10 @@ class Microgrid:
         """ This function update the parameters of the microgrid that change with time. """
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
-        dict = {
+        if not isinstance(df, dict):
+            raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
+
+        new_dict = {
             'load': next_load,
                     'pv': next_pv,
             'hour':self._tracking_timestep%24,
@@ -825,18 +830,18 @@ class Microgrid:
                                      self.parameters['battery_capacity'].values[0]
                                      ) * self.parameters['battery_efficiency'].values[0], 0)
 
-            dict['battery_soc']=new_soc
-            dict['capa_to_discharge'] = capa_to_discharge
-            dict['capa_to_charge'] = capa_to_charge
+            new_dict['battery_soc']=new_soc
+            new_dict['capa_to_discharge'] = capa_to_discharge
+            new_dict['capa_to_charge'] = capa_to_charge
 
         if self.architecture['grid'] == 1 :
-            dict['grid_status'] = next_grid
-            dict['grid_price_import'] = next_price_import
-            dict['grid_price_export'] = next_price_export
+            new_dict['grid_status'] = next_grid
+            new_dict['grid_price_import'] = next_price_import
+            new_dict['grid_price_export'] = next_price_export
 
 
         for j in df:
-            df[j].append(dict[j])
+            df[j].append(new_dict[j])
 
         #df = df.append(dict,ignore_index=True)
 
@@ -941,6 +946,10 @@ class Microgrid:
         #todo make sure the control actions repect their respective constriants
 
         #todo pv
+
+        if not isinstance(df, dict):
+            raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
+
         total_load = 0
         total_production = 0
         threshold = 0.001
@@ -948,6 +957,7 @@ class Microgrid:
         temp_pv = 0
 
         #check the generator constraints
+
 
 
         try:
@@ -1050,6 +1060,10 @@ class Microgrid:
 
     def _record_cost(self, control_dict, df, cost_import=0, cost_export=0):
         """ This function record the cost of operating the microgrid at each time step."""
+
+        if not isinstance(df, dict):
+            raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
+
         cost = 0
         cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
         cost += control_dict['overgeneration'] * self.parameters['cost_overgeneration'].values[0]

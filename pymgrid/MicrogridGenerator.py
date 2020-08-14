@@ -17,6 +17,7 @@ from os.path import isfile, join
 import os
 import sys
 import pickle
+from IPython.display import display
 
 class MicrogridGenerator:
     """

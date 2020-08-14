@@ -363,7 +363,9 @@ class SampleAverageApproximation:
             # return horizon_outputs
 
             optimal_output = self.determine_optimal_actions(outputs=horizon_outputs, percentile=optimal_percentile)
-            output.append(optimal_output)
+            output.append(optimal_output, actual_load=self.underlying_data.loc[j,'load'],
+                          actual_pv=self.underlying_data.loc[j,'pv'],
+                          actual_grid=self.underlying_data.loc[j,'grid'])
 
         return output
 
@@ -634,11 +636,13 @@ class ControlOutput(dict):
             action = self.microgrid._record_action(other_output.first_dict, action)
             production = self.microgrid._record_production(other_output.first_dict, production, status)
 
+            last_prod = dict([(key, production[key][-1]) for key in production])
+
             i = other_output.current_step
 
             if self.microgrid.architecture['grid'] == 1:
                 status = self.microgrid._update_status(
-                    production.iloc[-1, :].to_dict(),
+                    last_prod,
                     status,
                     actual_load,
                     actual_pv,
@@ -648,40 +652,20 @@ class ControlOutput(dict):
                 )
 
                 cost = self.microgrid._record_cost(
-                    production.iloc[-1, :].to_dict(),
+                    last_prod,
                     cost, self.microgrid._grid_price_import.iloc[i, 0],
                     self.microgrid._grid_price_export.iloc[i, 0])
             else:
                 status = self.microgrid._update_status(
-                    production.iloc[-1, :].to_dict(),
+                    last_prod,
                     status,
                     actual_load,
                     actual_pv
                 )
                 cost = self.microgrid._record_cost(
-                    production.iloc[-1, :].to_dict(),
+                    last_prod,
                     cost
                 )
-            try:
-                if (action == self['action']).all():
-                    raise RuntimeError('Did not record actions')
-            except ValueError:
-                pass
-            try:
-                if (production == self['production']).all():
-                    raise RuntimeError('Did not record production')
-            except ValueError:
-                pass
-            try:
-                if (cost == self['cost']).all():
-                    raise RuntimeError('Did not record cost')
-            except ValueError:
-                pass
-            try:
-                if (status == self['status']).all():
-                    raise RuntimeError('Did not record status')
-            except ValueError:
-                pass
 
             self['action'] = action
             self['production'] = production
@@ -692,17 +676,17 @@ class ControlOutput(dict):
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplemented
-        return (self['cost'].sum() == other['cost'].sum()).item()
+        return np.sum(self['cost']) == np.sum(other['cost'])
 
     def __lt__(self, other):
         if type(self) != type(other):
             return NotImplemented
-        return (self['cost'].sum() < other['cost'].sum()).item()
+        return np.sum(self['cost']) < np.sum(other['cost'])
 
     def __gt__(self, other):
         if type(self) != type(other):
             return NotImplemented
-        return (self['cost'].sum() > other['cost'].sum()).item()
+        return np.sum(self['cost']) > np.sum(other['cost'])
 
 
 class ModelPredictiveControl:
@@ -1349,7 +1333,7 @@ class ModelPredictiveControl:
         if not isinstance(previous_output, ControlOutput):
             raise TypeError('previous_output must be ControlOutput, unless first_step is True')
 
-        baseline_linprog_update_status = pd.DataFrame(previous_output['status'].iloc[-1].squeeze()).transpose()
+        # baseline_linprog_update_status = pd.DataFrame(previous_output['status'].iloc[-1].squeeze()).transpose()
 
         horizon = self.microgrid.horizon
 
@@ -1373,7 +1357,7 @@ class ModelPredictiveControl:
         e_max = self.microgrid.parameters['battery_soc_max'].values[0]
         p_max_charge = self.microgrid.parameters['battery_power_charge'].values[0]
         p_max_discharge = self.microgrid.parameters['battery_power_discharge'].values[0]
-        soc_0 = baseline_linprog_update_status.iloc[-1]['battery_soc']
+        soc_0 = previous_output['status']['battery_soc'][-1]
 
         if self.has_genset:
             p_genset_max = self.microgrid.parameters['genset_pmax'].values[0] * \
@@ -1393,53 +1377,6 @@ class ModelPredictiveControl:
                     raise TypeError('control_dict number {} is None'.format(j))
 
         return HorizonOutput(control_dicts, self.microgrid, current_step)
-
-        action = baseline_linprog_action.copy()
-        status = baseline_linprog_update_status.copy()
-        production = baseline_linprog_record_production.copy()
-        cost = baseline_linprog_cost.copy()
-
-        for i, control_dict in enumerate(control_dicts):
-
-            action = self.microgrid._record_action(control_dict, action)
-            production = self.microgrid._record_production(control_dict, production, status)
-
-            if self.microgrid.architecture['grid'] == 1:
-                status = self.microgrid._update_status(
-                    {i: production[i][-1] for i in production},
-                    status,
-                    actual_data.at[i + 1, 'load'],
-                    actual_data.at[i + 1, 'pv'],
-                    actual_data.at[i + 1, 'grid'],
-                    self.microgrid._grid_price_import.iloc[i + 1].values[0],
-                    self.microgrid._grid_price_export.iloc[i + 1].values[0]
-                )
-
-                cost = self.microgrid._record_cost(
-                    {i: production[i][-1] for i in production},
-                    cost, self.microgrid._grid_price_import.iloc[i, 0],
-                    self.microgrid._grid_price_export.iloc[i, 0])
-            else:
-                status = self.microgrid._update_status(
-                    {i: production[i][-1] for i in production},
-                    status,
-                    actual_data.at[i + 1, 'load'],
-                    actual_data.at[i + 1, 'pv']
-                )
-                cost = self.microgrid._record_cost(
-                    {i: production[i][-1] for i in production},
-                    cost
-                )
-
-        names = ('action', 'status', 'production', 'cost')
-
-        dfs = (action, status,
-                production, cost)
-
-        return ControlOutput(names, dfs, 'mpc_single_horizon')
-
-
-
 
 # TODO Set up continuous action space RL for MG
 
@@ -1770,6 +1707,7 @@ class Benchmarks:
         SAA = SampleAverageApproximation(self.microgrid, preset_to_use=preset_to_use, **kwargs)
         self.saa_output = SAA.run(**kwargs)
         self.has_saa_benchmark = True
+        self.outputs_dict[self.saa_output.alg_name] = self.saa_output
 
     def run_benchmarks(self, verbose=False, **kwargs):
         """
@@ -1809,7 +1747,14 @@ class Benchmarks:
         else:
             algorithms = possible_benchmarks
 
-        T = len(self.mpc_output['cost'])
+        t_vals = []
+        for key in self.outputs_dict:
+            t_vals.append(len(self.outputs_dict[key]['cost']['cost']))
+
+        if not all([t_val == t_vals[0] for t_val in t_vals]):
+            raise ValueError('Outputs are of different lengths')
+
+        T = t_vals[0]
 
         if test_split:
             if test_ratio is None and test_index is None:
@@ -1832,60 +1777,70 @@ class Benchmarks:
             percent = round(test_ratio * 100, 1)
 
             if self.has_mpc_benchmark and 'mpc' in algorithms:
-                cost = round(self.mpc_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+                cost = round(np.sum(self.mpc_output['cost']['cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
                 print('Cost of the last {} steps ({} percent of all steps) using MPC: {}'.format(steps, percent, cost))
 
             if self.has_rule_based_benchmark and 'rbc' in algorithms:
-                cost = round(self.rule_based_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+                cost = round(np.sum(self.rule_based_output['cost']['cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
                 print('Cost of the last {} steps ({} percent of all steps) using rule-based control: {}'.format(steps, percent, cost))
 
             if self.has_saa_benchmark and 'saa' in algorithms:
-                cost = round(self.saa_output['cost'].iloc[int(np.ceil(T*(1-test_ratio))):].sum().squeeze(),2)
+                cost = round(np.sum(self.saa_output['cost']['cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
                 print('Cost of the last {} steps ({} percent of all steps) using sample-average MPC control: {}'.format(steps, percent, cost))
 
         else:
 
             if self.has_mpc_benchmark and 'mpc' in algorithms:
-                cost_train = round(self.mpc_output['cost'].iloc[:test_index].sum().squeeze(), 2)
-                cost_test = round(self.mpc_output['cost'].iloc[test_index:].sum().squeeze(), 2)
+                cost_train = round(np.sum(self.mpc_output['cost']['cost'][:test_index]), 2)
+                cost_test = round(np.sum(self.mpc_output['cost']['cost'][test_index:]), 2)
 
                 print('Test set cost using MPC: {}'.format(cost_test))
                 print('Train set cost using MPC: {}'.format(cost_train))
 
             if self.has_rule_based_benchmark and 'rbc' in algorithms:
-                cost_train = round(self.rule_based_output['cost'].iloc[:test_index].sum().squeeze(), 2)
-                cost_test = round(self.rule_based_output['cost'].iloc[test_index:].sum().squeeze(), 2)
+                cost_train = round(np.sum(self.rule_based_output['cost']['cost'][:test_index]), 2)
+                cost_test = round(np.sum(self.rule_based_output['cost']['cost'][test_index:]), 2)
 
                 print('Test set cost using RBC: {}'.format(cost_test))
                 print('Train set cost using RBC: {}'.format(cost_train))
 
             if self.has_saa_benchmark and 'saa' in algorithms:
-                cost_train = round(self.saa_output['cost'].iloc[:test_index].sum().squeeze(), 2)
-                cost_test = round(self.saa_output['cost'].iloc[test_index:].sum().squeeze(), 2)
+                cost_train = round(np.sum(self.saa_output['cost']['cost'][:test_index]), 2)
+                cost_test = round(np.sum(self.saa_output['cost']['cost'][test_index:]), 2)
 
                 print('Test set cost using SAA: {}'.format(cost_test))
                 print('Train set cost using SAA: {}'.format(cost_train))
 
 
 if __name__=='__main__':
-
+    # TODO this has new code, you need to debug SAA
     import cProfile
 
     m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=100,
                                   path='/Users/ahalev/Dropbox/Avishai/gradSchool/internships/totalInternship/pymgrid_git')
-    m_gen = m_gen.load('pymgrid25')
-    microgrid = m_gen.microgrids[0]
+    # m_gen = m_gen.load('pymgrid25')
 
-    sampling_args = dict(load_variance_scale=1.2, noise_params=(None, {'std_ratio': 0.3}), verbose=False)
+    for j in range(1000):
+        m_gen.generate_microgrid()
+        microgrid = m_gen.microgrids[0]
 
-    SAA = SampleAverageApproximation(microgrid)
-    samples = SAA.sample_from_forecasts(n_samples=3, **sampling_args)
+        if microgrid.architecture['grid']==0:
+            print('Found a good one on iter', j)
+            break
 
-    underlying_data_list = [SAA.underlying_data]*3
+    if microgrid.architecture['grid']==1:
+        raise ValueError('no')
 
-    t0 = time.time()
+    # sampling_args = dict(load_variance_scale=1.2, noise_params=(None, {'std_ratio': 0.3}), verbose=False)
+    # SAA = SampleAverageApproximation(microgrid)
+    # samples = SAA.sample_from_forecasts(n_samples=3, **sampling_args)
+    # underlying_data_list = [SAA.underlying_data]*3
     # output = SAA.run_mpc_on_group(samples, verbose=True)
 
-    cProfile.run('SAA.test_args()', sort='cumtime')
+    t0 = time.time()
+    benchmarks = Benchmarks(microgrid)
+    benchmarks.run_saa_benchmark(verbose=True, n_samples=2)
+    benchmarks.describe_benchmarks()
+    # cProfile.run('SAA.test_args()', sort='cumtime')
 
     print(time.time()-t0,' seconds')
