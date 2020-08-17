@@ -671,10 +671,20 @@ class NoisyGridData:
                     transition_prob_matrix[int(val), int(grid_vals[j + 1])] += 1
                     occurrences[int(val)] += 1
 
-            transition_prob_matrix[0, :] /= occurrences[0]
-            transition_prob_matrix[1, :] /= occurrences[1]
+            if occurrences[0] > 0:
+                transition_prob_matrix[0, :] /= occurrences[0]
+            else:
+                transition_prob_matrix[0, 0] = 1
+
+            if occurrences[1] > 0:
+                transition_prob_matrix[1, :] /= occurrences[1]
+            else:
+                transition_prob_matrix[1, 1] = 1
 
             self.occurrences = occurrences
+
+            assert all([np.sum(transition_prob_matrix[j, :]) == 1 for j in range(2)]), \
+                'transition prob matrix invalid: {}'.format(transition_prob_matrix)
 
         else:
             raise RuntimeError('Should not be here')
