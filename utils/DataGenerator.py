@@ -1,3 +1,13 @@
+"""
+Copyright 2020 Total S.A.
+Authors:Gonzague Henri <gonzague.henri@total.com>, Avishai Halev <>
+Permission to use, modify, and distribute this software is given under the
+terms of the pymgrid License.
+NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
+$Date: 2020/08/27 08:04 $
+Gonzague Henri
+"""
+
 import sys
 import unittest
 import pandas as pd
