@@ -1,5 +1,26 @@
+
+"""
+Copyright 2020 Total S.A.
+Authors:Gonzague Henri <gonzague.henri@total.com>, Avishai Halev <>
+Permission to use, modify, and distribute this software is given under the
+terms of the pymgrid License.
+NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
+$Date: 2020/08/27 08:04 $
+Gonzague Henri
+"""
+"""
+<pymgrid is a Python library to simulate microgrids>
+Copyright (C) <2020> <Total S.A.>
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+"""
 from utils import DataGenerator as dg
-from pymgrid import Microgrid
+# from pymgrid import Microgrid
 import pandas as pd
 import numpy as np
 from copy import copy
@@ -7,11 +28,12 @@ import time, sys
 from matplotlib import pyplot as plt
 import cvxpy as cp
 from scipy.sparse import csr_matrix
-from pymgrid import MicrogridGenerator
 import operator
 from IPython.display import display
 
 np.random.seed(0)
+
+# TODO commented type checks to test imports in Microgrid/Benchmarks
 
 def return_underlying_data(microgrid):
     """
@@ -79,8 +101,8 @@ class SampleAverageApproximation:
         if control_duration > 8760:
             raise ValueError('control_duration must be less than 8760')
 
-        if not isinstance(microgrid, Microgrid.Microgrid):
-            raise TypeError('microgrid must be of type \'pymgrid.Microgrid.Microgrid\', is {}'.format(type(microgrid)))
+        # if not isinstance(microgrid, Microgrid.Microgrid):
+        #     raise TypeError('microgrid must be of type \'pymgrid.Microgrid.Microgrid\', is {}'.format(type(microgrid)))
 
         self.microgrid = microgrid
         self.control_duration = control_duration
@@ -592,9 +614,9 @@ class ControlOutput(dict):
                 raise TypeError('dfs cannot be None unless initializing empty and empty=True')
             if alg_name is None:
                 raise TypeError('alg_name cannot be None unless initializing empty and empty=True')
-        else:
-            if not isinstance(microgrid,Microgrid.Microgrid):
-                raise TypeError('microgrid must be a Microgrid if empty is True')
+        # else:
+            # if not isinstance(microgrid,Microgrid.Microgrid):
+            #     raise TypeError('microgrid must be a Microgrid if empty is True')
 
         if not empty:
             names_needed = ('action', 'status', 'production', 'cost')
@@ -1382,8 +1404,8 @@ class ModelPredictiveControl:
 
 class RuleBasedControl:
     def __init__(self, microgrid):
-        if not isinstance(microgrid, Microgrid.Microgrid):
-            raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
+        # if not isinstance(microgrid, Microgrid.Microgrid):
+        #     raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
 
         self.microgrid = microgrid
 
@@ -1668,8 +1690,8 @@ class Benchmarks:
 
     """
     def __init__(self, microgrid):
-        if not isinstance(microgrid, Microgrid.Microgrid):
-            raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
+        # if not isinstance(microgrid, Microgrid.Microgrid):
+        #     raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
 
         self.microgrid = microgrid
         self.outputs_dict = dict()
@@ -1815,21 +1837,29 @@ class Benchmarks:
 if __name__=='__main__':
     # TODO this has new code, you need to debug SAA
     import cProfile
+    from pymgrid import MicrogridGenerator
 
-    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=100,
+    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25,
                                   path='/Users/ahalev/Dropbox/Avishai/gradSchool/internships/totalInternship/pymgrid_git')
     # m_gen = m_gen.load('pymgrid25')
 
-    for j in range(1000):
-        m_gen.generate_microgrid()
-        microgrid = m_gen.microgrids[0]
 
-        if microgrid.architecture['grid']==0:
-            print('Found a good one on iter', j)
-            break
+    m_gen.generate_microgrid(verbose=False)
 
-    if microgrid.architecture['grid']==1:
-        raise ValueError('no')
+    for j, microgrid in enumerate(m_gen.microgrids):
+        print(j, microgrid.architecture)
+    #     if microgrid.architecture['grid']==1:
+    #         print('Found a good one on iter', j)
+    #         break
+    #
+    # if microgrid.architecture['grid']==0:
+    #     raise ValueError('no')
+
+    microgrid = m_gen.microgrids[1]
+    log = open('grid_and_genset.log','a')
+    sys.stdout = log
+    MPC = ModelPredictiveControl(microgrid)
+    MPC.run_mpc_on_microgrid(forecast_steps=2000)
 
     # sampling_args = dict(load_variance_scale=1.2, noise_params=(None, {'std_ratio': 0.3}), verbose=False)
     # SAA = SampleAverageApproximation(microgrid)
@@ -1837,10 +1867,14 @@ if __name__=='__main__':
     # underlying_data_list = [SAA.underlying_data]*3
     # output = SAA.run_mpc_on_group(samples, verbose=True)
 
-    t0 = time.time()
-    benchmarks = Benchmarks(microgrid)
-    benchmarks.run_saa_benchmark(verbose=True, n_samples=2)
-    benchmarks.describe_benchmarks()
-    # cProfile.run('SAA.test_args()', sort='cumtime')
 
-    print(time.time()-t0,' seconds')
+
+    # t0 = time.time()
+    # benchmarks = Benchmarks(microgrid)
+    # benchmarks.run_saa_benchmark(verbose=True, n_samples=2)
+    # cProfile.run('benchmarks.run_saa_benchmark(verbose=True, n_samples=2)', sort='cumtime')
+
+    # benchmarks.describe_benchmarks()
+
+
+    # print(time.time()-t0,' seconds')
