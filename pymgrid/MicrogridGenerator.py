@@ -186,7 +186,7 @@ class MicrogridGenerator:
             'soc_min':soc_min,
             'efficiency':efficiency,
             'soc_0':min(max(np.random.randn(), soc_min),soc_max),
-            'cost_cycle':0.1
+            'cost_cycle':0.025
 
         }
         return battery
