@@ -1223,6 +1223,7 @@ class ModelPredictiveControl:
         baseline_linprog_update_status = copy(self.microgrid._df_record_state)
         baseline_linprog_record_production = copy(self.microgrid._df_record_actual_production)
         baseline_linprog_cost = copy(self.microgrid._df_record_cost)
+        baseline_linprog_co2 = copy(self.microgrid._df_record_co2)
 
         T = len(sample)
         horizon = self.microgrid.horizon
@@ -1296,6 +1297,12 @@ class ModelPredictiveControl:
                 raise RuntimeError('Fell through, was unable to solve for control_dict and could not find previous control dict')
 
             if self.microgrid.architecture['grid'] == 1:
+                baseline_linprog_co2 = self.microgrid._record_co2(
+                    {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
+                    baseline_linprog_co2,
+                    self.microgrid._grid_co2.iloc[i].values[0],
+                )
+
                 baseline_linprog_update_status = self.microgrid._update_status(
                     {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
                     baseline_linprog_update_status,
@@ -1303,14 +1310,22 @@ class ModelPredictiveControl:
                     sample.at[i + 1, 'pv'],
                     sample.at[i + 1, 'grid'],
                     self.microgrid._grid_price_import.iloc[i + 1].values[0],
-                    self.microgrid._grid_price_export.iloc[i + 1].values[0]
+                    self.microgrid._grid_price_export.iloc[i + 1].values[0],
+                    self.microgrid._grid_co2.iloc[i + 1].values[0],
                 )
 
                 baseline_linprog_cost = self.microgrid._record_cost(
                     {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
-                    baseline_linprog_cost, self.microgrid._grid_price_import.iloc[i, 0],
+                    baseline_linprog_cost,
+                    baseline_linprog_co2,
+                    self.microgrid._grid_price_import.iloc[i, 0],
                     self.microgrid._grid_price_export.iloc[i, 0])
             else:
+                baseline_linprog_co2 = self.microgrid._record_co2(
+                    {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
+                    baseline_linprog_co2,
+                )
+
                 baseline_linprog_update_status = self.microgrid._update_status(
                     {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
                     baseline_linprog_update_status,
@@ -1319,7 +1334,8 @@ class ModelPredictiveControl:
                 )
                 baseline_linprog_cost = self.microgrid._record_cost(
                     {i: baseline_linprog_record_production[i][-1] for i in baseline_linprog_record_production},
-                    baseline_linprog_cost
+                    baseline_linprog_cost,
+                    baseline_linprog_co2,
                 )
 
         names = ('action', 'status', 'production', 'cost')
@@ -1584,6 +1600,8 @@ class RuleBasedControl:
         baseline_priority_list_update_status = copy(self.microgrid._df_record_state)
         baseline_priority_list_record_production = copy(self.microgrid._df_record_actual_production)
         baseline_priority_list_cost = copy(self.microgrid._df_record_cost)
+        baseline_priority_list_co2 = copy(self.microgrid._df_record_co2)
+
 
         n = length - self.microgrid.horizon
         print_ratio = n/100
@@ -1630,20 +1648,36 @@ class RuleBasedControl:
 
             if self.microgrid.architecture['grid']==1:
 
+                baseline_priority_list_co2 = self.microgrid._record_co2(
+                    {i: baseline_priority_list_record_production[i][-1] for i in baseline_priority_list_record_production},
+                    baseline_priority_list_co2,
+                    self.microgrid._grid_co2.iloc[i].values[0],
+                )
+
                 baseline_priority_list_update_status = self.microgrid._update_status(
                     {i: baseline_priority_list_record_production[i][-1] for i in baseline_priority_list_record_production},
                     baseline_priority_list_update_status, self.microgrid._load_ts.iloc[i + 1].values[0],
                     self.microgrid._pv_ts.iloc[i + 1].values[0],
                     self.microgrid._grid_status_ts.iloc[i + 1].values[0],
                     self.microgrid._grid_price_import.iloc[i + 1].values[0],
-                    self.microgrid._grid_price_export.iloc[i + 1].values[0])
+                    self.microgrid._grid_price_export.iloc[i + 1].values[0],
+                    self.microgrid._grid_co2.iloc[i + 1].values[0],
+                )
 
 
                 baseline_priority_list_cost = self.microgrid._record_cost(
                     {i: baseline_priority_list_record_production[i][-1] for i in
                      baseline_priority_list_record_production},
-                    baseline_priority_list_cost, self.microgrid._grid_price_import.iloc[i,0], self.microgrid._grid_price_export.iloc[i,0])
+                    baseline_priority_list_cost,
+                    baseline_priority_list_co2,
+                    self.microgrid._grid_price_import.iloc[i,0], self.microgrid._grid_price_export.iloc[i,0])
             else:
+
+                baseline_priority_list_co2 = self.microgrid._record_co2(
+                    {i: baseline_priority_list_record_production[i][-1] for i in
+                     baseline_priority_list_record_production},
+                     baseline_priority_list_co2,
+                )
 
                 baseline_priority_list_update_status = self.microgrid._update_status(
                     {i: baseline_priority_list_record_production[i][-1] for i in
@@ -1654,7 +1688,8 @@ class RuleBasedControl:
                 baseline_priority_list_cost = self.microgrid._record_cost(
                     {i: baseline_priority_list_record_production[i][-1] for i in
                      baseline_priority_list_record_production},
-                    baseline_priority_list_cost)
+                    baseline_priority_list_cost,
+                    baseline_priority_list_co2)
 
         names = ('action', 'status', 'production', 'cost')
 
