@@ -23,7 +23,7 @@ from utils import DataGenerator as dg
 # from pymgrid import Microgrid
 import pandas as pd
 import numpy as np
-from copy import copy
+from copy import copy, deepcopy
 import time, sys
 from matplotlib import pyplot as plt
 import cvxpy as cp
@@ -629,13 +629,14 @@ class ControlOutput(dict):
 
         else:
             names = ('action', 'status', 'production', 'cost')
-            baseline_linprog_action = copy(microgrid._df_record_control_dict)
-            baseline_linprog_update_status = copy(microgrid._df_record_state)
-            baseline_linprog_record_production = copy(microgrid._df_record_actual_production)
-            baseline_linprog_cost = copy(microgrid._df_record_cost)
+            baseline_linprog_action = deepcopy(microgrid._df_record_control_dict)
+            baseline_linprog_update_status = deepcopy(microgrid._df_record_state)
+            baseline_linprog_record_production = deepcopy(microgrid._df_record_actual_production)
+            baseline_linprog_cost = deepcopy(microgrid._df_record_cost)
+            baseline_linprog_co2 = deepcopy(microgrid._df_record_co2)
 
             dfs = (baseline_linprog_action, baseline_linprog_update_status,
-               baseline_linprog_record_production, baseline_linprog_cost)
+               baseline_linprog_record_production, baseline_linprog_cost, baseline_linprog_co2)
 
             super(ControlOutput, self).__init__(zip(names, dfs))
             self.alg_name = alg_name
@@ -1219,11 +1220,11 @@ class ModelPredictiveControl:
             sample = sample.iloc[:8760]
 
         # dataframes, copied API from _baseline_linprog
-        baseline_linprog_action = copy(self.microgrid._df_record_control_dict)
-        baseline_linprog_update_status = copy(self.microgrid._df_record_state)
-        baseline_linprog_record_production = copy(self.microgrid._df_record_actual_production)
-        baseline_linprog_cost = copy(self.microgrid._df_record_cost)
-        baseline_linprog_co2 = copy(self.microgrid._df_record_co2)
+        baseline_linprog_action = deepcopy(self.microgrid._df_record_control_dict)
+        baseline_linprog_update_status = deepcopy(self.microgrid._df_record_state)
+        baseline_linprog_record_production = deepcopy(self.microgrid._df_record_actual_production)
+        baseline_linprog_cost = deepcopy(self.microgrid._df_record_cost)
+        baseline_linprog_co2 = deepcopy(self.microgrid._df_record_co2)
 
         T = len(sample)
         horizon = self.microgrid.horizon
@@ -1596,11 +1597,11 @@ class RuleBasedControl:
 
         """ This function runs the rule based benchmark over the datasets (load and pv profiles) in the microgrid."""
 
-        baseline_priority_list_action = copy(self.microgrid._df_record_control_dict)
-        baseline_priority_list_update_status = copy(self.microgrid._df_record_state)
-        baseline_priority_list_record_production = copy(self.microgrid._df_record_actual_production)
-        baseline_priority_list_cost = copy(self.microgrid._df_record_cost)
-        baseline_priority_list_co2 = copy(self.microgrid._df_record_co2)
+        baseline_priority_list_action = deepcopy(self.microgrid._df_record_control_dict)
+        baseline_priority_list_update_status = deepcopy(self.microgrid._df_record_state)
+        baseline_priority_list_record_production = deepcopy(self.microgrid._df_record_actual_production)
+        baseline_priority_list_cost = deepcopy(self.microgrid._df_record_cost)
+        baseline_priority_list_co2 = deepcopy(self.microgrid._df_record_co2)
 
 
         n = length - self.microgrid.horizon
@@ -1776,7 +1777,7 @@ class Benchmarks:
         """
         self.run_mpc_benchmark(verbose=verbose, **kwargs)
         self.run_rule_based_benchmark()
-        self.run_saa_benchmark(verbose=verbose, **kwargs)
+        #self.run_saa_benchmark(verbose=verbose, **kwargs)
 
         if verbose:
             self.describe_benchmarks()
