@@ -171,6 +171,15 @@ class MicrogridGenerator:
         path = self.path+'/data/wind/'
         return self._get_random_file(path)
 
+    def _get_co2_ts(self):
+        """ Function to get a random wind file. """
+        # open load folder
+        # get list of file
+        # select randomly rank if file to select in the list
+
+        path = self.path + '/data/co2/'
+        return self._get_random_file(path)
+
     def _get_genset(self, rated_power=1000, pmax=0.9, pmin=0.2):
         """ Function generates a dictionnary with the genset information. """
 
@@ -181,7 +190,8 @@ class MicrogridGenerator:
             'rated_power':rated_power,
             'pmax':pmax,
             'pmin':pmin,
-            'fuel_cost':0.4
+            'fuel_cost':0.4,
+            'co2':2,
         }
 
         return genset
@@ -406,14 +416,16 @@ class MicrogridGenerator:
         grid_ts=[]
         grid_price_export_ts = []
         grid_price_import_ts = []
+        grid_co2_ts = []
         df_parameters = pd.DataFrame()
         df_cost = {'cost':[]}
         df_status = {}
-
+        df_co2 = {'co2':[]}
 
         df_parameters['load'] = [size_load]
         df_parameters['cost_loss_load'] = 10
         df_parameters['cost_overgeneration'] = 1
+        df_parameters['cost_co2'] = 0.1
         #df_cost['cost'] = [0.0]
         df_status['load'] = [np.around(load.iloc[0,0],1)]# --> il y a doublon pour l'instant avec l'architecture PV, -> non si pas de pv la net load est juste la load
         df_status['hour'] = [0]
@@ -465,7 +477,7 @@ class MicrogridGenerator:
         grid_spec=0
 
         if architecture['grid']==1:
-
+            grid_co2_ts = self._get_co2_ts()
             rand_weak_grid = np.random.randint(low=0, high=2)
             price_scenario = np.random.randint(low=1, high=3)
             if rand_weak_grid == 1:
@@ -482,7 +494,7 @@ class MicrogridGenerator:
             column_actions.append('grid_import')
             column_actions.append('grid_export')
             df_status['grid_status'] = [grid_ts.iloc[0,0]]
-
+            df_status['grid_co2'] = [grid_co2_ts.iloc[0, 0]]
 
             grid_price_import_ts = grid['grid_price_import']
             grid_price_export_ts = grid['grid_price_export']
@@ -500,6 +512,7 @@ class MicrogridGenerator:
             df_parameters['genset_pmin'] = genset['pmin']
             df_parameters['genset_pmax'] = genset['pmax']
             df_parameters['fuel_cost'] = genset['fuel_cost']
+            df_parameters['genset_co2'] = genset['co2']
             column_actual_production.append('genset')
             column_actions.append('genset')
 
@@ -515,6 +528,7 @@ class MicrogridGenerator:
             'df_actual_generation':df_actual_production,#Dataframe
             'grid_spec':grid_spec, #value = 0
             'df_cost':df_cost, #Dataframe of 1 value = 0.0
+            'df_co2': df_co2,
             'pv':pv, #Dataframe
             'load': load, #Dataframe
             'grid_ts':grid_ts, #Dataframe
