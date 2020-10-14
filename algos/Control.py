@@ -1767,7 +1767,7 @@ class Benchmarks:
         self.has_saa_benchmark = True
         self.outputs_dict[self.saa_output.alg_name] = self.saa_output
 
-    def run_benchmarks(self, verbose=False, **kwargs):
+    def run_benchmarks(self, algo=None, verbose=False, **kwargs):
         """
         Runs both run_mpc_benchmark() and self.run_mpc_benchmark() and stores the results.
         :param verbose: bool, default False
@@ -1775,9 +1775,17 @@ class Benchmarks:
         :return:
             None
         """
-        self.run_mpc_benchmark(verbose=verbose, **kwargs)
-        self.run_rule_based_benchmark()
-        #self.run_saa_benchmark(verbose=verbose, **kwargs)
+
+        if algo == 'mpc':
+            self.run_mpc_benchmark(verbose=verbose, **kwargs)
+        elif algo == 'rbc':
+            self.run_rule_based_benchmark()
+        elif algo == 'saa':
+            self.run_saa_benchmark(verbose=verbose, **kwargs)
+        else:
+            self.run_mpc_benchmark(verbose=verbose, **kwargs)
+            self.run_rule_based_benchmark()
+            #self.run_saa_benchmark(verbose=verbose, **kwargs)
 
         if verbose:
             self.describe_benchmarks()

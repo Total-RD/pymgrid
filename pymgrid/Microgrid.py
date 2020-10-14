@@ -1160,7 +1160,6 @@ class Microgrid:
             cost += (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
 
         cost += self.parameters['cost_co2'].values[0] * df_co2['co2'][-1]
-
         cost_dict= {'cost': cost}
 
         df['cost'].append(cost)
