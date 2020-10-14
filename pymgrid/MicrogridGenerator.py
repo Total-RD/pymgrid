@@ -535,6 +535,7 @@ class MicrogridGenerator:
             'control_dict': column_actions, #dictionnary
             'grid_price_import' : grid_price_import_ts,
             'grid_price_export' : grid_price_export_ts,
+            'grid_co2': grid_co2_ts,
         }
 
         microgrid = Microgrid.Microgrid(microgrid_spec)
