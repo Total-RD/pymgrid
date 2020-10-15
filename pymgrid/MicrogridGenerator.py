@@ -11,7 +11,7 @@ Gonzague Henri
 
 import numpy as np
 import pandas as pd
-from pymgrid import Microgrid
+from . import Microgrid
 from os import listdir
 from os.path import isfile, join
 import os

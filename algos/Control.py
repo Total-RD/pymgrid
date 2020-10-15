@@ -1,4 +1,4 @@
-from utils import DataGenerator as dg
+from pymgrid_git.utils import DataGenerator as dg
 # from pymgrid import Microgrid
 import pandas as pd
 import numpy as np
@@ -44,6 +44,7 @@ def return_underlying_data(microgrid):
         grid_data = pd.Series(data=[0] * len(microgrid._load_ts), name='grid')
 
     return pd.concat([pv_data, load_data, grid_data], axis=1)
+
 
 class SampleAverageApproximation:
     """
@@ -371,6 +372,7 @@ class SampleAverageApproximation:
         return output
 
     def run_deterministic_on_forecast(self, forecast_steps=None, verbose=False):
+        
 
         sample = self.forecasts.copy()
         output = ControlOutput(alg_name='mpc', empty=True, microgrid=self.microgrid)
@@ -384,7 +386,7 @@ class SampleAverageApproximation:
 
         for j in range(forecast_steps):
             if verbose:
-                print('iter {}'.format(j))
+                print('Deterministic iter {}'.format(j))
 
                 sample.iloc[j] = self.underlying_data.iloc[j]  # overwrite with actual data
 
@@ -392,10 +394,9 @@ class SampleAverageApproximation:
                 # TODO then, pick 0th step controls of sample with 'percentile' cost over horizon
 
                 horizon_output = self.mpc.mpc_single_step(sample, output, j)
-
                 output.append(horizon_output)
+        return output
 
-            return output
 
 class ForecastArgs:
     def __init__(self, num_pv_noise_params_0, num_pv_std_ratio, num_load_variance_scale, num_push_peak_ratio,
@@ -517,6 +518,7 @@ class ForecastArgSet(dict):
             return NotImplemented
 
         return self.mape_mean > other.mape_mean
+
 
 class HorizonOutput:
 
@@ -1379,7 +1381,6 @@ class ModelPredictiveControl:
 
         return HorizonOutput(control_dicts, self.microgrid, current_step)
 
-# TODO Set up continuous action space RL for MG
 
 class RuleBasedControl:
     def __init__(self, microgrid):
@@ -1812,48 +1813,78 @@ class Benchmarks:
                 print('Test set cost using SAA: {}'.format(cost_test))
                 print('Train set cost using SAA: {}'.format(cost_train))
 
+def compute_cost_of_mpc(mpc_output):
+    l = int(np.ceil(2/3*len(mpc_output['cost'])))
+    cost_mpc = np.sum(result['mpc_output']['cost']['cost'][l:])
+    print(cost_mpc)
+    return round(cost_mpc,2)
 
-if __name__=='__main__':
-    # TODO this has new code, you need to debug SAA
-    import cProfile
-    from pymgrid import MicrogridGenerator
+if __name__ == '__main__':
+    print('Running main')
+    from pymgrid.MicrogridGenerator import MicrogridGenerator
 
-    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25,
+    m_gen = MicrogridGenerator(nb_microgrid=25,
                                   path='/Users/ahalev/Dropbox/Avishai/gradSchool/internships/totalInternship/pymgrid_git')
-    # m_gen = m_gen.load('pymgrid25')
-
 
     m_gen.generate_microgrid(verbose=False)
 
-    for j, microgrid in enumerate(m_gen.microgrids):
-        print(j, microgrid.architecture)
-    #     if microgrid.architecture['grid']==1:
-    #         print('Found a good one on iter', j)
-    #         break
-    #
-    # if microgrid.architecture['grid']==0:
-    #     raise ValueError('no')
+    microgrids = m_gen.microgrids
 
-    microgrid = m_gen.microgrids[1]
-    log = open('grid_and_genset.log','a')
-    sys.stdout = log
-    MPC = ModelPredictiveControl(microgrid)
-    MPC.run_mpc_on_microgrid(forecast_steps=2000)
+    comparison_list = []
+    forecast_accuracies = [50, 70, 85]
+    percentiles = [0.25, 0.5, 0.75]
 
-    # sampling_args = dict(load_variance_scale=1.2, noise_params=(None, {'std_ratio': 0.3}), verbose=False)
-    # SAA = SampleAverageApproximation(microgrid)
-    # samples = SAA.sample_from_forecasts(n_samples=3, **sampling_args)
-    # underlying_data_list = [SAA.underlying_data]*3
-    # output = SAA.run_mpc_on_group(samples, verbose=True)
+    sampling_args = dict()
+    sampling_args['push_individual_vals'] = True  # For pv data
+    sampling_args['push_individual_ratio'] = 0.5  # For pv data
+
+    total_iter = len(microgrids) * len(forecast_accuracies) * len(percentiles)
+
+    checkpoint = pd.DataFrame()
+
+    for j, microgrid in enumerate(microgrids):
+        if j == 1:
+            break
+        for k, accuracy in enumerate(forecast_accuracies):
+            for l, percentile in enumerate(percentiles):
+                if l != 0:
+                    continue
+                t0 = time.time()
+
+                m = (j * len(forecast_accuracies) + k) * len(percentiles) + l
+                print(round(100 * m / total_iter, 2), '%')
+                print('j={} k={} l={}'.format(j, k, l))
+
+                SAA = SampleAverageApproximation(microgrid, preset_to_use=accuracy)
+                MPC = ModelPredictiveControl(microgrid)
+
+                mape = SAA.validate_forecasts(forecasts=SAA.forecasts, aggregate=True)
+
+                print('Running MPC')
+                mpc_output = MPC.run_mpc_on_sample(SAA.forecasts)
+                print('Running SAA')
+                #             saa_output = SAA.run(optimal_percentile = percentile, use_previous_samples=False, verbose=True, **sampling_args)
+
+                d = dict(microgrid=microgrid, percentile=percentile, accuracy=accuracy, mpc_output=mpc_output,
+                         forecasts=SAA.forecasts)
+                comparison_list.append(d)
+
+    #             checkpoint = pd.DataFrame({'j':j, 'k':k, 'l':l}, index=[0])
+    #             checkpoint.to_csv('checkpoint.csv')
+
+    #             filename = 'sensitivity_1208/comparison_algos_'+str(j)+'_'+str(k)+'_'+str(l)
+    #             outfile = open(filename,'wb')
+    #             pickle.dump(d,outfile)
+    #             outfile.close()
+
+    #             total_t = time.time()-t0
+    #             total_t/=60
+    #             total_t = round(total_t,2)
+    #             print('Total iter time: {} min'.format(total_t))
+
+    for result in comparison_list:
+        print(compute_cost_of_mpc(result['mpc_output']))
 
 
 
-    # t0 = time.time()
-    # benchmarks = Benchmarks(microgrid)
-    # benchmarks.run_saa_benchmark(verbose=True, n_samples=2)
-    # cProfile.run('benchmarks.run_saa_benchmark(verbose=True, n_samples=2)', sort='cumtime')
 
-    # benchmarks.describe_benchmarks()
-
-
-    # print(time.time()-t0,' seconds')

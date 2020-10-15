@@ -21,23 +21,22 @@ from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
 import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
-from algos.Control import *
 
 init_notebook_mode(connected=False)
 np.random.seed(123)
 cf.set_config_file(theme='pearl')
 
-DEFAULT_HORIZON = 24 #in hours
-DEFAULT_TIMESTEP = 1 #in hours
-ZERO = 10**-5
+DEFAULT_HORIZON = 24  # in hours
+DEFAULT_TIMESTEP = 1  # in hours
+ZERO = 10 ** -5
 
 '''
 The following classes are used to contain the information related to the different components
 of the microgrid. Their main use is for easy access in a notebook.
 '''
 
-class Battery:
 
+class Battery:
     """
     The class battery is used to store the information related to the battery in a microgrid. One of the main use for
     this class is for an easy access to information in a notebook using the battery object contained in a microgrid.
@@ -92,7 +91,6 @@ class Battery:
     """
 
     def __init__(self, param_battery, capa_to_charge, capa_to_discharge):
-
         self.soc = param_battery['battery_soc_0'].values[0]
         self.capacity = param_battery['battery_capacity'].values[0]
         self.soc_max = param_battery['battery_soc_max'].values[0]
@@ -140,6 +138,7 @@ class Genset:
     You can access the maximum power max for example with:
     >>> m_gen.microgrids[0].genset.p_max
     """
+
     def __init__(self, param):
         self.rated_power = param['genset_rated_power'].values[0]
         self.p_min = param['genset_pmin'].values[0]
@@ -188,16 +187,16 @@ class Grid:
     You can access the status of the grid for example with:
     >>> m_gen.microgrids[0].grid.status
     """
+
     def __init__(self, param, status, price_import, price_export):
         self.power_export = param['grid_power_export'].values[0]
         self.power_import = param['grid_power_import'].values[0]
-        self.price_export = price_export #param['grid_price_export'].values[0]
-        self.price_import = price_import # param['grid_price_import'].values[0]
+        self.price_export = price_export  # param['grid_price_export'].values[0]
+        self.price_import = price_import  # param['grid_price_import'].values[0]
         self.status = status
 
 
 class Microgrid:
-
     """
     The class microgrid implement a microgrid. It is also used to run the simulation and different benchmarks.
 
@@ -321,35 +320,35 @@ class Microgrid:
 
     def __init__(self, parameters, horizon=DEFAULT_HORIZON, timestep=DEFAULT_TIMESTEP):
 
-        #list of parameters
-        #this is a static dataframe: parameters of the microgrid that do not change with time
+        # list of parameters
+        # this is a static dataframe: parameters of the microgrid that do not change with time
 
-        #self._param_check(parameters)
+        # self._param_check(parameters)
 
         self.parameters = parameters['parameters']
-        self.architecture =  parameters['architecture']
+        self.architecture = parameters['architecture']
 
-        #different timeseries
-        self._load_ts=parameters['load']
-        self._pv_ts=parameters['pv']
+        # different timeseries
+        self._load_ts = parameters['load']
+        self._pv_ts = parameters['pv']
 
-        self.pv = self._pv_ts.iloc[0,0]
+        self.pv = self._pv_ts.iloc[0, 0]
         self.load = self._load_ts.iloc[0, 0]
-        self._next_load = self._load_ts.iloc[1,0]
-        self._next_pv = self._pv_ts.iloc[1,0]
-        if parameters['architecture']['grid']==1:
-            self._grid_status_ts=parameters['grid_ts'] #time series of outages
-            #self.grid_status = self._grid_status_ts.iloc[0, 0]
-            #todo if we move to time series of price
-            self._grid_price_import=parameters['grid_price_import']
-            self._grid_price_export=parameters['grid_price_export']
+        self._next_load = self._load_ts.iloc[1, 0]
+        self._next_pv = self._pv_ts.iloc[1, 0]
+        if parameters['architecture']['grid'] == 1:
+            self._grid_status_ts = parameters['grid_ts']  # time series of outages
+            # self.grid_status = self._grid_status_ts.iloc[0, 0]
+            # todo if we move to time series of price
+            self._grid_price_import = parameters['grid_price_import']
+            self._grid_price_export = parameters['grid_price_export']
 
             self._next_grid_status = self._grid_status_ts.iloc[0, 0]
             self._next_grid_price_export = self._grid_price_export.iloc[0, 0]
             self._next_grid_price_import = self._grid_price_import.iloc[0, 0]
 
         # those dataframe record what is happening at each time step
-        self._df_record_control_dict=parameters['df_actions']
+        self._df_record_control_dict = parameters['df_actions']
         self._df_record_state = parameters['df_status']
         self._df_record_actual_production = parameters['df_actual_generation']
         self._df_record_cost = parameters['df_cost']
@@ -361,13 +360,13 @@ class Microgrid:
         self._has_run_rule_based_baseline = False
         self._has_run_mpc_baseline = False
         self._has_train_test_split = False
-        self._epoch=0
+        self._epoch = 0
         self._zero = ZERO
         self.control_dict = parameters['control_dict']
         self._data_set_to_use_default = 'all'
         self._data_set_to_use = 'all'
 
-        self.benchmarks = Benchmarks(self)
+        self.benchmarks = None
 
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
@@ -380,13 +379,12 @@ class Microgrid:
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0])
 
-    def _param_check(self,parameters):
+    def _param_check(self, parameters):
         """Simple parameter checks"""
 
         # Check parameters
         if not isinstance(parameters, dict):
             raise TypeError('parameters must be of type dict, is ({})'.format(type(parameters)))
-
 
         # Check architecture
         try:
@@ -398,9 +396,9 @@ class Microgrid:
             raise TypeError('parameters[\'architecture\'] must be of type dict, is ({})'.format(type(architecture)))
 
         for key, val in architecture.items():
-            if isinstance(val,bool):
+            if isinstance(val, bool):
                 continue
-            elif isinstance(val,int) and (val == 0 or val == 1):
+            elif isinstance(val, int) and (val == 0 or val == 1):
                 continue
             else:
                 raise TypeError('Value ({}) of key ({}) in architecture is of unrecognizable type, '
@@ -408,7 +406,7 @@ class Microgrid:
 
         # Ensure various DataFrames exist and are in fact DataFrames
 
-        keys = ('parameters','load', 'pv', 'df_actions', 'df_status', 'df_actual_generation', 'df_cost')
+        keys = ('parameters', 'load', 'pv', 'df_actions', 'df_status', 'df_actual_generation', 'df_cost')
 
         for key in keys:
             try:
@@ -418,8 +416,6 @@ class Microgrid:
                 raise
             if not isinstance(df, pd.DataFrame):
                 raise TypeError('parameters[\'{}\'] must be of type pd.DataFrame, is ({})'.format(key, type(df)))
-
-
 
     def set_horizon(self, horizon):
         """Function used to change the horizon of the simulation."""
@@ -442,16 +438,13 @@ class Microgrid:
         """ Function that returns the control_dict. """
         return self.control_dict
 
-
     def get_parameters(self):
         """ Function that returns the parameters of the microgrid. """
         return self.parameters
 
-
     def get_cost(self):
         """ Function that returns the cost associated the operation of the last time step. """
         return self._df_record_cost['cost'][-1]
-
 
     def get_updated_values(self):
         """
@@ -470,7 +463,6 @@ class Microgrid:
 
         return mg_data
 
-
     def forecast_all(self):
         """ Function that returns the PV, load and grid_status forecasted values for the next horizon. """
         forecast = {
@@ -483,12 +475,12 @@ class Microgrid:
 
         return forecast
 
-
     def forecast_pv(self):
         """ Function that returns the PV forecasted values for the next horizon. """
         forecast = np.nan
         if self._data_set_to_use == 'training':
-            forecast=self._pv_train.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast = self._pv_train.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'testing':
             forecast = self._pv_test.iloc[
@@ -499,18 +491,20 @@ class Microgrid:
 
         return forecast
 
-
     def forecast_load(self):
         """ Function that returns the load forecasted values for the next horizon. """
         forecast = np.nan
         if self._data_set_to_use == 'training':
-            forecast = self._load_train.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast = self._load_train.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'testing':
-            forecast = self._load_test.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast = self._load_test.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'all':
-            forecast = self._load_ts.iloc[self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+            forecast = self._load_ts.iloc[
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         return forecast
 
@@ -519,15 +513,15 @@ class Microgrid:
         forecast = np.nan
         if self._data_set_to_use == 'training':
             forecast = self._grid_status_train.iloc[
-               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'testing':
             forecast = self._grid_status_test.iloc[
-               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'all':
             forecast = self._grid_status_ts.iloc[
-               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         return forecast
 
@@ -537,27 +531,25 @@ class Microgrid:
         forecast_export = np.nan
         if self._data_set_to_use == 'training':
             forecast_import = self._grid_price_import_train.iloc[
-                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                              self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
             forecast_export = self._grid_price_export_train.iloc[
                               self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'testing':
             forecast_import = self._grid_price_import_test.iloc[
-                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                              self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
             forecast_export = self._grid_price_export_test.iloc[
-                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                              self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         if self._data_set_to_use == 'all':
             forecast_import = self._grid_price_import.iloc[
-                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                              self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
             forecast_export = self._grid_price_export.iloc[
-                       self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
+                              self._tracking_timestep:self._tracking_timestep + self.horizon].values.flatten()
 
         return forecast_import, forecast_export
 
-
-
-    #if return whole pv and load ts, the time can be counted in notebook
+    # if return whole pv and load ts, the time can be counted in notebook
     def run(self, control_dict):
         """
         Function to 'run' the microgrid and iterate over the dataset.
@@ -585,16 +577,15 @@ class Microgrid:
 
         self._df_record_control_dict = self._record_action(control_dict, self._df_record_control_dict)
 
-
-
         self._df_record_actual_production = self._record_production(control_dict,
-                                                                         self._df_record_actual_production,
+                                                                    self._df_record_actual_production,
                                                                     self._df_record_state)
 
         if self.architecture['grid'] == 1:
 
-            self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
-                                                               self._df_record_cost, self.grid.price_import, self.grid.price_export)
+            self._df_record_cost = self._record_cost(
+                {i: self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
+                self._df_record_cost, self.grid.price_import, self.grid.price_export)
             self._df_record_state = self._update_status(control_dict,
                                                         self._df_record_state, self._next_load, self._next_pv,
                                                         self._next_grid_status, self._next_grid_price_import,
@@ -602,8 +593,9 @@ class Microgrid:
 
 
         else:
-            self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
-                                                     self._df_record_cost)
+            self._df_record_cost = self._record_cost(
+                {i: self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
+                self._df_record_cost)
             self._df_record_state = self._update_status(control_dict,
                                                         self._df_record_state, self._next_load, self._next_pv)
 
@@ -613,14 +605,13 @@ class Microgrid:
         self._tracking_timestep += 1
         self.update_variables()
 
+        # TODO should this have a -self.horizon here?
         if self._tracking_timestep == self._data_length - self.horizon:
             self.done = True
 
-
         return self.get_updated_values()
 
-
-    def train_test_split(self, train_size=0.67, shuffle = False, cancel=False):
+    def train_test_split(self, train_size=0.67, shuffle=False, cancel=False):
         """
         Function to split our data between a training and testing set.
 
@@ -661,8 +652,8 @@ class Microgrid:
 
         """
 
-        if self._has_train_test_split ==  False:
-            self._limit_index = int(np.ceil(self._data_length*train_size))
+        if self._has_train_test_split == False:
+            self._limit_index = int(np.ceil(self._data_length * train_size))
             self._load_train = self._load_ts.iloc[:self._limit_index]
             self._pv_train = self._pv_ts.iloc[:self._limit_index]
 
@@ -683,7 +674,7 @@ class Microgrid:
             self._data_set_to_use_default = 'training'
             self._data_set_to_use = 'training'
 
-        elif self._has_train_test_split ==  True and cancel == True:
+        elif self._has_train_test_split == True and cancel == True:
             self._has_train_test_split = False
             self._data_set_to_use_default = 'all'
             self._data_set_to_use = 'all'
@@ -697,34 +688,32 @@ class Microgrid:
             self.pv = self._pv_train.iloc[self._tracking_timestep, 0]
             self.load = self._load_train.iloc[self._tracking_timestep, 0]
 
-            self._next_pv = self._pv_train.iloc[self._tracking_timestep +1, 0]
-            self._next_load = self._load_train.iloc[self._tracking_timestep+1, 0]
-
+            self._next_pv = self._pv_train.iloc[self._tracking_timestep + 1, 0]
+            self._next_load = self._load_train.iloc[self._tracking_timestep + 1, 0]
 
         if self._data_set_to_use == 'testing':
             self.pv = self._pv_test.iloc[self._tracking_timestep, 0]
             self.load = self._load_test.iloc[self._tracking_timestep, 0]
 
-            self._next_pv = self._pv_test.iloc[self._tracking_timestep+1, 0]
-            self._next_load = self._load_test.iloc[self._tracking_timestep+1, 0]
+            self._next_pv = self._pv_test.iloc[self._tracking_timestep + 1, 0]
+            self._next_load = self._load_test.iloc[self._tracking_timestep + 1, 0]
 
         if self._data_set_to_use == 'all':
             self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
             self.load = self._load_ts.iloc[self._tracking_timestep, 0]
 
-            self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
-            self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
+            self._next_pv = self._pv_ts.iloc[self._tracking_timestep + 1, 0]
+            self._next_load = self._load_ts.iloc[self._tracking_timestep + 1, 0]
 
-
-        if self.architecture['grid']==1:
+        if self.architecture['grid'] == 1:
             if self._data_set_to_use == 'training':
                 self.grid.status = self._grid_status_train.iloc[self._tracking_timestep, 0]
-                self.grid.price_import = self._grid_price_import_train.iloc[self._tracking_timestep,0]
-                self.grid.price_export = self._grid_price_export_train.iloc[self._tracking_timestep,0]
+                self.grid.price_import = self._grid_price_import_train.iloc[self._tracking_timestep, 0]
+                self.grid.price_export = self._grid_price_export_train.iloc[self._tracking_timestep, 0]
 
-                self._next_grid_status = self._grid_status_train.iloc[self._tracking_timestep +1, 0]
-                self._next_grid_price_import = self._grid_price_import_train.iloc[self._tracking_timestep +1, 0]
-                self._next_grid_price_export = self._grid_price_export_train.iloc[self._tracking_timestep +1, 0]
+                self._next_grid_status = self._grid_status_train.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_import = self._grid_price_import_train.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_export = self._grid_price_export_train.iloc[self._tracking_timestep + 1, 0]
 
             if self._data_set_to_use == 'testing':
                 self.grid.status = self._grid_status_test.iloc[self._tracking_timestep, 0]
@@ -734,7 +723,6 @@ class Microgrid:
                 self._next_grid_status = self._grid_status_test.iloc[self._tracking_timestep + 1, 0]
                 self._next_grid_price_import = self._grid_price_import_test.iloc[self._tracking_timestep + 1, 0]
                 self._next_grid_price_export = self._grid_price_export_test.iloc[self._tracking_timestep + 1, 0]
-
 
             if self._data_set_to_use == 'all':
                 self.grid.status = self._grid_status_ts.iloc[self._tracking_timestep, 0]
@@ -757,10 +745,10 @@ class Microgrid:
             temp_cost['epoch'] = self._epoch
             self._df_cost_per_epochs.append(temp_cost)
 
-        self._df_record_control_dict = {i:[] for i in self._df_record_control_dict}
-        self._df_record_state = {i:[self._df_record_state[i][0]] for i in self._df_record_state}
-        self._df_record_actual_production = {i:[] for i in self._df_record_actual_production}
-        self._df_record_cost = {i:[] for i in self._df_record_cost}
+        self._df_record_control_dict = {i: [] for i in self._df_record_control_dict}
+        self._df_record_state = {i: [self._df_record_state[i][0]] for i in self._df_record_state}
+        self._df_record_actual_production = {i: [] for i in self._df_record_actual_production}
+        self._df_record_cost = {i: [] for i in self._df_record_cost}
 
         self._tracking_timestep = 0
 
@@ -777,15 +765,11 @@ class Microgrid:
         self.update_variables()
         self.done = False
 
-
-
-        self._epoch+=1
-
+        self._epoch += 1
 
     ########################################################
     # FUNCTIONS TO UPDATE THE INTERNAL DICTIONARIES
     ########################################################
-
 
     def _record_action(self, control_dict, df):
         """ This function is used to record the actions taken, before being checked for feasability. """
@@ -795,29 +779,31 @@ class Microgrid:
             if j in control_dict.keys():
                 df[j].append(control_dict[j])
             else:
-                df[j].append({j:0})
-        #df = df.append(control_dict,ignore_index=True)
+                df[j].append({j: 0})
+        # df = df.append(control_dict,ignore_index=True)
 
         return df
 
-
-    def _update_status(self, control_dict, df, next_load, next_pv, next_grid = 0, next_price_import =0, next_price_export = 0):
+    def _update_status(self, control_dict, df, next_load, next_pv, next_grid=0, next_price_import=0,
+                       next_price_export=0):
         """ This function update the parameters of the microgrid that change with time. """
-        #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
+        # self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
         if not isinstance(df, dict):
             raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
 
         new_dict = {
             'load': next_load,
-                    'pv': next_pv,
-            'hour':self._tracking_timestep%24,
+            'pv': next_pv,
+            'hour': self._tracking_timestep % 24,
         }
-        new_soc =np.nan
+        new_soc = np.nan
         if self.architecture['battery'] == 1:
-            new_soc = df['battery_soc'][-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
-                                                        - control_dict['battery_discharge']/self.parameters['battery_efficiency'].values[0])/self.parameters['battery_capacity'].values[0]
-            #if col == 'net_load':
+            new_soc = df['battery_soc'][-1] + (
+                        control_dict['battery_charge'] * self.parameters['battery_efficiency'].values[0]
+                        - control_dict['battery_discharge'] / self.parameters['battery_efficiency'].values[0]) / \
+                      self.parameters['battery_capacity'].values[0]
+            # if col == 'net_load':
             capa_to_charge = max(
                 (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
                  new_soc *
@@ -830,35 +816,32 @@ class Microgrid:
                                      self.parameters['battery_capacity'].values[0]
                                      ) * self.parameters['battery_efficiency'].values[0], 0)
 
-            new_dict['battery_soc']=new_soc
+            new_dict['battery_soc'] = new_soc
             new_dict['capa_to_discharge'] = capa_to_discharge
             new_dict['capa_to_charge'] = capa_to_charge
 
-        if self.architecture['grid'] == 1 :
+        if self.architecture['grid'] == 1:
             new_dict['grid_status'] = next_grid
             new_dict['grid_price_import'] = next_price_import
             new_dict['grid_price_export'] = next_price_export
 
-
         for j in df:
             df[j].append(new_dict[j])
 
-        #df = df.append(dict,ignore_index=True)
-
-
+        # df = df.append(dict,ignore_index=True)
 
         return df
 
-
-    #now we consider all the generators on all the time (mainly concern genset)
+    # now we consider all the generators on all the time (mainly concern genset)
 
     def _check_constraints_genset(self, p_genset):
         """ This function checks that the constraints of the genset are respected."""
         if p_genset < 0:
-            p_genset =0
+            p_genset = 0
             print('error, genset power cannot be lower than 0')
 
-        if p_genset < self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0] and p_genset >1:
+        if p_genset < self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[
+            0] and p_genset > 1:
             p_genset = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
 
         if p_genset > self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmax'].values[0]:
@@ -871,13 +854,13 @@ class Microgrid:
         if p_import < 0:
             p_import = 0
 
-        if p_export <0:
+        if p_export < 0:
             p_export = 0
 
         if p_import > self._zero and p_export > self._zero:
-        	pass
-            #print ('cannot import and export at the same time')
-            #todo how to deal with that?
+            pass
+        # print ('cannot import and export at the same time')
+        # todo how to deal with that?
 
         if p_import > self.parameters['grid_power_import'].values[0]:
             p_import = self.parameters['grid_power_import'].values[0]
@@ -898,14 +881,14 @@ class Microgrid:
 
         if p_charge > self._zero and p_discharge > self._zero:
             pass
-            #print ('cannot import and export at the same time')
-            #todo how to deal with that?
+            # print ('cannot import and export at the same time')
+            # todo how to deal with that?
 
         capa_to_charge = max(
-                        (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
-                         status['battery_soc'][-1] *
-                         self.parameters['battery_capacity'].values[0]
-                         ) / self.parameters['battery_efficiency'].values[0], 0)
+            (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
+             status['battery_soc'][-1] *
+             self.parameters['battery_capacity'].values[0]
+             ) / self.parameters['battery_efficiency'].values[0], 0)
 
         capa_to_discharge = max((status['battery_soc'][-1] *
                                  self.parameters['battery_capacity'].values[0]
@@ -914,15 +897,15 @@ class Microgrid:
                                  ) * self.parameters['battery_efficiency'].values[0], 0)
 
         if p_charge > capa_to_charge or p_charge > self.parameters['battery_power_charge'].values[0]:
-            p_charge = min (capa_to_charge, self.parameters['battery_power_charge'].values[0])
-
+            p_charge = min(capa_to_charge, self.parameters['battery_power_charge'].values[0])
 
         if p_discharge > capa_to_discharge or p_discharge > self.parameters['battery_power_discharge'].values[0]:
-            p_discharge = min (capa_to_discharge, self.parameters['battery_power_discharge'].values[0])
+            p_discharge = min(capa_to_discharge, self.parameters['battery_power_discharge'].values[0])
 
         return p_charge, p_discharge
 
     def _record_production(self, control_dict, df, status):
+        # TODO tell Gonzague that this and _record_control_dict record the same thing
         """
         This function records the actual production occuring in the microgrid. Based on the control actions and the
         parameters of the microgrid. This function will check that the control actions respect the constraints of
@@ -942,10 +925,10 @@ class Microgrid:
         The mechanism to incure a penalty in case of over-generation is not yet in its final version.
         """
 
-        #todo enforce constraints
-        #todo make sure the control actions repect their respective constriants
+        # todo enforce constraints
+        # todo make sure the control actions repect their respective constriants
 
-        #todo pv
+        # todo pv
 
         if not isinstance(df, dict):
             raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
@@ -956,14 +939,12 @@ class Microgrid:
         total_load = control_dict['load']
         temp_pv = 0
 
-        #check the generator constraints
-
-
+        # check the generator constraints
 
         try:
             total_production += control_dict['loss_load']
         except:
-            control_dict['loss_load'] =0
+            control_dict['loss_load'] = 0
         try:
             total_production += control_dict['overgeneration']
         except:
@@ -999,7 +980,8 @@ class Microgrid:
             except:
                 p_import = 0
                 p_export = 0
-                print("this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
+                print(
+                    "this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
 
             p_import, p_export = self._check_constraints_grid(p_import, p_export)
             control_dict['grid_import'] = p_import
@@ -1011,8 +993,8 @@ class Microgrid:
         if self.architecture['battery'] == 1:
 
             try:
-                p_charge=control_dict['battery_charge']
-                p_discharge=control_dict['battery_discharge']
+                p_charge = control_dict['battery_charge']
+                p_discharge = control_dict['battery_discharge']
 
             except:
                 p_charge = 0
@@ -1020,10 +1002,9 @@ class Microgrid:
                 print(
                     "this microgrid is grid connected, you should add a 'battery_charge' and a 'battery_discharge' field to your control dictionnary")
 
-
             p_charge, p_discharge = self._check_constraints_battery(p_charge,
-                                                                   p_discharge,
-                                                                   status)
+                                                                    p_discharge,
+                                                                    status)
             control_dict['battery_discharge'] = p_discharge
             control_dict['battery_charge'] = p_charge
 
@@ -1031,30 +1012,30 @@ class Microgrid:
             total_production -= control_dict['battery_charge']
 
         if abs(total_production - total_load) < threshold:
-            control_dict['overgeneration'] =0
+            control_dict['overgeneration'] = 0
             control_dict['loss_load'] = 0
             for j in df:
                 df[j].append(control_dict[j])
 
-        elif total_production > total_load :
+        elif total_production > total_load:
             # here we consider we produced more than needed ? we pay the price of the full cost proposed?
             # penalties ?
-            control_dict['overgeneration'] = total_production-total_load
+            control_dict['overgeneration'] = total_production - total_load
             control_dict['loss_load'] = 0
             for j in df:
                 df[j].append(control_dict[j])
-            #df = df.append(control_dict, ignore_index=True)
-            #print('total_production > total_load')
-            #print(control_dict)
+            # df = df.append(control_dict, ignore_index=True)
+            # print('total_production > total_load')
+            # print(control_dict)
 
-        elif total_production < total_load :
-            control_dict['loss_load']+= total_load-total_production
+        elif total_production < total_load:
+            control_dict['loss_load'] += total_load - total_production
             control_dict['overgeneration'] = 0
             for j in df:
                 df[j].append(control_dict[j])
-            #df = df.append(control_dict, ignore_index=True)
-            #print('total_production < total_load')
-            #print(control_dict)
+            # df = df.append(control_dict, ignore_index=True)
+            # print('total_production < total_load')
+            # print(control_dict)
 
         return df
 
@@ -1071,17 +1052,15 @@ class Microgrid:
         if self.architecture['genset'] == 1:
             cost += control_dict['genset'] * self.parameters['fuel_cost'].values[0]
 
-        if self.architecture['grid'] ==1:
-
-
-            cost +=( cost_import * control_dict['grid_import']
+        if self.architecture['grid'] == 1:
+            cost += (cost_import * control_dict['grid_import']
                      - cost_export * control_dict['grid_export'])
 
+        if self.architecture['battery'] == 1:
+            cost += (control_dict['battery_charge'] + control_dict['battery_discharge']) * \
+                    self.parameters['battery_cost_cycle'].values[0]
 
-        if self.architecture['battery'] ==1 :
-            cost += (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
-
-        cost_dict= {'cost': cost}
+        cost_dict = {'cost': cost}
 
         df['cost'].append(cost)
 
@@ -1091,7 +1070,6 @@ class Microgrid:
     # PRINT FUNCTIONS
     ########################################################
 
-
     def print_load_pv(self):
 
         print('Load')
@@ -1099,11 +1077,14 @@ class Microgrid:
         iplot(fig1)
 
         print('PV')
-        fig2 =self._pv_ts.iplot(asFigure=True)
+        fig2 = self._pv_ts.iplot(asFigure=True)
         iplot(fig2)
 
-    def print_actual_production(self):
-        if self._df_record_actual_production != type(pd.DataFrame()):
+    def print_actual_production(self, production=None):
+        if production is None:
+            production = self._df_record_actual_production
+
+        if not isinstance(production, pd.DataFrame):
             df = pd.DataFrame(self._df_record_actual_production)
             fig1 = df.iplot(asFigure=True)
             iplot(fig1)
@@ -1129,17 +1110,19 @@ class Microgrid:
             plt.plot(self._df_record_cost.cumsum())
             plt.show()
 
-
-
     def print_benchmark_cost(self):
         """
         This function prints the cumulative cost of the different benchmark ran and different part of the dataset
         depending on if split it in train/test or not.
         """
+        if self.benchmarks is None:
+            from algos.Control import Benchmarks
+            self.benchmarks = Benchmarks(self)
 
         if len(self.benchmarks.outputs_dict) == 0:
             print('No benchmark algorithms have been run, running all.')
-            #self.benchmarks.run_benchmarks()
+            self.benchmarks.run_benchmarks()
+            self.benchmarks.describe_benchmarks()
 
         if self._has_train_test_split:
             self.benchmarks.describe_benchmarks(test_split=self._has_train_test_split, test_index=self._limit_index)
@@ -1177,18 +1160,17 @@ class Microgrid:
 
     def print_updated_parameters(self):
         """ This function prints the last values for the parameters of the microgrid changing with time."""
-        state={}
+        state = {}
         for i in self._df_record_state:
             state[i] = self._df_record_state[i][-1]
 
         print(state)
 
-
     ########################################################
     # BENCHMARK RELATED FUNCTIONS
     ########################################################
 
-    def _generate_priority_list(self, architecture, parameters , grid_status=0, price_import = 0, price_export=0):
+    def _generate_priority_list(self, architecture, parameters, grid_status=0, price_import=0, price_export=0):
         """
         Depending on the architecture of the microgrid and grid related import/export costs, this function generates a
         priority list to be run in the rule based benchmark.
@@ -1196,10 +1178,9 @@ class Microgrid:
         # compute marginal cost of each resource
         # construct priority list
         # should receive fuel cost and cost curve, price of electricity
-        if  architecture['grid'] == 1:
+        if architecture['grid'] == 1:
 
-
-            if price_export / (parameters['battery_efficiency'].values[0]**2) < price_import:
+            if price_export / (parameters['battery_efficiency'].values[0] ** 2) < price_import:
 
                 # should return something like ['gen', starting at in MW]?
                 priority_dict = {'PV': 1 * architecture['PV'],
@@ -1255,22 +1236,23 @@ class Microgrid:
         pv_not_curtailed = 0
         self_consumed_pv = 0
 
-
         sorted_priority = priority_dict
         min_load = 0
         if self.architecture['genset'] == 1:
-            #load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
+            # load - pv - min(capa_to_discharge, p_discharge) > 0: then genset on and min load, else genset off
             grid_first = 0
             capa_to_discharge = max(min((status['battery_soc'].iloc[-1] *
-                                     parameters['battery_capacity'].values[0]
-                                     - parameters['battery_soc_min'].values[0] *
-                                     parameters['battery_capacity'].values[0]
-                                     ) * parameters['battery_efficiency'].values[0], self.battery.p_discharge_max), 0)
+                                         parameters['battery_capacity'].values[0]
+                                         - parameters['battery_soc_min'].values[0] *
+                                         parameters['battery_capacity'].values[0]
+                                         ) * parameters['battery_efficiency'].values[0], self.battery.p_discharge_max),
+                                    0)
 
-            if self.architecture['grid'] == 1 and sorted_priority['grid'] < sorted_priority['genset'] and sorted_priority['grid']>0:
-                grid_first=1
+            if self.architecture['grid'] == 1 and sorted_priority['grid'] < sorted_priority['genset'] and \
+                    sorted_priority['grid'] > 0:
+                grid_first = 1
 
-            if temp_load > pv + capa_to_discharge and grid_first ==0:
+            if temp_load > pv + capa_to_discharge and grid_first == 0:
 
                 min_load = self.parameters['genset_rated_power'].values[0] * self.parameters['genset_pmin'].values[0]
                 if min_load <= temp_load:
@@ -1379,11 +1361,9 @@ class Microgrid:
         p_grid_import = cp.Variable((horizon,), pos=True)
         p_grid_export = cp.Variable((horizon,), pos=True)
 
-
         # if self.architecture['battery'] == 1:
         p_charge = cp.Variable((horizon,), pos=True)
         p_discharge = cp.Variable((horizon,), pos=True)
-
 
         # if self.architecture['pv']==1:
         p_curtail_pv = cp.Variable((horizon,), pos=True)
@@ -1403,8 +1383,8 @@ class Microgrid:
             fuel_cost = parameters['fuel_cost'].values[0] * np.ones(horizon)
 
             for t in range(horizon):
-                constraints += [p_genset[t] >= u_genset[t]*p_genset_min,
-                                p_genset[t] <= u_genset[t]*p_genset_max]
+                constraints += [p_genset[t] >= u_genset[t] * p_genset_min,
+                                p_genset[t] <= u_genset[t] * p_genset_max]
 
                 total_cost += (p_genset[t] * fuel_cost[t])
 
@@ -1446,7 +1426,7 @@ class Microgrid:
 
             for t in range(horizon):
                 constraints += [p_charge[t] <= p_charge_max,
-                                p_discharge[t] <= p_discharge_max,]
+                                p_discharge[t] <= p_discharge_max, ]
 
                 constraints += [battery_soc[t] >= parameters['battery_soc_min'].values[0],
                                 battery_soc[t] <= parameters['battery_soc_max'].values[0]]
@@ -1520,27 +1500,24 @@ class Microgrid:
         self._baseline_priority_list_cost = copy(self._df_record_cost)
 
         n = length - self.horizon
-        print_ratio = n/100
+        print_ratio = n / 100
 
         for i in range(length - self.horizon):
 
             e = i
 
-            if e == (n-1):
+            if e == (n - 1):
+                e = n
 
-               e = n
-
-            e = e/print_ratio
+            e = e / print_ratio
 
             sys.stdout.write("\rIn Progress %d%% " % e)
             sys.stdout.flush()
 
             if e == 100:
-
                 sys.stdout.write("\nRules Based Calculation Finished")
                 sys.stdout.flush()
                 sys.stdout.write("\n")
-
 
             if self.architecture['grid'] == 1:
                 priority_dict = self._generate_priority_list(self.architecture, self.parameters,
@@ -1561,8 +1538,7 @@ class Microgrid:
                                                                                      self._baseline_priority_list_record_production,
                                                                                      self._baseline_priority_list_update_status)
 
-
-            if self.architecture['grid']==1:
+            if self.architecture['grid'] == 1:
 
                 self._baseline_priority_list_update_status = self._update_status(
                     self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
@@ -1572,10 +1548,10 @@ class Microgrid:
                     self._grid_price_import.iloc[i + 1].values[0],
                     self._grid_price_export.iloc[i + 1].values[0])
 
-
                 self._baseline_priority_list_cost = self._record_cost(
                     self._baseline_priority_list_record_production.iloc[-1, :].to_dict(),
-                    self._baseline_priority_list_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
+                    self._baseline_priority_list_cost, self._grid_price_import.iloc[i, 0],
+                    self._grid_price_export.iloc[i, 0])
             else:
 
                 self._baseline_priority_list_update_status = self._update_status(
@@ -1598,35 +1574,33 @@ class Microgrid:
         self._baseline_linprog_cost = copy(self._df_record_cost)
 
         n = length - self.horizon
-        print_ratio = n/100
+        print_ratio = n / 100
 
         for i in range(n):
 
             e = i
 
-            if e == (n-1):
+            if e == (n - 1):
+                e = n
 
-               e = n
-
-            e = e/print_ratio
+            e = e / print_ratio
 
             sys.stdout.write("\rIn Progress %d%% " % e)
             sys.stdout.flush()
 
             if e == 100:
-
                 sys.stdout.write("\nMPC Calculation Finished")
                 sys.stdout.flush()
                 sys.stdout.write("\n")
 
             if self.architecture['grid'] == 0:
                 temp_grid = np.zeros(self.horizon)
-                price_import =np.zeros(self.horizon)
+                price_import = np.zeros(self.horizon)
                 price_export = np.zeros(self.horizon)
             else:
                 temp_grid = self._grid_status_ts.iloc[i:i + self.horizon].values
-                price_import= self._grid_price_import.iloc[i:i + self.horizon].values
-                price_export= self._grid_price_export.iloc[i:i + self.horizon].values
+                price_import = self._grid_price_import.iloc[i:i + self.horizon].values
+                price_export = self._grid_price_export.iloc[i:i + self.horizon].values
 
             control_dict = self._mpc_lin_prog_cvxpy(self.parameters, self._load_ts.iloc[i:i + self.horizon].values,
                                                     self._pv_ts.iloc[i:i + self.horizon].values, temp_grid,
@@ -1638,7 +1612,6 @@ class Microgrid:
             self._baseline_linprog_record_production = self._record_production(control_dict,
                                                                                self._baseline_linprog_record_production,
                                                                                self._baseline_linprog_update_status)
-
 
             if self.architecture['grid'] == 1:
 
@@ -1653,7 +1626,7 @@ class Microgrid:
 
                 self._baseline_linprog_cost = self._record_cost(
                     self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
-                    self._baseline_linprog_cost, self._grid_price_import.iloc[i,0], self._grid_price_export.iloc[i,0])
+                    self._baseline_linprog_cost, self._grid_price_import.iloc[i, 0], self._grid_price_export.iloc[i, 0])
 
 
             else:
@@ -1668,10 +1641,7 @@ class Microgrid:
                     self._baseline_linprog_record_production.iloc[-1, :].to_dict(),
                     self._baseline_linprog_cost)
 
-
             self._has_run_mpc_baseline = True
-
-
 
     def compute_benchmark(self, benchmark_to_compute='all', length=8760):
         """
@@ -1694,16 +1664,22 @@ class Microgrid:
     ########################################################
     # RL UTILITY FUNCTIONS
     ########################################################
-    #todo add a forecasting function that add noise to the time series
-    #todo forecasting function can be used for both mpc benchmart and rl loop
+    # todo add a forecasting function that add noise to the time series
+    # todo forecasting function can be used for both mpc benchmart and rl loop
 
-
-    #todo verbose
-    def penalty(self, coef = 1):
+    # todo verbose
+    def penalty(self, control_dict=None, coef=1):
         """Penalty that represents discrepancies between control dict and what really happens. """
         penalty = 0
-        for i in self._df_record_control_dict:
-            penalty += abs(self._df_record_control_dict[i][-1] - self._df_record_actual_production[i][-1])
 
-        return penalty*coef
+        if control_dict is None:
+            for i in self._df_record_control_dict:
+                penalty += abs(self._df_record_control_dict[i][-1] - self._df_record_actual_production[i][-1])
+        else:
+            for key in control_dict:
+                penalty+= abs(control_dict[key]-self._df_record_actual_production[key][-1])
 
+        return penalty * coef
+
+if __name__=='__main__':
+    print('Compiled.')
