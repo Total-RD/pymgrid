@@ -87,6 +87,7 @@ class MicrogridGenerator:
         
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
+        #todo create an architecture argument to fix an architetcture (pymgrid10)
         self.microgrids= [] # generate a list of microgrid object
         #self.annual_load
         self.nb_microgrids=nb_microgrid
@@ -206,7 +207,7 @@ class MicrogridGenerator:
             'soc_min':soc_min,
             'efficiency':efficiency,
             'soc_0':min(max(np.random.randn(), soc_min),soc_max),
-            'cost_cycle':0.025
+            'cost_cycle':0.1
 
         }
         return battery
@@ -477,7 +478,7 @@ class MicrogridGenerator:
         grid_spec=0
 
         if architecture['grid']==1:
-            grid_co2_ts = self._get_co2_ts()
+
             rand_weak_grid = np.random.randint(low=0, high=2)
             price_scenario = np.random.randint(low=1, high=3)
             if rand_weak_grid == 1:
@@ -494,6 +495,8 @@ class MicrogridGenerator:
             column_actions.append('grid_import')
             column_actions.append('grid_export')
             df_status['grid_status'] = [grid_ts.iloc[0,0]]
+            #todo Switch back to random file to generate the new version of pymgrid25
+            grid_co2_ts = pd.read_csv(self.path+'/data/co2/co2_caiso.csv') #self._get_co2_ts()
             df_status['grid_co2'] = [grid_co2_ts.iloc[0, 0]]
 
             grid_price_import_ts = grid['grid_price_import']

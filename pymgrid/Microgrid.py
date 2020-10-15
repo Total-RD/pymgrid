@@ -355,7 +355,6 @@ class Microgrid:
         if parameters['architecture']['grid']==1:
             self._grid_status_ts=parameters['grid_ts'] #time series of outages
             #self.grid_status = self._grid_status_ts.iloc[0, 0]
-            #todo if we move to time series of price
             self._grid_price_import=parameters['grid_price_import']
             self._grid_price_export=parameters['grid_price_export']
             self._grid_co2 = parameters['grid_co2']
@@ -488,6 +487,7 @@ class Microgrid:
             - Battery capacity to charge
             - Battery capacity to discharge
             - Whether the grid is connected or not
+            - CO2 intensity of the grid
         """
         mg_data = {}
 
