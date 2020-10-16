@@ -1725,10 +1725,10 @@ class RuleBasedControl:
                     baseline_priority_list_cost,
                     baseline_priority_list_co2)
 
-        names = ('action', 'status', 'production', 'cost')
+        names = ('action', 'status', 'production', 'cost', 'co2')
 
         dfs = (baseline_priority_list_action, baseline_priority_list_update_status,
-               baseline_priority_list_record_production, baseline_priority_list_cost)
+               baseline_priority_list_record_production, baseline_priority_list_cost, baseline_priority_list_co2)
 
         return ControlOutput(names, dfs, 'rbc')
 
@@ -1818,7 +1818,7 @@ class Benchmarks:
         else:
             self.run_mpc_benchmark(verbose=verbose, **kwargs)
             self.run_rule_based_benchmark()
-            #self.run_saa_benchmark(verbose=verbose, **kwargs)
+            self.run_saa_benchmark(verbose=verbose, **kwargs)
 
         if verbose:
             self.describe_benchmarks()
