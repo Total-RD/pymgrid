@@ -598,7 +598,7 @@ class ControlOutput(dict):
             Name of the algorithm that produced the output
     Usage: dict-like, e.g.:
 
-     >>>  names = ('action', 'status', 'production', 'cost')
+     >>>  names = ('action', 'status', 'production', 'cost', 'co2')
      >>>  dfs = (baseline_linprog_action, baseline_linprog_update_status,
      >>>          baseline_linprog_record_production, baseline_linprog_cost) # From MPC
      >>> M = ControlOutput(names, dfs,'mpc')
@@ -619,7 +619,7 @@ class ControlOutput(dict):
             #     raise TypeError('microgrid must be a Microgrid if empty is True')
 
         if not empty:
-            names_needed = ('action', 'status', 'production', 'cost')
+            names_needed = ('action', 'status', 'production', 'cost', 'co2')
             if any([needed not in names for needed in names_needed]):
                 raise ValueError('Names must contain {}, currently contains {}'.format(names,names_needed))
 
@@ -628,7 +628,7 @@ class ControlOutput(dict):
             self.microgrid = microgrid
 
         else:
-            names = ('action', 'status', 'production', 'cost')
+            names = ('action', 'status', 'production', 'cost', 'co2')
             baseline_linprog_action = deepcopy(microgrid._df_record_control_dict)
             baseline_linprog_update_status = deepcopy(microgrid._df_record_state)
             baseline_linprog_record_production = deepcopy(microgrid._df_record_actual_production)
@@ -655,6 +655,7 @@ class ControlOutput(dict):
             production = self['production']
             cost = self['cost']
             status = self['status']
+            co2 = self['co2']
 
             action = self.microgrid._record_action(other_output.first_dict, action)
             production = self.microgrid._record_production(other_output.first_dict, production, status)
@@ -664,6 +665,12 @@ class ControlOutput(dict):
             i = other_output.current_step
 
             if self.microgrid.architecture['grid'] == 1:
+                co2 = self.microgrid._record_co2(
+                    last_prod,
+                    co2,
+                    self.microgrid._grid_co2.iloc[i].values[0]
+                )
+
                 status = self.microgrid._update_status(
                     last_prod,
                     status,
@@ -671,14 +678,23 @@ class ControlOutput(dict):
                     actual_pv,
                     actual_grid,
                     self.microgrid._grid_price_import.iloc[i + 1].values[0],
-                    self.microgrid._grid_price_export.iloc[i + 1].values[0]
+                    self.microgrid._grid_price_export.iloc[i + 1].values[0],
+                    self.microgrid._grid_co2.iloc[i + 1].values[0]
                 )
 
                 cost = self.microgrid._record_cost(
                     last_prod,
-                    cost, self.microgrid._grid_price_import.iloc[i, 0],
+                    cost,
+                    co2,
+                    self.microgrid._grid_price_import.iloc[i, 0],
                     self.microgrid._grid_price_export.iloc[i, 0])
             else:
+
+                co2 = self.microgrid._record_co2(
+                    last_prod,
+                    co2,
+                )
+
                 status = self.microgrid._update_status(
                     last_prod,
                     status,
@@ -687,13 +703,15 @@ class ControlOutput(dict):
                 )
                 cost = self.microgrid._record_cost(
                     last_prod,
-                    cost
+                    cost,
+                    co2
                 )
 
             self['action'] = action
             self['production'] = production
             self['cost'] = cost
             self['status'] = status
+            self['co2'] = co2
 
 
     def __eq__(self, other):
@@ -814,19 +832,22 @@ class ModelPredictiveControl:
 
         cost_battery_cycle = parameters['battery_cost_cycle'].values[0]
         cost_loss_load = parameters['cost_loss_load'].values[0]
+        cost_co2 = parameters['cost_co2'].values[0]
 
         if self.has_genset:
             p_genset_min = parameters['genset_pmin'].values[0] * parameters['genset_rated_power'].values[0]
             p_genset_max = parameters['genset_pmax'].values[0] * parameters['genset_rated_power'].values[0]
+            genset_co2 = parameters['genset_co2'].values[0]
 
         else:
             p_genset_min = 0
             p_genset_max = 0
+            genset_co2 = 0
 
-        return eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load, p_genset_min, p_genset_max
+        return eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load, p_genset_min, p_genset_max, cost_co2, genset_co2
 
     def _create_problem(self, eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load,
-                        p_genset_min, p_genset_max):
+                        p_genset_min, p_genset_max, cost_co2, genset_co2):
 
         """
         Protected, automatically called on initialization.
@@ -956,7 +977,7 @@ class ModelPredictiveControl:
 
         # Define  objective
         if self.has_genset:
-            cost_vector = np.array([fuel_cost, 0, 0,
+            cost_vector = np.array([fuel_cost + cost_co2 * genset_co2, 0, 0,
                                 cost_battery_cycle, cost_battery_cycle, 0, cost_loss_load, 0])
         else:
             cost_vector = np.array([0, 0,
@@ -972,7 +993,7 @@ class ModelPredictiveControl:
 
     def _set_parameters(self, load_vector, pv_vector, grid_vector, import_price, export_price,
                         e_max, e_min, p_max_charge, p_max_discharge,
-                        p_max_import, p_max_export, soc_0, p_genset_max):
+                        p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,):
 
         """
         Protected, called by set_and_solve.
@@ -1064,17 +1085,17 @@ class ModelPredictiveControl:
 
         # Set costs
         if self.has_genset:
-            self.costs.value[1::8] = import_price.reshape(-1)
+            self.costs.value[1::8] = import_price.reshape(-1) + grid_co2.reshape(-1)*cost_co2
             self.costs.value[2::8] = export_price.reshape(-1)
         else:
-            self.costs.value[0::7] = import_price.reshape(-1)
+            self.costs.value[0::7] = import_price.reshape(-1) + grid_co2.reshape(-1)*cost_co2
             self.costs.value[1::7] = export_price.reshape(-1)
 
         if np.isnan(self.costs.value).any():
             raise RuntimeError('There are still nan values in self.costs.value, something is wrong')
 
     def set_and_solve(self, load_vector, pv_vector, grid_vector, import_price, export_price, e_max, e_min, p_max_charge,
-                      p_max_discharge, p_max_import, p_max_export, soc_0, p_genset_max, iteration=None, total_iterations=None, return_steps=0):
+                      p_max_discharge, p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2, iteration=None, total_iterations=None, return_steps=0):
         """
         Sets the parameters in the problem and then solves the problem.
             Specifically, sets the right-hand sides b and d from the paper of the
@@ -1119,7 +1140,7 @@ class ModelPredictiveControl:
 
         self._set_parameters(load_vector, pv_vector, grid_vector, import_price, export_price,
                         e_max, e_min, p_max_charge, p_max_discharge,
-                        p_max_import, p_max_export, soc_0, p_genset_max)
+                        p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
 
         self.problem.solve(warm_start = True)
 
@@ -1251,10 +1272,12 @@ class ModelPredictiveControl:
                 price_export = np.zeros(horizon)
                 p_max_import = 0
                 p_max_export = 0
+                grid_co2 = 0
             else:
                 temp_grid = sample.loc[i:i + horizon - 1, 'grid'].values
                 price_import = self.microgrid._grid_price_import.iloc[i:i + horizon].values
                 price_export = self.microgrid._grid_price_export.iloc[i:i + horizon].values
+                grid_co2 = self.microgrid._grid_co2.iloc[i:i + horizon].values
                 p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
                 p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
 
@@ -1269,17 +1292,21 @@ class ModelPredictiveControl:
 
             soc_0 = baseline_linprog_update_status['battery_soc'][-1]
 
+            cost_co2 = self.microgrid.parameters['cost_co2'].values[0]
+
             if self.has_genset:
                 p_genset_max = self.microgrid.parameters['genset_pmax'].values[0] *\
                            self.microgrid.parameters['genset_rated_power'].values[0]
+                genset_co2 = self.microgrid.parameters['genset_co2'].values[0]
             else:
                 p_genset_max = None
+                genset_co2 = None
 
             # Solve one step of MPC
             control_dict = self.set_and_solve(sample.loc[i:i + horizon - 1, 'load'].values,
                                               sample.loc[i:i + horizon - 1, 'pv'].values, temp_grid, price_import,
                                               price_export, e_max, e_min, p_max_charge, p_max_discharge, p_max_import,
-                                              p_max_export, soc_0, p_genset_max, iteration = i, total_iterations = num_iter)
+                                              p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2, iteration = i, total_iterations = num_iter)
 
             if control_dict is not None:
                 baseline_linprog_action = self.microgrid._record_action(control_dict, baseline_linprog_action)

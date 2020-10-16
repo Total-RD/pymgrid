@@ -181,7 +181,7 @@ class MicrogridGenerator:
         path = self.path + '/data/co2/'
         return self._get_random_file(path)
 
-    def _get_genset(self, rated_power=1000, pmax=0.9, pmin=0.2):
+    def _get_genset(self, rated_power=1000, pmax=0.9, pmin=0.05):
         """ Function generates a dictionnary with the genset information. """
 
         polynom=[np.random.rand()*10, np.random.rand(), np.random.rand()/10] #fuel consumption
