@@ -1407,12 +1407,14 @@ class ModelPredictiveControl:
             temp_grid = np.zeros(horizon)
             price_import = np.zeros(horizon)
             price_export = np.zeros(horizon)
+            grid_co2 = np.zeros(horizon)
             p_max_import = 0
             p_max_export = 0
         else:
             temp_grid = sample.loc[current_step:current_step + horizon - 1, 'grid'].values
             price_import = self.microgrid._grid_price_import.iloc[current_step:current_step + horizon].values
             price_export = self.microgrid._grid_price_export.iloc[current_step:current_step + horizon].values
+            grid_co2 = self.microgrid._grid_co2.iloc[current_step:current_step + horizon].values
             p_max_import = self.microgrid.parameters['grid_power_import'].values[0]
             p_max_export = self.microgrid.parameters['grid_power_export'].values[0]
 
@@ -1425,17 +1427,21 @@ class ModelPredictiveControl:
         p_max_discharge = self.microgrid.parameters['battery_power_discharge'].values[0]
         soc_0 = previous_output['status']['battery_soc'][-1]
 
+        cost_co2 = self.microgrid.parameters['cost_co2'].values[0]
+
         if self.has_genset:
             p_genset_max = self.microgrid.parameters['genset_pmax'].values[0] * \
                            self.microgrid.parameters['genset_rated_power'].values[0]
+            genset_co2 = self.microgrid.parameters['genset_co2'].values[0]
         else:
             p_genset_max = None
+            genset_co2 = 0
 
         # Solve one step of MPC
         control_dicts = self.set_and_solve(sample.loc[current_step:current_step + horizon - 1, 'load'].values,
                                           sample.loc[current_step:current_step + horizon - 1, 'pv'].values, temp_grid, price_import,
                                           price_export, e_max, e_min, p_max_charge, p_max_discharge, p_max_import,
-                                          p_max_export, soc_0, p_genset_max, iteration=current_step, return_steps=self.microgrid.horizon)
+                                          p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2, iteration=current_step, return_steps=self.microgrid.horizon)
 
         if any([d is None for d in control_dicts]):
             for j, d in enumerate(control_dicts):
