@@ -1366,10 +1366,10 @@ class ModelPredictiveControl:
                     baseline_linprog_co2,
                 )
 
-        names = ('action', 'status', 'production', 'cost')
+        names = ('action', 'status', 'production', 'cost', 'co2')
 
         dfs = (baseline_linprog_action, baseline_linprog_update_status,
-               baseline_linprog_record_production, baseline_linprog_cost)
+               baseline_linprog_record_production, baseline_linprog_cost, baseline_linprog_co2)
 
         if verbose:
             print('Total time: {} minutes'.format(round((time.time()-t0)/60, 2)))
