@@ -16,6 +16,7 @@ setup(
         "pickle",
         "plotly",
         "cufflinks",
+        "gym",
     ],
     },
 )
