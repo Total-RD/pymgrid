@@ -1916,8 +1916,7 @@ if __name__=='__main__':
     import cProfile
     from pymgrid import MicrogridGenerator
 
-    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25,
-                                  path='/Users/ahalev/Dropbox/Avishai/gradSchool/internships/totalInternship/pymgrid_git')
+    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25)
     # m_gen = m_gen.load('pymgrid25')
 
 
