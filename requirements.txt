@@ -10,3 +10,4 @@ plotly
 seaborn
 cufflinks
 pickle
+statsmodels

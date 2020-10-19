@@ -82,4 +82,4 @@ Please make sure to update tests as appropriate.
 
 ## License
 
-This repo is under a GNU LGPL 2.1 (https://github.com/total-sa/pymgrid/edit/master/LICENSE)
+This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/master/LICENSE)
