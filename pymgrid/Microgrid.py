@@ -25,15 +25,11 @@ import numpy as np
 from copy import copy
 import cvxpy as cp
 import operator
-import math
-import time
 import sys
-import seaborn as sns
-from plotly.offline import download_plotlyjs, init_notebook_mode, plot, iplot
+from plotly.offline import init_notebook_mode, iplot
 import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
-from algos.Control import *
 
 init_notebook_mode(connected=False)
 np.random.seed(123)
