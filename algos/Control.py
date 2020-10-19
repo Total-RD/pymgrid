@@ -1272,7 +1272,7 @@ class ModelPredictiveControl:
                 price_export = np.zeros(horizon)
                 p_max_import = 0
                 p_max_export = 0
-                grid_co2 = 0
+                grid_co2 = np.zeros(horizon)
             else:
                 temp_grid = sample.loc[i:i + horizon - 1, 'grid'].values
                 price_import = self.microgrid._grid_price_import.iloc[i:i + horizon].values
