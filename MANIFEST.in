@@ -1,1 +1,1 @@
-include src/pymgrid/data/*
+global-include *.csv
