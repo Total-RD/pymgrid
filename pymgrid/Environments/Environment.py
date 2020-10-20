@@ -1,0 +1,455 @@
+import numpy as np
+import gym
+from gym.utils import seeding
+from gym.spaces import Space, Discrete, Box
+
+class Environment(gym.Env):
+    """
+    Markov Decision Process associated to the microgrid.
+
+        Parameters
+        ----------
+            microgrid: microgrid, mandatory
+                The controlled microgrid.
+            random_seed: int, optional
+                Seed to be used to generate the needed random numbers to size microgrids.
+
+    """
+
+    def __init__(self, env_config, seed = 42):
+        # Set seed
+        np.random.seed(seed)
+        # Microgrid
+        self.mg = env_config['microgrid']
+        # State space
+        self.mg.train_test_split()
+        #np.zeros(2+self.mg.architecture['grid']*3+self.mg.architecture['genset']*1)
+        # Number of states
+        self.Ns = len(self.mg._df_record_state.keys())
+        # Number of actions
+        self.Na = 2+self.mg.architecture['grid']*3+self.mg.architecture['genset']*1
+        
+        self.observation_space = Box(low=-0.1, high=np.float('inf'), shape=(self.Ns,), dtype=np.float)
+        #np.zeros(len(self.mg._df_record_state.keys()))
+        # Action space
+        self.action_space = Discrete(self.Na)
+        self.metadata = {"render.modes": [ "human"]}
+        
+        self.state, self.reward, self.done, self.info, self.round = None, None, None, None, None
+        self.round = None
+
+        # Start the first round
+        self.seed()
+        self.reset()
+        
+
+        try:
+            assert (self.observation_space.contains(self.state))
+        except AssertionError:
+            print("ERROR : INVALID STATE", self.state)
+
+    def get_reward(self):
+        return -self.mg.get_cost()
+
+    def get_cost(self):
+        return sum(self.mg._df_record_cost['cost'])
+
+
+
+    def step(self, action):
+
+        # CONTROL
+        if self.done:
+            print("WARNING : EPISODE DONE")  # should never reach this point
+            return self.state, self.reward, self.done, self.info
+        try:
+            assert (self.observation_space.contains(self.state))
+        except AssertionError:
+            print("ERROR : INVALID STATE", self.state)
+
+        try:
+            assert (self.action_space.contains(action))
+        except AssertionError:
+            print("ERROR : INVALD ACTION", action)
+
+        # UPDATE THE MICROGRID
+        control_dict = self.get_action(action)
+        self.mg.run(control_dict)
+
+        # COMPUTE NEW STATE AND REWARD
+        self.state = self.transition()
+        self.reward = self.get_reward()
+        self.done = self.mg.done
+        self.info = {}
+        self.round += 1
+
+        return self.state, self.reward, self.done, self.info
+        
+#         control_dict = self.get_action(action)
+#         self.mg.run(control_dict)
+#         reward = self.reward()
+#         s_ = self.transition()
+#         self.state = s_
+#         done = self.mg.done
+#         self.round += 1
+#         return s_, reward, done, {}
+
+    def reset(self, testing=False):
+        self.round = 1
+        # Reseting microgrid
+        self.mg.reset(testing=testing)
+        
+        self.state, self.reward, self.done, self.info =  self.transition(), 0, False, {}
+        
+        return self.state
+
+
+    def get_action(self, action):
+        """
+        :param action: current action
+        :return: control_dict : dicco of controls
+        """
+        '''
+        States are:
+        binary variable whether charging or dischargin
+        battery power, normalized to 1
+        binary variable whether importing or exporting
+        grid power, normalized to 1
+        binary variable whether genset is on or off
+        genset power, normalized to 1
+
+        '''
+
+        control_dict=[]
+
+        return control_dict
+
+    def states(self):  # soc, price, load, pv 'df status?'
+        observation_space = []
+        return observation_space
+
+    def transition(self):
+        s_ = np.nan
+        return s_
+    
+    def seed (self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+    
+    def render(self, mode="human"):
+        txt = "state: " + str(self.state) + " reward: " + str(self.reward) + " info: " + str(self.info)
+        print(txt)
+
+    # Mapping between action and the control_dict
+    def get_action_continuous(self, action):
+        """
+        :param action: current action
+        :return: control_dict : dicco of controls
+        """
+        '''
+        Actions are:
+        binary variable whether charging or dischargin
+        battery power, normalized to 1
+        binary variable whether importing or exporting
+        grid power, normalized to 1
+        binary variable whether genset is on or off
+        genset power, normalized to 1
+
+        '''
+        print(action)
+
+        mg = self.mg
+        pv = mg.pv
+        load = mg.load
+        net_load = load - pv
+        capa_to_charge = mg.battery.capa_to_charge
+        p_charge_max = mg.battery.p_charge_max
+        p_charge = max(0, min(-net_load, capa_to_charge, p_charge_max))
+
+        capa_to_discharge = mg.battery.capa_to_discharge
+        p_discharge_max = mg.battery.p_discharge_max
+        p_discharge = max(0, min(net_load, capa_to_discharge, p_discharge_max))
+
+        control_dict = {}
+
+        if mg.architecture['battery'] == 1:
+            control_dict['battery_charge'] = max(0, action[0] * min(action[1] * mg.battery.capacity,
+                                                                    mg.battery.capa_to_charge,
+                                                                    mg.battery.power_charge))
+            control_dict['battery_discharge'] = max(0, (1 - action[0]) * min(action[1] * mg.battery.capacity,
+                                                                             mg.battery.capa_to_discharge,
+                                                                             mg.battery.power_discharge))
+
+        if mg.architecture['grid'] == 1:
+            if mg.grid.status == 1:
+                control_dict['grid_import'] = max(0, action[2] * min(action[3] * mg.grid.power_import,
+                                                                     mg.grid.power_import))
+                control_dict['grid_export'] = max(0, (1 - action[2]) * min(action[3] * mg.grid.power_export,
+                                                                           mg.grid.power_export))
+
+        if mg.architecture['genset'] == 1:
+            control_dict['genset'] = max(0, action[4] * min(action[5] * mg.genset.rated_power_import))
+
+        return control_dict
+
+    # Mapping between action and the control_dict
+    def get_action_discret(self, action):
+        """
+        :param action: current action
+        :return: control_dict : dicco of controls
+        """
+        '''
+        States are:
+        binary variable whether charging or dischargin
+        battery power, normalized to 1
+        binary variable whether importing or exporting
+        grid power, normalized to 1
+        binary variable whether genset is on or off
+        genset power, normalized to 1
+
+        '''
+
+        mg = self.mg
+        pv = mg.pv
+        load = mg.load
+        net_load = load - pv
+        capa_to_charge = mg.battery.capa_to_charge
+        p_charge_max = mg.battery.p_charge_max
+        p_charge = max(0, min(-net_load, capa_to_charge, p_charge_max))
+
+        capa_to_discharge = mg.battery.capa_to_discharge
+        p_discharge_max = mg.battery.p_discharge_max
+        p_discharge = max(0, min(net_load, capa_to_discharge, p_discharge_max))
+
+        control_dict = {}
+
+        control_dict = self.actions_agent_discret(mg, action)
+
+        return control_dict
+
+
+    def actions_agent_discret(self, mg, action):
+        if mg.architecture['genset'] == 1 and mg.architecture['grid'] == 1:
+            control_dict = self.action_grid_genset(mg, action)
+
+        elif mg.architecture['genset'] == 1 and mg.architecture['grid'] == 0:
+            control_dict = self.action_genset(mg, action)
+
+        else:
+            control_dict = self.action_grid(mg, action)
+
+        return control_dict
+
+    def action_grid(self, mg, action):
+        # slack is grid
+
+        pv = mg.pv
+        load = mg.load
+
+        net_load = load - pv
+
+        capa_to_charge = mg.battery.capa_to_charge
+        p_charge_max = mg.battery.p_charge_max
+        p_charge_pv = max(0, min(-net_load, capa_to_charge, p_charge_max))
+        p_charge_grid = max(0, min( capa_to_charge, p_charge_max))
+
+        capa_to_discharge = mg.battery.capa_to_discharge
+        p_discharge_max = mg.battery.p_discharge_max
+        p_discharge = max(0, min(net_load, capa_to_discharge, p_discharge_max))
+
+        # Charge
+        if action == 0:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': p_charge_pv,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': max(0, pv - min(pv, load) - p_charge_pv),
+                            'genset': 0
+                            }
+        
+        if action == 4:
+            load = load + p_charge_grid
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': p_charge_grid,
+                            'battery_discharge': 0,
+                            'grid_import': max(0, load - min(pv, load)),
+                            'grid_export': max(0, pv - min(pv, load) - p_charge_grid) ,
+                            'genset': 0
+                            }
+
+
+        # décharger full
+        elif action == 1:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': p_discharge,
+                            'grid_import': max(0, load - min(pv, load) - p_discharge),
+                            'grid_export': 0,
+                            'genset': 0
+                            }
+
+        # Import
+        elif action == 2:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': 0,
+                            'grid_import': max(0, net_load),
+                            'grid_export': 0,
+                            'genset': 0
+                            }
+        # Export
+        elif action == 3:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': abs(min(net_load, 0)),
+                            'genset': 0
+                            }
+
+        return control_dict
+
+    def action_grid_genset(self, mg, action):
+        # slack is grid
+
+        pv = mg.pv
+        load = mg.load
+
+        net_load = load - pv
+        status = mg.grid.status  # whether there is an outage or not
+        capa_to_charge = mg.battery.capa_to_charge
+        p_charge_max = mg.battery.p_charge_max
+        p_charge_pv = max(0, min(-net_load, capa_to_charge, p_charge_max))
+        p_charge_grid = max(0, min( capa_to_charge, p_charge_max))
+
+        capa_to_discharge = mg.battery.capa_to_discharge
+        p_discharge_max = mg.battery.p_discharge_max
+        p_discharge = max(0, min(net_load, capa_to_discharge, p_discharge_max))
+
+        capa_to_genset = mg.genset.rated_power * mg.genset.p_max
+        p_genset = max(0, min(net_load, capa_to_genset))
+
+        # Charge
+        if action == 0:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': p_charge_pv,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': max(0, pv - min(pv, load) - p_charge_pv) * status,
+                            'genset': 0
+                            }
+        if action == 5:
+            load = load+p_charge_grid
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': p_charge_grid,
+                            'battery_discharge': 0,
+                            'grid_import': max(0, load - min(pv, load)) * status,
+                            'grid_export': max(0, pv - min(pv, load) - p_charge_grid) * status,
+                            'genset': 0
+                            }
+
+
+        # décharger full
+        elif action == 1:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': p_discharge,
+                            'grid_import': max(0, load - min(pv, load) - p_discharge) * status,
+                            'grid_export': 0,
+                            'genset': 0
+                            }
+
+        # Import
+        elif action == 2:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': 0,
+                            'grid_import': max(0, net_load) * status,
+                            'grid_export': 0,
+                            'genset': 0
+                            }
+        # Export
+        elif action == 3:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': abs(min(net_load, 0)) * status,
+                            'genset': 0
+                            }
+        # Genset
+        elif action == 4:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': 0,
+                            'genset': max(net_load, 0)
+                            }
+
+        return control_dict
+
+    def action_genset(self, mg, action):
+        # slack is genset
+
+        pv = mg.pv
+        load = mg.load
+
+        net_load = load - pv
+
+        capa_to_charge = mg.battery.capa_to_charge
+        p_charge_max = mg.battery.p_charge_max
+        p_charge = max(0, min(-net_load, capa_to_charge, p_charge_max))
+
+        capa_to_discharge = mg.battery.capa_to_discharge
+        p_discharge_max = mg.battery.p_discharge_max
+        p_discharge = max(0, min(net_load, capa_to_discharge, p_discharge_max))
+
+        capa_to_genset = mg.genset.rated_power * mg.genset.p_max
+        p_genset = max(0, min(net_load, capa_to_genset))
+
+        # Charge
+        if action == 0:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': p_charge,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': 0,
+                            'genset': 0
+                            }
+
+
+        # décharger full
+        elif action == 1:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': p_discharge,
+                            'grid_import': 0,
+                            'grid_export': 0,
+                            'genset': max(0, load - min(pv, load) - p_discharge)
+                            }
+
+        # Genset
+        elif action == 2:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': 0,
+                            'grid_import': 0,
+                            'grid_export': 0,
+                            'genset': max(0, load - min(pv, load))
+                            }
+
+        return control_dict
