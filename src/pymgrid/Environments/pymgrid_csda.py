@@ -1,5 +1,5 @@
 
-from pymgrid.Environments.Environment import Environment
+from src.pymgrid.Environments import Environment
 import numpy as np
 
 

@@ -8,13 +8,10 @@ $Date: 2020/08/27 08:04 $
 Gonzague Henri
 """
 
-import numpy as np
-import pandas as pd
-
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from pymgrid.MicrogridGenerator import MicrogridGenerator
+from src.pymgrid.MicrogridGenerator import MicrogridGenerator
 
 import unittest
 

@@ -19,7 +19,7 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 """
-from pymgrid.utils import DataGenerator as dg
+from src.pymgrid.utils import DataGenerator as dg
 # from pymgrid import Microgrid
 import pandas as pd
 import numpy as np
@@ -1912,7 +1912,7 @@ class Benchmarks:
 
 if __name__=='__main__':
     # TODO this has new code, you need to debug SAA
-    from pymgrid import MicrogridGenerator
+    from src.pymgrid import MicrogridGenerator
 
     m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25)
     # m_gen = m_gen.load('pymgrid25')
