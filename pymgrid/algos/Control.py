@@ -1449,7 +1449,7 @@ class ModelPredictiveControl:
 
         return HorizonOutput(control_dicts, self.microgrid, current_step)
 
-# TODO Set up continuous action space RL for MG
+
 
 class RuleBasedControl:
     def __init__(self, microgrid):

@@ -30,6 +30,7 @@ from plotly.offline import init_notebook_mode, iplot
 import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
+from pymgrid.algos.Control import Benchmarks
 
 init_notebook_mode(connected=False)
 np.random.seed(123)
