@@ -13,7 +13,6 @@ setup(
         "cvxpy",
         "statsmodels",
         "matplotlib",
-        "pickle",
         "plotly",
         "cufflinks",
         "gym",
