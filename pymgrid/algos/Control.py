@@ -1084,10 +1084,10 @@ class ModelPredictiveControl:
 
         # Set costs
         if self.has_genset:
-            self.costs.value[1::8] = import_price.reshape(-1) + grid_co2.reshape(-1)*cost_co2
+            self.costs.value[1::8] = import_price.reshape(-1) + grid_co2.reshape(-1) * cost_co2
             self.costs.value[2::8] = export_price.reshape(-1)
         else:
-            self.costs.value[0::7] = import_price.reshape(-1) + grid_co2.reshape(-1)*cost_co2
+            self.costs.value[0::7] = import_price.reshape(-1) + grid_co2.reshape(-1) * cost_co2
             self.costs.value[1::7] = export_price.reshape(-1)
 
         if np.isnan(self.costs.value).any():

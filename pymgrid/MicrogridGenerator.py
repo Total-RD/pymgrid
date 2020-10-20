@@ -432,12 +432,15 @@ class MicrogridGenerator:
         df_status['hour'] = [0]
         column_actual_production.append('loss_load')
         column_actual_production.append('overgeneration')
+        column_actions.append('load')
         if architecture['PV'] == 1:
 
             df_parameters['PV_rated_power'] = np.around(size['pv'],2)
             column_actual_production.append('pv_consummed')
             column_actual_production.append('pv_curtailed')
             column_actions.append('pv_consummed')
+            column_actions.append('pv_curtailed')
+            column_actions.append('pv')
             pv = pd.DataFrame(self._scale_ts(self._get_pv_ts(), size['pv'], scaling_method='max'))
             df_status['pv'] = [np.around( pv.iloc[0].values[0],1)]
 
