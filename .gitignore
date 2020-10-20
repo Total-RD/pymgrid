@@ -5,3 +5,4 @@ data/
 .idea
 *.pkl
 pymgrid/__pycache__/
+*.ipynb

@@ -150,7 +150,6 @@ class NoisyPVData:
         """
         Interpolates the upper bound curve using cos/sin features so that at least
             percentile points are below the curve
-
         """
         sf_presets = {'period_scale': 0.8,
                       'q_max': 0.9,
@@ -412,7 +411,7 @@ class NoisyPVData:
 
         if noise_types[0] is None:
             if self.parabolic_baseline is None:
-                raise ValueError('noise_types[0] was None, but there is no stored baseline')
+                raise ValueError('noise_types[0] is None, but there is no stored baseline')
             else:
                 noisy_data = self.parabolic_baseline.copy()
                 lower_distribution_bounds, upper_distribution_bounds = self.distribution_bounds
@@ -487,26 +486,35 @@ class NoisyPVData:
             new_stacked_data[new_stacked_data.columns[0]] = temp_data
             return new_stacked_data
 
-
     def plot(self, stacked_data, days_to_plot=(0,10),
-             plot_original=True, plot_upper_lower_bounds=True, plot_points_of_distribution=False):
+             plot_sample=True, plot_original=True, plot_upper_lower_bounds=True, plot_points_of_distribution=False,
+             plot_daily_maxes=False, plot_parabolas=False, month_xticks=False):
+
+        if isinstance(stacked_data, pd.DataFrame):
+            stacked_data = stacked_data.squeeze()
+
+        if not isinstance(stacked_data, pd.Series):
+            if plot_sample:
+                print('Warning: stacked_data is an arbitrary sample. Must be pd.Series to plot passed stacked_data, is '
+                      '{}'.format((type(stacked_data))))
+            stacked_data = self.sample()
 
         indices = slice(24 * days_to_plot[0], 24 * days_to_plot[1])
         daily_slice = slice(*days_to_plot)
-
-        plt.plot(stacked_data[indices].index, stacked_data[indices].values, label='noisy')
+        if plot_sample:
+            plt.plot(stacked_data[indices].index, stacked_data[indices].values, label='Sample')
 
         if plot_original:
-            plt.plot(stacked_data[indices].index, self.unmunged_data[indices].values, label='original')
+            plt.plot(stacked_data[indices].index, self.unmunged_data[indices].values, label='Original')
 
         if plot_upper_lower_bounds:
             plt.plot(stacked_data[indices].index,
                      self.most_light_curve_eval('max', cumulative_hours=stacked_data[indices].index), color='k',
-                     label='UB')
+                     label='Parabola distribution UB')
 
             plt.plot(stacked_data[indices].index,
                      self.most_light_curve_eval('min', cumulative_hours=stacked_data[indices].index), color='c',
-                     label='LB')
+                     label='Parabola distribution LB')
 
         if plot_points_of_distribution:
             if self.distribution_bounds is None:
@@ -518,7 +526,26 @@ class NoisyPVData:
                         marker='.', color='r')
             plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice], upper_distribution_bounds[daily_slice],
                         marker='.', color='r')
-        plt.legend()
+
+        if plot_daily_maxes:
+            plt.scatter(self.daily_maxes['cumulative_hr'].iloc[daily_slice],self.daily_maxes['max_GHI'].iloc[daily_slice],
+                        marker='.', color='r', label='Underlying daily max pv')
+        if plot_parabolas:
+            parabolas = self.parabolic_baseline.transpose().stack().squeeze()
+            print(parabolas)
+            plt.plot(stacked_data[indices].index, parabolas.iloc[indices],color='c',label='Parabolic Baseline')
+        if month_xticks:
+            print(plt.xticks())
+            locs = [j*30*24 for j in range(13) if j*12>=days_to_plot[0] and j*12<=days_to_plot[1]]
+            ticks = [j for j in range(13) if j*12>=days_to_plot[0] and j*12<=days_to_plot[1]]
+            print(locs)
+            print(ticks)
+            plt.xticks(locs, ticks)
+
+        plt.xlabel('Month')
+        plt.ylabel('PV')
+        plt.legend(loc='lower right')
+        plt.savefig('daily max distribution.png', bbox_inches='tight')
         plt.show()
 
 
