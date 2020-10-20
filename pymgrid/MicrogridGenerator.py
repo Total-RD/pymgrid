@@ -207,7 +207,7 @@ class MicrogridGenerator:
             'soc_min':soc_min,
             'efficiency':efficiency,
             'soc_0':min(max(np.random.randn(), soc_min),soc_max),
-            'cost_cycle':0.1
+            'cost_cycle':0.02
 
         }
         return battery
@@ -499,7 +499,7 @@ class MicrogridGenerator:
             column_actions.append('grid_export')
             df_status['grid_status'] = [grid_ts.iloc[0,0]]
             #todo Switch back to random file to generate the new version of pymgrid25
-            grid_co2_ts = pd.read_csv(self.path+'/data/co2/co2_caiso.csv') #self._get_co2_ts()
+            grid_co2_ts = self._get_co2_ts() #pd.read_csv(self.path+'/data/co2/co2_caiso.csv') #
             df_status['grid_co2'] = [grid_co2_ts.iloc[0, 0]]
 
             grid_price_import_ts = grid['grid_price_import']
