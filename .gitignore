@@ -7,7 +7,7 @@ data/
 pymgrid/__pycache__/
 *.ipynb
 .ipynb_checkpoints
-.csv
+__pycache__/
 
 .Python
 build/
