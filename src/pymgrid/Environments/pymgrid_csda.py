@@ -1,5 +1,5 @@
 
-from pymgrid.Environments import Environment
+from pymgrid.Environments.Environment import Environment
 import numpy as np
 
 
@@ -16,8 +16,8 @@ class MicroGridEnv(Environment):
 
     """
 
-    def __init__(self, microgrid, seed=0):
-        super().__init__(microgrid, seed)
+    def __init__(self, env_config, seed=42):
+        super().__init__(env_config, seed)
 
 
     # Transition function

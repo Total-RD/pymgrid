@@ -633,7 +633,7 @@ class Microgrid:
                                                                     self._df_record_state)
 
         if self.architecture['grid'] == 1:
-            self._df_record_co2 = self._record_co2(self._df_record_actual_production.iloc[-1, :].to_dict(),
+            self._df_record_co2 = self._record_co2({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
                                                    self._df_record_co2, self.grid.co2)
 
             self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
@@ -645,7 +645,7 @@ class Microgrid:
 
 
         else:
-            self._df_record_co2 = self._record_co2(self._df_record_actual_production.iloc[-1, :].to_dict(),
+            self._df_record_co2 = self._record_co2({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
                                                    self._df_record_co2)
 
             self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
