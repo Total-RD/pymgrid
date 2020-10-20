@@ -1,6 +1,3 @@
-
-=======
-
 """
 Copyright 2020 Total S.A.
 Authors:Gonzague Henri <gonzague.henri@total.com>, Avishai Halev <>
