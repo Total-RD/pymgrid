@@ -4,10 +4,10 @@ pymgrid (PYthon MicroGRID) is a python library to generate and simulate a large 
 
 ## Installation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid. (available soon)
+Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid. You can clone and cd in the repo and then do: 
 
 ```bash
-pip install pymgrid
+pip install .
 ```
 
 ## Getting Started
