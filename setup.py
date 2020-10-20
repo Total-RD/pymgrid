@@ -11,7 +11,7 @@ setup(
         "pandas",
         "numpy",
         "cvxpy",
-        "statsmodel",
+        "statsmodels",
         "matplotlib",
         "pickle",
         "plotly",
