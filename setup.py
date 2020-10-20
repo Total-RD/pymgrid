@@ -18,5 +18,5 @@ setup(
         "cufflinks",
         "gym",
     ],
-},
+    },
 )
