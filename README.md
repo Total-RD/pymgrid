@@ -75,6 +75,8 @@ If you use this package for your research, please cite the following paper:
 
 Data in pymgrid are based on TMY3 (data based on representative weather). The PV data comes from DOE/NREL/ALLIANCE (https://rredc.nrel.gov/solar/old_data/nsrdb/1991-2005/tmy3/) and the load data comes from OpenEI (https://openei.org/doe-opendata/dataset/commercial-and-residential-hourly-load-profiles-for-all-tmy3-locations-in-the-united-states)
 
+The CO2 data is from Jacque de Chalendar and his gridemissions API.
+
 ## Contributing
 Pull requests are welcome for bug fixes. For new features, please open an issue first to discuss what you would like to add.
 
