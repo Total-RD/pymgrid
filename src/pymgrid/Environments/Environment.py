@@ -49,12 +49,11 @@ class Environment(gym.Env):
         # Number of states
         self.Ns = len(self.mg._df_record_state.keys())
         # Number of actions
-        self.Na = 2+self.mg.architecture['grid']*3+self.mg.architecture['genset']*1
+
         
         self.observation_space = Box(low=-0.1, high=np.float('inf'), shape=(self.Ns,), dtype=np.float)
         #np.zeros(len(self.mg._df_record_state.keys()))
         # Action space
-        self.action_space = Discrete(self.Na)
         self.metadata = {"render.modes": [ "human"]}
         
         self.state, self.reward, self.done, self.info, self.round = None, None, None, None, None
@@ -215,7 +214,7 @@ class Environment(gym.Env):
         return control_dict
 
     # Mapping between action and the control_dict
-    def get_action_discret(self, action):
+    def get_action_priority_list(self, action):
         """
         :param action: current action
         :return: control_dict : dicco of controls
