@@ -54,7 +54,7 @@ class MicroGridEnv(Environment):
         return s_
 
     def get_action(self, action):
-        return self.get_action_priority_list()
+        return self.get_action_priority_list(action)
 
     
 
