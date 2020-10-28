@@ -54,21 +54,8 @@ class MicroGridEnv(Environment):
         return s_
 
     def get_action(self, action):
-        return self.get_action_priority_list
+        return self.get_action_priority_list()
 
-
-    # Transition function
-    def transition(self):
-        #         net_load = round(self.mg.load - self.mg.pv)
-        #         soc = round(self.mg.battery.soc,1)
-        #         s_ = (net_load, soc)  # next state
-        s_ = np.array(list(self.mg.get_updated_values().values()))
-        #np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
-        #s_ = [ s_[key] for key in s_.keys()]
-        return s_
-
-    def get_action(self, action):
-        return self.get_action_discret(action)(action)
     
 
 
