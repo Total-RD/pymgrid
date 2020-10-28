@@ -53,9 +53,8 @@ class MicroGridEnv(Environment):
         #s_ = [ s_[key] for key in s_.keys()]
         return s_
 
-    def get_action_priority_list(self, action):
-        return self.    def __init__(self, env_config, seed=42):
-        super().__init__(env_config, seed)
+    def get_action(self, action):
+        return self.get_action_priority_list
 
 
     # Transition function

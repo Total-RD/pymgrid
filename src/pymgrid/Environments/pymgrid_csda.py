@@ -33,5 +33,5 @@ class MicroGridEnv(Environment):
         return s_
 
 
-    def get_action_(self, action):
+    def get_action(self, action):
         return self.get_action_discret(action)
