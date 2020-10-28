@@ -1813,11 +1813,11 @@ class Benchmarks:
         elif algo == 'rbc':
             self.run_rule_based_benchmark()
         elif algo == 'saa':
-            self.run_saa_benchmark(verbose=verbose, preset_to_use=preset_to_use, **kwargs)
+            self.run_saa_benchmark(preset_to_use=preset_to_use, **kwargs)
         else:
             self.run_mpc_benchmark(verbose=verbose, **kwargs)
             self.run_rule_based_benchmark()
-            self.run_saa_benchmark(verbose=verbose, preset_to_use=preset_to_use, **kwargs)
+            self.run_saa_benchmark( preset_to_use=preset_to_use, **kwargs)
 
         if verbose:
             self.describe_benchmarks()
