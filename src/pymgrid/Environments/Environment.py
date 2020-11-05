@@ -213,6 +213,38 @@ class Environment(gym.Env):
 
         return control_dict
 
+    def get_action_discrete(self, action):
+        """
+        :param action: current action
+        :return: control_dict : dicco of controls
+        """
+        '''
+        Actions are:
+        binary variable whether charging or dischargin
+        battery power, normalized to 1
+        binary variable whether importing or exporting
+        grid power, normalized to 1
+        binary variable whether genset is on or off
+        genset power, normalized to 1
+
+        '''
+        control_dict={}
+        control_dict['pv_consumed'] = action[0]
+        if self.mg.architecture['battery'] == 1:
+            control_dict['battery_charge'] = action[1]
+            control_dict['battery_discharge'] =  action[2]
+
+        if self.mg.architecture['genset'] == 1:
+            control_dict['genset'] = action[3]
+
+        if self.mg.architecture['grid'] == 1:
+            control_dict['grid_import'] = action[4]
+            control_dict['grid_export'] = action[5]
+
+
+
+        return control_dict
+
     # Mapping between action and the control_dict
     def get_action_priority_list(self, action):
         """
