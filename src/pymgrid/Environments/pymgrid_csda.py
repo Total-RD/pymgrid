@@ -24,6 +24,7 @@ class MicroGridEnv(Environment):
         action_limits = [int(max(self.mg._pv_ts)),
                          self.mg.parameters['battery_power_charge'].values[0],
                          self.mg.parameters['battery_power_discharge'].values[0],
+                         2,
                          ]
         if self.mg.architecture['genset'] ==1:
             action_limits.append(self.mg.parameters['genset_rated_power'].values[0]* self.mg.parameters['genset_pmax'].values[0])
@@ -31,6 +32,7 @@ class MicroGridEnv(Environment):
         if self.mg.architecture['grid'] == 1:
             action_limits.append(self.mg.parameters['grid_power_import'].values[0])
             action_limits.append(self.mg.parameters['grid_power_export'].values[0])
+            action_limits.append(2)
 
         self.action_space = gym.spaces.Tuple([gym.spaces.Discrete(x) for x in action_limits])
 

@@ -229,17 +229,23 @@ class Environment(gym.Env):
 
         '''
         control_dict={}
+
         control_dict['pv_consumed'] = action[0]
         if self.mg.architecture['battery'] == 1:
-            control_dict['battery_charge'] = action[1]
-            control_dict['battery_discharge'] =  action[2]
+            control_dict['battery_charge'] = action[1] * action[3]
+            control_dict['battery_discharge'] =  action[2] * (1- action[3])
 
         if self.mg.architecture['genset'] == 1:
-            control_dict['genset'] = action[3]
+            control_dict['genset'] = action[4]
 
-        if self.mg.architecture['grid'] == 1:
-            control_dict['grid_import'] = action[4]
-            control_dict['grid_export'] = action[5]
+            if self.mg.architecture['grid'] == 1:
+                control_dict['grid_import'] = action[5] * action[7]
+                control_dict['grid_export'] = action[6] * (1- action[7])
+
+        elif self.mg.architecture['grid'] == 1:
+            control_dict['grid_import'] = action[4] * action[6]
+            control_dict['grid_export'] = action[5] * (1 - action[6])
+
 
 
 
