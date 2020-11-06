@@ -34,7 +34,7 @@ from pymgrid.algos.Control import Benchmarks
 
 init_notebook_mode(connected=False)
 np.random.seed(123)
-cf.set_config_file(theme='pearl')
+#cf.set_config_file(offline=True, theme='pearl') #commented for now, issues with parallel processes
 
 DEFAULT_HORIZON = 24 #in hours
 DEFAULT_TIMESTEP = 1 #in hours
