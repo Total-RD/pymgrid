@@ -1,7 +1,6 @@
 cvxpy
 pandas
 numpy
-copy
 matplotlib
 plotly
 seaborn
