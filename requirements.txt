@@ -1,8 +1,6 @@
 cvxpy
 pandas
 numpy
-os
-sys
 operator
 copy
 matplotlib
