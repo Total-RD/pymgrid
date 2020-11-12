@@ -37,7 +37,6 @@ from pymgrid import MicrogridGenerator as m_gen
 #these line will create a list of microgrid
 env = m_gen.MicrogridGenerator(nb_microgrid=25)
 pymgrid25 = env.load('pymgrid25')
-#env.generate_microgrid()
 mg = pymgrid25.microgrids
 
 #you can pass any of the microgrid to environment class:
