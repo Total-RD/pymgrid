@@ -10,6 +10,17 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid
 pip install .
 ```
 
+You can also run this pip command:
+```bash
+pip install git+https://github.com/Total-RD/pymgrid/
+```
+
+
+And in Google Colab:
+```bash
+!pip install git+https://github.com/Total-RD/pymgrid/
+```
+
 ## Getting Started
 
 You can easily import the library from pip, and then import MicrogridGenerator from pymgrid.
