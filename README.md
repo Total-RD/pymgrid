@@ -26,7 +26,33 @@ By default, this command will let you generate 10 microgrids. The object m_gen w
 First, you can get the control information with this command:
 ```python
 m_gen.microgrids[0].get_control_info()
+
 ```
+
+pymgrid contains OpenAI Gym environments, you can use the following command to generate one:
+```python
+from pymgrid.Environments.pymgrid_cspla import MicroGridEnv
+from pymgrid import MicrogridGenerator as m_gen
+
+#these line will create a list of microgrid
+env = m_gen.MicrogridGenerator(nb_microgrid=25)
+pymgrid25 = env.load('pymgrid25')
+#env.generate_microgrid()
+mg = pymgrid25.microgrids
+
+#you can pass any of the microgrid to environment class:
+env = MicroGridEnv({'microgrid':mg[0]})
+
+#example of codes to to interact with the environment:
+episode_reward = 0
+done = False
+obs = env.reset()
+while not done:
+    action = #your algorithm to select the next action
+    obs, reward, done, info = env.step(action)
+    episode_reward += reward
+```
+
 The control_dict dictionnary it the main way you will interact with the microgrid class. It will allow you to pass control commands to the microgrids. Using get_control_info() will let you know what fields you need to fill based on the microgrids architecture.
 
 Now you know what fields in control_dict, you can fill it up and pass it to your microgrid:
