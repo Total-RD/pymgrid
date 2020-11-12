@@ -85,3 +85,7 @@ Please make sure to update tests as appropriate.
 ## License
 
 This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/master/LICENSE)
+
+## Contact
+
+For any question you can contact me at gonzague.henri [@] total.com
