@@ -107,6 +107,17 @@ m_gen.load('pymgrid25')
 
 If you use this package for your research, please cite the following paper:
 
+@misc{henri2020pymgrid,
+      title={pymgrid: An Open-Source Python Microgrid Simulator for Applied Artificial Intelligence Research}, 
+      author={Gonzague Henri and Tanguy Levent and Avishai Halev and Reda Alami and Philippe Cordier},
+      year={2020},
+      eprint={2011.08004},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI}
+}
+
+You can find it on Arxiv here: https://arxiv.org/abs/2011.08004
+
 ## Data
 
 Data in pymgrid are based on TMY3 (data based on representative weather). The PV data comes from DOE/NREL/ALLIANCE (https://rredc.nrel.gov/solar/old_data/nsrdb/1991-2005/tmy3/) and the load data comes from OpenEI (https://openei.org/doe-opendata/dataset/commercial-and-residential-hourly-load-profiles-for-all-tmy3-locations-in-the-united-states)
