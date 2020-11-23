@@ -19,7 +19,7 @@ class MicroGridEnv(Environment):
     """
     def __init__(self, env_config, seed=42):
         super().__init__(env_config, seed)
-        self.Na = 2 + self.mg.architecture['grid'] * 3 + self.mg.architecture['genset'] * 1
+        self.Na = 4 + self.mg.architecture['grid'] * 3 + self.mg.architecture['genset'] * 1
 
         action_limits = [int(self.mg._pv_ts.max().values[0]),
                          int(self.mg.parameters['battery_power_charge'].values[0]),
@@ -35,23 +35,6 @@ class MicroGridEnv(Environment):
             action_limits.append(2)
 
         self.action_space = gym.spaces.Tuple([gym.spaces.Discrete(x) for x in action_limits])
-
-        '''
-        a = gym.spaces.MultiDiscrete([5, 2, 4])
-        info(a)
-        
-        b = gym.spaces.Tuple([gym.spaces.Discrete(x) for x in [5, 2, 4]])
-        '''
-
-    # Transition function
-    def transition(self):
-        #         net_load = round(self.mg.load - self.mg.pv)
-        #         soc = round(self.mg.battery.soc,1)
-        #         s_ = (net_load, soc)  # next state
-        s_ = np.array(list(self.mg.get_updated_values().values()))
-        # np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
-        # s_ = [ s_[key] for key in s_.keys()]
-        return s_
 
 
     def get_action(self, action):

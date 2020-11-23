@@ -149,8 +149,14 @@ class Environment(gym.Env):
         observation_space = []
         return observation_space
 
+    # Transition function
     def transition(self):
-        s_ = np.nan
+        #         net_load = round(self.mg.load - self.mg.pv)
+        #         soc = round(self.mg.battery.soc,1)
+        #         s_ = (net_load, soc)  # next state
+        s_ = np.array(list(self.mg.get_updated_values().values()))
+        #np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
+        #s_ = [ s_[key] for key in s_.keys()]
         return s_
     
     def seed (self, seed=None):

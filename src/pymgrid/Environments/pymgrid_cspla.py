@@ -43,15 +43,7 @@ class MicroGridEnv(Environment):
         self.Na = 2 + self.mg.architecture['grid'] * 3 + self.mg.architecture['genset'] * 1
         self.action_space = Discrete(self.Na)
 
-    # Transition function
-    def transition(self):
-        #         net_load = round(self.mg.load - self.mg.pv)
-        #         soc = round(self.mg.battery.soc,1)
-        #         s_ = (net_load, soc)  # next state
-        s_ = np.array(list(self.mg.get_updated_values().values()))
-        #np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
-        #s_ = [ s_[key] for key in s_.keys()]
-        return s_
+
 
     def get_action(self, action):
         return self.get_action_priority_list(action)
