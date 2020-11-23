@@ -10,6 +10,17 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid
 pip install .
 ```
 
+You can also run this pip command:
+```bash
+pip install git+https://github.com/Total-RD/pymgrid/
+```
+
+
+And in Google Colab:
+```bash
+!pip install git+https://github.com/Total-RD/pymgrid/
+```
+
 ## Getting Started
 
 You can easily import the library from pip, and then import MicrogridGenerator from pymgrid.
@@ -26,7 +37,32 @@ By default, this command will let you generate 10 microgrids. The object m_gen w
 First, you can get the control information with this command:
 ```python
 m_gen.microgrids[0].get_control_info()
+
 ```
+
+pymgrid contains OpenAI Gym environments, you can use the following command to generate one:
+```python
+from pymgrid.Environments.pymgrid_cspla import MicroGridEnv
+from pymgrid import MicrogridGenerator as m_gen
+
+#these line will create a list of microgrid
+env = m_gen.MicrogridGenerator(nb_microgrid=25)
+pymgrid25 = env.load('pymgrid25')
+mg = pymgrid25.microgrids
+
+#you can pass any of the microgrid to environment class:
+env = MicroGridEnv({'microgrid':mg[0]})
+
+#example of codes to to interact with the environment:
+episode_reward = 0
+done = False
+obs = env.reset()
+while not done:
+    action = #your algorithm to select the next action
+    obs, reward, done, info = env.step(action)
+    episode_reward += reward
+```
+
 The control_dict dictionnary it the main way you will interact with the microgrid class. It will allow you to pass control commands to the microgrids. Using get_control_info() will let you know what fields you need to fill based on the microgrids architecture.
 
 Now you know what fields in control_dict, you can fill it up and pass it to your microgrid:
@@ -55,7 +91,7 @@ m_gen.microgrids[0].reset(testing=True)
 ## Benchmarks datasets
 
 We pre-computed two microgrids datasets for researchers to compare their algorithms on:
-1. pymgrid10: ten microgrids with the same architecture (PV + battery + genset), the main goal of this dataset if for user to beging running simulations on pymgrid
+1. pymgrid10 (deprecated at the moment): ten microgrids with the same architecture (PV + battery + genset), the main goal of this dataset if for user to beging running simulations on pymgrid
 2. pymgrid25: 25 microgrids with diverse architecture, we propose this dataset as the main way to compare algorithms.
 
 If you have ideas for new benchmark dataset, feel free to contact us!
@@ -65,11 +101,22 @@ You can load these datasets with:
 from pymgrid import MicrogridGenerator as mg
 
 m_gen=mg.MicrogridGenerator()
-m_gen.load('pymgrid10') #or 'pymgrid25'
+m_gen.load('pymgrid25') 
 ```
 ## Citation
 
 If you use this package for your research, please cite the following paper:
+
+@misc{henri2020pymgrid,
+      title={pymgrid: An Open-Source Python Microgrid Simulator for Applied Artificial Intelligence Research}, 
+      author={Gonzague Henri and Tanguy Levent and Avishai Halev and Reda Alami and Philippe Cordier},
+      year={2020},
+      eprint={2011.08004},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI}
+}
+
+You can find it on Arxiv here: https://arxiv.org/abs/2011.08004
 
 ## Data
 
@@ -85,3 +132,7 @@ Please make sure to update tests as appropriate.
 ## License
 
 This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/master/LICENSE)
+
+## Contact
+
+For any question you can contact me at gonzague.henri [@] total.com
