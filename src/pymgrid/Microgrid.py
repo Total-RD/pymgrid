@@ -1034,6 +1034,8 @@ class Microgrid:
                 control_dict['pv_consummed'] = 0
 
             try:
+                if control_dict['pv_curtailed'] <0:
+                    control_dict['pv_curtailed'] = 0
                 total_production -= control_dict['pv_curtailed']
             except:
                 control_dict['pv_curtailed'] = 0
