@@ -1029,7 +1029,7 @@ class Microgrid:
         if self.architecture['PV'] == 1:
             try:
                 total_production += control_dict['pv']
-                control_dict['pv_consummed'] = max(control_dict['pv_consummed'], control_dict['pv'])
+                control_dict['pv_consummed'] = max(0,min(control_dict['pv_consummed'], control_dict['pv']))
                 temp_pv += max(control_dict['pv_consummed'], control_dict['pv'])
 
             except:
