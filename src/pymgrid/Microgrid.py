@@ -30,9 +30,22 @@ from plotly.offline import init_notebook_mode, iplot
 import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
+from IPython import get_ipython
 from pymgrid.algos.Control import Benchmarks
 
-init_notebook_mode(connected=False)
+def in_ipynb():
+    try:
+        cfg = get_ipython().config
+        if cfg['IPKernelApp']['parent_appname'] == 'ipython-notebook':
+            return True
+        else:
+            return False
+    except NameError:
+        return False
+
+if in_ipynb():
+    init_notebook_mode(connected=False)
+
 np.random.seed(123)
 #cf.set_config_file(offline=True, theme='pearl') #commented for now, issues with parallel processes
 
