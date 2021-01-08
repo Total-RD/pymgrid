@@ -40,7 +40,7 @@ def in_ipynb():
             return True
         else:
             return False
-    except NameError:
+    except (NameError, AttributeError):
         return False
 
 if in_ipynb():
