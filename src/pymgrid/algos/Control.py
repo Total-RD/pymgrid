@@ -238,7 +238,6 @@ class SampleAverageApproximation:
             sampling_args['noise_types'] = (None,'gaussian')
 
         for j in range(n_samples):
-            print('Creating sample {}'.format(j))
             pv_forecast = NPV.sample(**sampling_args)
             load_forecast = NL.sample(**sampling_args)
 
