@@ -27,6 +27,39 @@ from scipy.interpolate import interp1d
 import statsmodels.regression.quantile_regression as quantile_regression
 from IPython.display import display
 
+def return_underlying_data(microgrid):
+    """
+    Returns the pv, load, and grid data from the  microgrid in the same format as samples.
+    :param microgrid, pymgrid.Microgrid.Microgrid
+        microgrid to reformat underlying data for
+    :return:
+        data: pd.DataFrame, shape (8760,3)
+            DataFrame with columns 'pv', 'load', 'grid', values of these respectively at each timestep.
+    """
+    pv_data = microgrid._pv_ts
+    load_data = microgrid._load_ts
+
+    pv_data = pv_data[pv_data.columns[0]]
+    load_data = load_data[load_data.columns[0]]
+    pv_data.name = 'pv'
+    load_data.name = 'load'
+
+    if microgrid.architecture['grid'] != 0:
+        grid_data = microgrid._grid_status_ts
+        if isinstance(grid_data, pd.DataFrame):
+            grid_data = grid_data[grid_data.columns[0]]
+            grid_data.name = 'grid'
+        elif isinstance(grid_data, pd.Series):
+            grid_data.name = 'grid'
+        else:
+            raise RuntimeError('Unable to handle microgrid._grid_status_ts of type {}.'.format(type(grid_data)))
+    else:
+        grid_data = pd.Series(data=[0] * len(microgrid._load_ts), name='grid')
+
+    return pd.concat([pv_data, load_data, grid_data], axis=1)
+
+
+
 class NoisyPVData:
     def __init__(self, pv_data = None,file_name = None):
         if pv_data is not None:
@@ -688,7 +721,7 @@ class NoisyGridData:
             raise TypeError('grid_data must be of type pd.DataFrame, is {}'.format(type(grid_data)))
 
         if not ((grid_data==1) | (grid_data==0)).all().item():
-            raise ValueError('Nonbinary values found in grid_data')
+            raise ValueError('Non-binary values found in grid_data')
 
         possible_dist_types = ('naive','markov')
         if dist_type not in possible_dist_types:
@@ -764,3 +797,306 @@ class NoisyGridData:
             raise RuntimeError('Should not be here')
 
         return generated_sample
+
+class SampleGenerator:
+    def __init__(self, microgrid, **forecast_args):
+        self.microgrid = microgrid
+        self.NPV = NoisyPVData(pv_data=self.microgrid._pv_ts)
+        self.NL = NoisyLoadData(load_data=self.microgrid._load_ts)
+
+        if self.microgrid.architecture['grid'] != 0:
+            self.NG = NoisyGridData(grid_data=self.microgrid._grid_status_ts)
+        else:
+            self.NG = None
+
+        self.underlying_data = return_underlying_data(self.microgrid)
+        self.forecasts = self.create_forecasts(**forecast_args)
+        self.samples = None
+
+    def create_forecasts(self, pv_args=None, load_args=None, preset_to_use=None, print_mape=False, **forecast_args):
+        """
+        Creates pv, load, and grid forecasts that are then used to create samples.
+
+        :return:
+            df, pd.DataFrame,  shape (8760,3)
+                DataFrame with columns of 'pv', 'load', and 'grid', containing values for each at all 8760 timesteps
+        """
+        if pv_args is None and load_args is None and preset_to_use is not None:
+            print('Using preset forecast arguments')
+            args = ForecastArgSet(preset_to_use=preset_to_use)
+            pv_args = args['pv_args']
+            load_args = args['load_args']
+        else:
+            if pv_args is None:
+                pv_args = dict()
+            if load_args is None:
+                load_args = dict()
+
+        pv_forecast = self.NPV.sample(**pv_args)
+        load_forecast = self.NL.sample(**load_args)
+
+        if self.microgrid.architecture['grid'] != 0:
+            grid_forecast = self.NG.sample()
+        else:
+            grid_forecast = pd.Series(data=[0] * len(self.microgrid._load_ts), name='grid')
+
+        forecast = pd.concat([pv_forecast, load_forecast, grid_forecast], axis=1)
+
+        if print_mape:
+            mape = self.validate_forecasts(forecasts=forecast, aggregate=True)
+            print('MAPE: {}'.format(mape))
+
+        if hasattr(self, 'forecasts'):
+            self.forecasts = forecast
+        else:
+            return forecast
+
+    def test_args(self, iters_per_set = 3):
+        num_pv_noise_params_0 = 3
+        num_pv_std_ratio = 3
+        num_load_variance_scale = 3
+        max_load_var_scale = 2.
+        max_pv_std_ratio = 0.5
+        num_push_peak_ratio = 3
+        num_push_individual_ratio = 3
+
+        forecast_args = ForecastArgs(num_pv_noise_params_0, num_pv_std_ratio, num_load_variance_scale,
+                                     num_push_peak_ratio, num_push_individual_ratio,
+                                     max_load_var_scale=max_load_var_scale, max_pv_std_ratio=max_pv_std_ratio)
+
+        for j, arg_set in enumerate(forecast_args.param_sets):
+            for k in range(iters_per_set):
+                print('iter {}.{}'.format(j, k))
+                forecasts = self.create_forecasts(**arg_set)
+                mape = self.validate_forecasts(forecasts, aggregate=True)
+                arg_set.update_with_mape(mape)
+
+        return forecast_args
+
+    def validate_forecasts(self, forecasts=None, aggregate=False):
+
+        if forecasts is None:
+            forecasts = self.forecasts
+
+        mape_vals = dict()
+
+        for col in ('pv', 'load'):
+            mape_vals[col] = self.mape(self.underlying_data[col], forecasts[col])
+
+        if aggregate:
+            return np.sqrt(np.mean(np.array(list(mape_vals.values()))**2))
+        return mape_vals
+
+    def mape(self, actual_vals, forecast_vals):
+        if isinstance(actual_vals.squeeze(), pd.Series):
+            actual_vals = actual_vals.to_numpy()
+        elif isinstance(actual_vals, np.ndarray):
+            pass
+        else:
+            raise TypeError('actual_vals must be squeezable to single column, has shape {}'.format(actual_vals.shape))
+        if isinstance(forecast_vals.squeeze(), pd.Series):
+            forecast_vals = forecast_vals.to_numpy()
+        elif isinstance(forecast_vals, np.ndarray):
+            pass
+        else:
+            raise TypeError('forecast_vals must be squeezable to single column, has shape {}'.format(forecast_vals.shape))
+
+        ratios = np.abs(((actual_vals-forecast_vals)/actual_vals))
+        mape = np.mean(ratios[~np.isnan(ratios)])
+
+        return mape
+
+    def sample_from_forecasts(self, n_samples=10, **sampling_args):
+        """
+            Generates samples of load, grid, pv data by sampling from the distributions defined by using self.forecasts
+                as a baseline in NoisyLoadData, NoisyPVData, NoisyGridData.
+
+        :param n_samples: int, default 100
+            Number of samples to generate
+        :param sampling_args: dict
+            Sampling arguments to be passed to NPV.sample() and NL.sample()
+        :return:
+            samples: list of pd.DataFrame of shape (8760,3)
+            list of samples created from sampling from distributions defined in forecasts.
+        """
+        # TODO: modify this to allow for noise variations, and maybe sample from better distribution
+        NPV = self.NPV
+        NL = NoisyLoadData(load_data=self.forecasts['load'])
+        NG = NoisyGridData(grid_data=self.forecasts['grid'])
+
+        samples = []
+
+        if 'noise_types' not in sampling_args.keys():
+            sampling_args['noise_types'] = (None, 'gaussian')
+
+        for j in range(n_samples):
+            print('Creating sample {}'.format(j))
+            pv_forecast = NPV.sample(**sampling_args)
+            load_forecast = NL.sample(**sampling_args)
+
+            grid_forecast = NG.sample()
+
+            sample = pd.concat([pv_forecast, load_forecast, grid_forecast], axis=1)
+
+            truncated_index = min(len(NPV.unmunged_data), len(NL.unmunged_data), len(NG.unmunged_data))
+            sample = sample.iloc[:truncated_index]
+            samples.append(sample)
+
+        self.samples = samples
+        return samples
+
+    def plot(self, var='load', days_to_plot=(0, 10), original=True, forecast=True, samples=True):
+        """
+        Function to plot the load, pv, or grid data versus the forecast or original data
+        :param var: str, default 'load'
+            one of 'load', 'pv', 'grid', which variable to plot
+        :param days_to_plot: tuple, len 2. default (0,10)
+            defines the days to plot. Plots all hours from days_to_plot[0] to days_to_plot[1]
+        :param original: bool, default True
+            whether to plot the underlying microgrid data
+        :param forecast: bool, default True
+            whether to plot the forecast stored in self.forecast
+        :param samples: bool, default True
+            whether to plot the samples stored in self.samples
+        :return:
+            None
+        """
+
+        if var not in self.forecasts.columns:
+            raise ValueError('Cound not find var {} in self.forecasts, should be one of {}'.format(var, self.forecasts.columns))
+
+        indices = slice(24 * days_to_plot[0], 24 * days_to_plot[1])
+
+        if original:
+            plt.plot(self.underlying_data.loc[indices, var].index, self.underlying_data.loc[indices, var].values,
+                     label='original', color='b')
+        if forecast:
+            plt.plot(self.forecasts.loc[indices, var].index, self.forecasts.loc[indices, var].values, label='forecast',
+                     color='r')
+        if samples:
+            for sample in self.samples:
+                plt.plot(sample.loc[indices, var].index, sample.loc[indices, var].values, color='k')
+
+        plt.legend()
+        plt.show()
+
+
+class ForecastArgSet(dict):
+    def __init__(self, pv_param_set=None, load_param_set=None, preset_to_use=None):
+
+        if pv_param_set is None and load_param_set is None and preset_to_use is not None:
+            saved_dict = self.get_preset(preset_to_use)
+            super(ForecastArgSet, self).__init__(saved_dict)
+
+        elif pv_param_set is not None and load_param_set is not None and preset_to_use is None:
+            super(ForecastArgSet, self).__init__(pv_args=pv_param_set, load_args=load_param_set)
+
+        else:
+            raise KeyError('Unable to parse inputs')
+
+        self.mape_vals = []
+        self.mape_mean = None
+        self.mape_std = None
+
+    def update_with_mape(self, mape):
+
+        self.mape_vals.append(mape)
+        self.mape_mean = np.mean(self.mape_vals)
+        self.mape_std = np.std(self.mape_vals)
+
+    def get_preset(self,forecast_accuracy=50):
+        potential_forecast_accuracies = (50, 70, 85)
+        if forecast_accuracy not in potential_forecast_accuracies:
+            raise ValueError('do not have relevant sampling parameters for forecast accuracy {}, must be one of {}'.format(
+                forecast_accuracy, potential_forecast_accuracies))
+
+        if forecast_accuracy == 50:
+             return {'pv_args': {'noise_params': ({'lower': 0.0, 'upper': 0.5},
+                        {'std_ratio': 0.25}),
+                         'push_peak_val': True,
+                         'push_peak_ratio': 0.0,
+                         'push_individual_vals': True,
+                         'push_individual_ratio': 0.5},
+             'load_args': {'load_variance_scale': 2.0}}
+
+        if forecast_accuracy == 70:
+            return {'pv_args': {'noise_params': ({'lower': 0.0, 'upper': 0.5},
+                        {'std_ratio': 0.25}),
+                         'push_peak_val': True,
+                         'push_peak_ratio': 0.0,
+                         'push_individual_vals': True,
+                         'push_individual_ratio': 0.65},
+             'load_args': {'load_variance_scale': 2.0}}
+
+        elif forecast_accuracy == 85:
+            return {'pv_args': {'noise_params': ({'lower': 0.0, 'upper': 0.5},
+                       {'std_ratio': 0.25}),
+                      'push_peak_val': True,
+                      'push_peak_ratio': 0.0,
+                      'push_individual_vals': True,
+                      'push_individual_ratio': 1.0},
+                     'load_args': {'load_variance_scale': 2.0}}
+
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.mape_mean == other.mape_mean
+
+    def __lt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.mape_mean < other.mape_mean
+
+    def __gt__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.mape_mean > other.mape_mean
+
+class ForecastArgs:
+    def __init__(self, num_pv_noise_params_0, num_pv_std_ratio, num_load_variance_scale, num_push_peak_ratio,
+                 num_push_individual_ratio, max_load_var_scale=2., max_pv_std_ratio=0.5):
+
+        pv_params = self.pv_parameters(num_pv_noise_params_0, num_pv_std_ratio, num_push_peak_ratio, num_push_individual_ratio,
+                                       max_std_ratio=max_pv_std_ratio)
+        load_params = self.load_parameters(num_load_variance_scale, max_load_var_scale=max_load_var_scale)
+
+        self.param_sets = self.combine_sets(pv_params, load_params)
+
+    def pv_parameters(self,num_noise_params_0, num_std_ratio, num_push_peak_ratio,  num_push_individual_ratio,
+                      max_std_ratio=0.5):
+
+        pv_params = []
+        for individual_ratio in np.linspace(0,1,num_push_individual_ratio):
+            for peak_ratio in np.linspace(0,1,num_push_peak_ratio):
+                for std_ratio in np.linspace(0,max_std_ratio, num_std_ratio):
+                    for lower in np.linspace(0,1,num_noise_params_0):
+                        for upper in np.linspace(1,lower,num_noise_params_0):
+                            if upper >= lower:
+                                pv_params.append(dict(noise_params=(dict(lower=lower, upper=upper), dict(std_ratio=std_ratio)),
+                                                      push_peak_val=True, push_peak_ratio=peak_ratio,
+                                                      push_individual_vals=True, push_individual_ratio=individual_ratio))
+                            else:
+                                print('upper not geq lower')
+
+        return pv_params
+
+    def load_parameters(self,num_load_variance_scale, max_load_var_scale=2.):
+        load_params = []
+        for var_scale in np.linspace(0,max_load_var_scale,num_load_variance_scale):
+            load_params.append(dict(load_variance_scale=var_scale))
+
+        return load_params
+
+    def combine_sets(self, pv_params, load_params):
+
+        sets = []
+
+        for pv_param in pv_params:
+            for load_param in load_params:
+                sets.append(ForecastArgSet(pv_param_set = pv_param, load_param_set = load_param))
+
+        return sets
