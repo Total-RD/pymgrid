@@ -1077,8 +1077,8 @@ class Microgrid:
                 print("this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
 
             p_import, p_export = self._check_constraints_grid(p_import, p_export)
-            control_dict['grid_import'] = p_import
-            control_dict['grid_export'] = p_export
+            control_dict['grid_import'] = p_import * self.grid.status
+            control_dict['grid_export'] = p_export * self.grid.status
 
             total_production += control_dict['grid_import']
             total_production -= control_dict['grid_export']
