@@ -24,6 +24,7 @@ import numpy as np
 import gym
 from gym.utils import seeding
 from gym.spaces import Space, Discrete, Box
+from . import Preprocessing
 
 class Environment(gym.Env):
     """
@@ -38,20 +39,26 @@ class Environment(gym.Env):
 
     """
 
-    def __init__(self, env_config, seed = 42):
+    def __init__(self, env_config, seed = 42, training_reward_smoothing = 'sqrt'):
         # Set seed
         np.random.seed(seed)
+
+        self.states_normalization = Preprocessing.normalize_environment_states(env_config['microgrid'])
+
+        self.TRAIN = True
         # Microgrid
         self.mg = env_config['microgrid']
         # State space
         self.mg.train_test_split()
         #np.zeros(2+self.mg.architecture['grid']*3+self.mg.architecture['genset']*1)
         # Number of states
-        self.Ns = len(self.mg._df_record_state.keys())
+        self.Ns = len(self.mg._df_record_state.keys())+1
         # Number of actions
 
+        #training_reward_smoothing
+        self.training_reward_smoothing = training_reward_smoothing
         
-        self.observation_space = Box(low=-0.1, high=np.float('inf'), shape=(self.Ns,), dtype=np.float)
+        self.observation_space = Box(low=-1, high=np.float('inf'), shape=(self.Ns,), dtype=np.float)
         #np.zeros(len(self.mg._df_record_state.keys()))
         # Action space
         self.metadata = {"render.modes": [ "human"]}
@@ -70,6 +77,9 @@ class Environment(gym.Env):
             print("ERROR : INVALID STATE", self.state)
 
     def get_reward(self):
+        if self.TRAIN == True:
+            if self.training_reward_smoothing == 'sqrt':
+                return -(self.mg.get_cost()**0.5)
         return -self.mg.get_cost()
 
     def get_cost(self):
@@ -119,6 +129,9 @@ class Environment(gym.Env):
         self.round = 1
         # Reseting microgrid
         self.mg.reset(testing=testing)
+        if testing == True:
+            self.TRAIN = False
+        
         
         self.state, self.reward, self.done, self.info =  self.transition(), 0, False, {}
         
@@ -154,7 +167,13 @@ class Environment(gym.Env):
         #         net_load = round(self.mg.load - self.mg.pv)
         #         soc = round(self.mg.battery.soc,1)
         #         s_ = (net_load, soc)  # next state
-        s_ = np.array(list(self.mg.get_updated_values().values()))
+        updated_values = self.mg.get_updated_values()
+        updated_values = {x:float(updated_values[x])/self.states_normalization[x] for x in self.states_normalization}  
+        updated_values['hour_sin'] = np.sin(2*np.pi*updated_values['hour']) # the hour is already divided by 24 in the line above
+        updated_values['hour_cos'] = np.cos(2*np.pi*updated_values['hour'])  
+        updated_values.pop('hour', None)
+
+        s_ = np.array(list(updated_values.values()))
         #np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
         #s_ = [ s_[key] for key in s_.keys()]
         return s_
