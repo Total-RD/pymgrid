@@ -403,7 +403,7 @@ class Microgrid:
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
         if self.architecture['grid'] == 1:
-            self.grid = Grid(self.parameters, self._grid_status_ts,
+            self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0,0],
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0],
                              self._grid_co2.iloc[0, 0])
