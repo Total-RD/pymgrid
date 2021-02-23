@@ -1,4 +1,4 @@
-
+import pandas as pd
 
 def normalize_environment_states(mg):
     max_values = {}
@@ -23,3 +23,26 @@ def normalize_environment_states(mg):
             max_values[keys] = mg.parameters[keys].values[0] 
             
     return max_values
+
+def sample_reset(has_grid, saa, microgrid, sampling_args=None):
+    """
+    Generates a new sample using an instance of SampleAverageApproximation and
+    :param has_grid: bool, whether the microgrid has a grid.
+    :param saa:, SampleAverageApproximation
+    :param microgrid: Microgrid
+    :param sampling_args: arguments to be passed to saa.sample_from_forecasts().
+    :return:
+    """
+    if sampling_args is None:
+        sampling_args = dict()
+
+    sample = saa.sample_from_forecasts(n_samples=1, **sampling_args)
+    sample = sample[0]
+
+    microgrid._load_ts = pd.DataFrame(sample['load'])
+    microgrid._pv_ts = pd.DataFrame(sample['pv'])
+    microgrid._df_record_state['load'] = [sample['load'].iloc[0].squeeze()]
+    microgrid._df_record_state['pv'] = [sample['pv'].iloc[0].squeeze()]
+    if has_grid:
+        microgrid._grid_status_ts = pd.DataFrame(sample['grid'])
+        microgrid._df_record_state['grid_status'] = [sample['grid'].iloc[0].squeeze()]

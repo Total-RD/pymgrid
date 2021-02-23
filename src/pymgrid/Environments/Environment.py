@@ -25,6 +25,27 @@ import gym
 from gym.utils import seeding
 from gym.spaces import Space, Discrete, Box
 from . import Preprocessing
+from pymgrid.algos.Control import SampleAverageApproximation
+
+DEFAULT_CONFIG={
+    'microgrid': None, #need to be passed by user
+    'training_reward_smoothing':'sqrt',
+    'resampling_on_reset':True,
+    'forecast_args':None, #used to init the SAA for resampling on reset
+    'baseline_sampling_args':None,
+}
+
+def generate_sampler(microgrid, forecast_args):
+    """
+    Generates an instance of SampleAverageApproximate to use in future sampling.
+    :param microgrid:
+    :param forecast_args:
+    :return:
+    """
+    if forecast_args is None:
+        forecast_args = dict()
+
+    return SampleAverageApproximation(microgrid, **forecast_args)
 
 class Environment(gym.Env):
     """
@@ -39,7 +60,7 @@ class Environment(gym.Env):
 
     """
 
-    def __init__(self, env_config, seed = 42, training_reward_smoothing = 'sqrt'):
+    def __init__(self, env_config, seed = 42):
         # Set seed
         np.random.seed(seed)
 
@@ -56,7 +77,20 @@ class Environment(gym.Env):
         # Number of actions
 
         #training_reward_smoothing
-        self.training_reward_smoothing = training_reward_smoothing
+        try:
+            self.training_reward_smoothing = env_config['training_reward_smoothing']
+        except:
+            self.training_reward_smoothing = 'sqrt'
+
+        try:
+            self.resampling_on_reset = env_config['resampling_on_reset']
+        except:
+            self.resampling_on_reset = True
+        
+        if self.resampling_on_reset == True:
+            self.forecast_args = env_config['forecast_args']
+            self.baseline_sampling_args = env_config['baseline_sampling_args']
+            self.saa = generate_sampler(self.mg, self.forecast_args)
         
         self.observation_space = Box(low=-1, high=np.float('inf'), shape=(self.Ns,), dtype=np.float)
         #np.zeros(len(self.mg._df_record_state.keys()))
@@ -125,12 +159,14 @@ class Environment(gym.Env):
 #         self.round += 1
 #         return s_, reward, done, {}
 
-    def reset(self, testing=False):
+    def reset(self, testing=False, sampling_args = None):
         self.round = 1
         # Reseting microgrid
         self.mg.reset(testing=testing)
         if testing == True:
             self.TRAIN = False
+        elif self.resampling_on_reset == True:
+            Preprocessing.sample_reset(self.mg.architecture['grid'] == 1, self.saa, self.mg, sampling_args=sampling_args)
         
         
         self.state, self.reward, self.done, self.info =  self.transition(), 0, False, {}
