@@ -29,7 +29,7 @@ from pymgrid.algos.Control import SampleAverageApproximation
 
 DEFAULT_CONFIG={
     'microgrid': None, #need to be passed by user
-    'training_reward_smoothing':'sqrt',
+    'training_reward_smoothing':'sqrt', #'peak_load'
     'resampling_on_reset':True,
     'forecast_args':None, #used to init the SAA for resampling on reset
     'baseline_sampling_args':None,
@@ -114,6 +114,8 @@ class Environment(gym.Env):
         if self.TRAIN == True:
             if self.training_reward_smoothing == 'sqrt':
                 return -(self.mg.get_cost()**0.5)
+            if self.training_reward_smoothing == 'peak_load':
+                return -self.mg.get_cost()/self.mg.parameters['load']
         return -self.mg.get_cost()
 
     def get_cost(self):
