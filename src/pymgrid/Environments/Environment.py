@@ -115,7 +115,7 @@ class Environment(gym.Env):
             if self.training_reward_smoothing == 'sqrt':
                 return -(self.mg.get_cost()**0.5)
             if self.training_reward_smoothing == 'peak_load':
-                return -self.mg.get_cost()/self.mg.parameters['load']
+                return -self.mg.get_cost()/self.mg.parameters['load'].values[0]
         return -self.mg.get_cost()
 
     def get_cost(self):
