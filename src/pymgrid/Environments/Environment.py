@@ -519,6 +519,16 @@ class Environment(gym.Env):
                             'genset': max(net_load, 0)
                             }
 
+        elif action == 6:
+
+            control_dict = {'pv_consummed': min(pv, load),
+                            'battery_charge': 0,
+                            'battery_discharge': p_discharge,
+                            'grid_import': 0,
+                            'grid_export': 0,
+                            'genset': max(0, load - min(pv, load) - p_discharge),
+                            }
+
         return control_dict
 
     def action_genset(self, mg, action):

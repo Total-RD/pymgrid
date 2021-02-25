@@ -40,7 +40,9 @@ class MicroGridEnv(Environment):
 
     def __init__(self, env_config, seed=42):
         super().__init__(env_config, seed)
-        self.Na = 2 + self.mg.architecture['grid'] * 3 + self.mg.architecture['genset'] * 1
+        self.Na = 2 + self.mg.architecture['grid'] * 3 + self.mg.architecture['genset'] * 1 
+        if self.mg.architecture['grid'] == 1 and self.mg.architecture['genset'] == 1:
+            self.Na += 1
         self.action_space = Discrete(self.Na)
 
 
