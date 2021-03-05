@@ -28,6 +28,7 @@ import os
 import sys
 import pickle
 from IPython.display import display
+from pathlib import Path
 
 class MicrogridGenerator:
     """
@@ -83,7 +84,7 @@ class MicrogridGenerator:
     def __init__(self, nb_microgrid=10,
                  random_seed=42,
                  timestep=1,
-                 path=os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]+'/pymgrid'):
+                 path=str(Path(__file__).parent)):
         
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
