@@ -116,6 +116,8 @@ class Environment(gym.Env):
 #         return s_, reward, done, {}
 
     def reset(self, testing=False):
+        if "testing" in env_config:
+            testing = env_config["testing"]
         self.round = 1
         # Reseting microgrid
         self.mg.reset(testing=testing)
