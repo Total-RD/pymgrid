@@ -332,6 +332,16 @@ class NoisyPVData:
             interpolated_most_light = self.most_light_curve_eval(max_min='max',
                                                                  day_hour_pairs=((day, time_of_most_light),))
 
+            # Check if these bounds are negative.
+            if interpolated_least_light<0:
+                if interpolated_most_light<0: # This is dumb, but it flips the negative bounds
+                    most_light = -min(interpolated_least_light, interpolated_most_light)
+                    least_light = -max(interpolated_least_light, interpolated_most_light)
+                    interpolated_most_light = most_light
+                    interpolated_least_light = least_light
+                else:
+                    interpolated_least_light = 0
+
             lower_b = interpolated_least_light
             upper_b = interpolated_most_light
             spread = upper_b - lower_b
@@ -599,7 +609,7 @@ class NoisyLoadData:
             self.data, self.unmunged_data = self._import_file(file_name)
 
         else:
-            raise RuntimeError('Unable to initialize data')
+            raise RuntimeError('Unable to initialize data, either load_data or file_name must not be None')
 
         # Cut load data to the correct size
         self.data = self.data.iloc[:8760]
@@ -630,7 +640,7 @@ class NoisyLoadData:
         self.data['day_of_week'] = self.data.index % 7
 
         self.load_mean = self.data.groupby(['day_of_week']).mean()
-        self.load_std = self.data.groupby(['day_of_week']).std()
+        self.load_std = self.data.groupby(['day_of_week']).std().fillna(value=0)
 
         self.munged = True
 
@@ -747,7 +757,7 @@ class NoisyGridData:
             transition_prob_matrix = np.zeros((2, 2))
             occurrences = np.zeros(2)
             for j, val in enumerate(grid_vals):
-                if j < len(grid_vals) - 1:
+                if j < len(grid_vals) - 1: # One less than length b/c we are counting transitions
                     transition_prob_matrix[int(val), int(grid_vals[j + 1])] += 1
                     occurrences[int(val)] += 1
 
@@ -919,7 +929,6 @@ class SampleGenerator:
             samples: list of pd.DataFrame of shape (8760,3)
             list of samples created from sampling from distributions defined in forecasts.
         """
-        # TODO: modify this to allow for noise variations, and maybe sample from better distribution
         NPV = self.NPV
         NL = NoisyLoadData(load_data=self.forecasts['load'])
         NG = NoisyGridData(grid_data=self.forecasts['grid'])
