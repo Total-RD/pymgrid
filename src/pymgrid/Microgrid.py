@@ -47,7 +47,7 @@ if in_ipynb():
     init_notebook_mode(connected=False)
 
 np.random.seed(123)
-cf.set_config_file(theme='pearl')
+#cf.set_config_file(offline=True, theme='pearl') #commented for now, issues with parallel processes
 
 DEFAULT_HORIZON = 24 #in hours
 DEFAULT_TIMESTEP = 1 #in hours
@@ -403,7 +403,7 @@ class Microgrid:
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
         if self.architecture['grid'] == 1:
-            self.grid = Grid(self.parameters, self._grid_status_ts,
+            self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0,0],
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0],
                              self._grid_co2.iloc[0, 0])
@@ -1042,11 +1042,15 @@ class Microgrid:
         if self.architecture['PV'] == 1:
             try:
                 total_production += control_dict['pv']
-                temp_pv += control_dict['pv_consummed']
+                control_dict['pv_consummed'] = max(0,min(control_dict['pv_consummed'], control_dict['pv']))
+                temp_pv += max(control_dict['pv_consummed'], control_dict['pv'])
+
             except:
                 control_dict['pv_consummed'] = 0
 
             try:
+                if control_dict['pv_curtailed'] <0:
+                    control_dict['pv_curtailed'] = 0
                 total_production -= control_dict['pv_curtailed']
             except:
                 control_dict['pv_curtailed'] = 0
@@ -1073,8 +1077,8 @@ class Microgrid:
                 print("this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
 
             p_import, p_export = self._check_constraints_grid(p_import, p_export)
-            control_dict['grid_import'] = p_import
-            control_dict['grid_export'] = p_export
+            control_dict['grid_import'] = p_import * status['grid_status'][-1]
+            control_dict['grid_export'] = p_export * status['grid_status'][-1]
 
             total_production += control_dict['grid_import']
             total_production -= control_dict['grid_export']

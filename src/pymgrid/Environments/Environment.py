@@ -11,13 +11,9 @@ Gonzague Henri
 """
 <pymgrid is a Python library to simulate microgrids>
 Copyright (C) <2020> <Total S.A.>
-
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
 You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 """
 
 import numpy as np
@@ -28,20 +24,19 @@ from gym.spaces import Space, Discrete, Box
 class Environment(gym.Env):
     """
     Markov Decision Process associated to the microgrid.
-
         Parameters
         ----------
             microgrid: microgrid, mandatory
                 The controlled microgrid.
             random_seed: int, optional
                 Seed to be used to generate the needed random numbers to size microgrids.
-
     """
 
     def __init__(self, env_config, seed = 42):
         # Set seed
         np.random.seed(seed)
         # Microgrid
+        self.env_config = env_config
         self.mg = env_config['microgrid']
         # State space
         self.mg.train_test_split()
@@ -49,12 +44,11 @@ class Environment(gym.Env):
         # Number of states
         self.Ns = len(self.mg._df_record_state.keys())
         # Number of actions
-        self.Na = 2+self.mg.architecture['grid']*3+self.mg.architecture['genset']*1
+
         
         self.observation_space = Box(low=-0.1, high=np.float('inf'), shape=(self.Ns,), dtype=np.float)
         #np.zeros(len(self.mg._df_record_state.keys()))
         # Action space
-        self.action_space = Discrete(self.Na)
         self.metadata = {"render.modes": [ "human"]}
         
         self.state, self.reward, self.done, self.info, self.round = None, None, None, None, None
@@ -117,6 +111,8 @@ class Environment(gym.Env):
 #         return s_, reward, done, {}
 
     def reset(self, testing=False):
+        if "testing" in self.env_config:
+            testing = self.env_config["testing"]
         self.round = 1
         # Reseting microgrid
         self.mg.reset(testing=testing)
@@ -139,7 +135,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
 
         control_dict=[]
@@ -150,8 +145,14 @@ class Environment(gym.Env):
         observation_space = []
         return observation_space
 
+    # Transition function
     def transition(self):
-        s_ = np.nan
+        #         net_load = round(self.mg.load - self.mg.pv)
+        #         soc = round(self.mg.battery.soc,1)
+        #         s_ = (net_load, soc)  # next state
+        s_ = np.array(list(self.mg.get_updated_values().values()))
+        #np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
+        #s_ = [ s_[key] for key in s_.keys()]
         return s_
     
     def seed (self, seed=None):
@@ -176,7 +177,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
         print(action)
 
@@ -214,8 +214,45 @@ class Environment(gym.Env):
 
         return control_dict
 
+    def get_action_discrete(self, action):
+        """
+        :param action: current action
+        :return: control_dict : dicco of controls
+        """
+        '''
+        Actions are:
+        binary variable whether charging or dischargin
+        battery power, normalized to 1
+        binary variable whether importing or exporting
+        grid power, normalized to 1
+        binary variable whether genset is on or off
+        genset power, normalized to 1
+        '''
+        control_dict={}
+
+        control_dict['pv_consumed'] = action[0]
+        if self.mg.architecture['battery'] == 1:
+            control_dict['battery_charge'] = action[1] * action[3]
+            control_dict['battery_discharge'] =  action[2] * (1- action[3])
+
+        if self.mg.architecture['genset'] == 1:
+            control_dict['genset'] = action[4]
+
+            if self.mg.architecture['grid'] == 1:
+                control_dict['grid_import'] = action[5] * action[7]
+                control_dict['grid_export'] = action[6] * (1- action[7])
+
+        elif self.mg.architecture['grid'] == 1:
+            control_dict['grid_import'] = action[4] * action[6]
+            control_dict['grid_export'] = action[5] * (1 - action[6])
+
+
+
+
+        return control_dict
+
     # Mapping between action and the control_dict
-    def get_action_discret(self, action):
+    def get_action_priority_list(self, action):
         """
         :param action: current action
         :return: control_dict : dicco of controls
@@ -228,7 +265,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
 
         mg = self.mg

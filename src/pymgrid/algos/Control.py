@@ -807,7 +807,7 @@ class ModelPredictiveControl:
                         e_max, e_min, p_max_charge, p_max_discharge,
                         p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
             
-        self.problem.solve(warm_start = True, solver = cp.MOSEK)
+        self.problem.solve(warm_start = True)
 
 
         if self.problem.status == 'infeasible':
@@ -1481,11 +1481,11 @@ class Benchmarks:
         elif algo == 'rbc':
             self.run_rule_based_benchmark()
         elif algo == 'saa':
-            self.run_saa_benchmark(verbose=verbose, preset_to_use=preset_to_use, **kwargs)
+            self.run_saa_benchmark(preset_to_use=preset_to_use, **kwargs)
         else:
             self.run_mpc_benchmark(verbose=verbose, **kwargs)
             self.run_rule_based_benchmark()
-            self.run_saa_benchmark(verbose=verbose, preset_to_use=preset_to_use, **kwargs)
+            self.run_saa_benchmark(preset_to_use=preset_to_use, **kwargs)
 
         if verbose:
             self.describe_benchmarks()
