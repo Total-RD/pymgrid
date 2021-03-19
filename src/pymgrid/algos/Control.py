@@ -907,6 +907,7 @@ class ModelPredictiveControl:
             sample = sample.iloc[:8760]
 
         # dataframes, copied API from _baseline_linprog
+        self.microgrid.reset()
         baseline_linprog_action = deepcopy(self.microgrid._df_record_control_dict)
         baseline_linprog_update_status = deepcopy(self.microgrid._df_record_state)
         baseline_linprog_record_production = deepcopy(self.microgrid._df_record_actual_production)
@@ -1600,3 +1601,4 @@ if __name__=='__main__':
     benchmark = Benchmarks(microgrid)
     benchmark.run_saa_benchmark(preset_to_use=70)
     benchmark.describe_benchmarks(test_split=True, test_ratio=0.33)
+
