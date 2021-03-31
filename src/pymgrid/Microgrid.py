@@ -403,7 +403,7 @@ class Microgrid:
         if self.architecture['genset'] == 1:
             self.genset = Genset(self.parameters)
         if self.architecture['grid'] == 1:
-            self.grid = Grid(self.parameters, self._grid_status_ts,
+            self.grid = Grid(self.parameters, self._grid_status_ts.iloc[0,0],
                              self._grid_price_import.iloc[0, 0],
                              self._grid_price_export.iloc[0, 0],
                              self._grid_co2.iloc[0, 0])
@@ -1077,8 +1077,9 @@ class Microgrid:
                 print("this microgrid is grid connected, you should add a 'grid_import' and a 'grid_export' field to your control dictionnary")
 
             p_import, p_export = self._check_constraints_grid(p_import, p_export)
-            control_dict['grid_import'] = p_import * self.grid.status
-            control_dict['grid_export'] = p_export * self.grid.status
+
+            control_dict['grid_import'] = p_import * status['grid_status'][-1]
+            control_dict['grid_export'] = p_export * status['grid_status'][-1]
 
             total_production += control_dict['grid_import']
             total_production -= control_dict['grid_export']

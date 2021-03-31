@@ -11,13 +11,9 @@ Gonzague Henri
 """
 <pymgrid is a Python library to simulate microgrids>
 Copyright (C) <2020> <Total S.A.>
-
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
 This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
 You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 """
 
 import numpy as np
@@ -50,14 +46,12 @@ def generate_sampler(microgrid, forecast_args):
 class Environment(gym.Env):
     """
     Markov Decision Process associated to the microgrid.
-
         Parameters
         ----------
             microgrid: microgrid, mandatory
                 The controlled microgrid.
             random_seed: int, optional
                 Seed to be used to generate the needed random numbers to size microgrids.
-
     """
 
     def __init__(self, env_config, seed = 42):
@@ -68,6 +62,7 @@ class Environment(gym.Env):
 
         self.TRAIN = True
         # Microgrid
+        self.env_config = env_config
         self.mg = env_config['microgrid']
         # State space
         self.mg.train_test_split()
@@ -161,7 +156,9 @@ class Environment(gym.Env):
 #         self.round += 1
 #         return s_, reward, done, {}
 
-    def reset(self, testing=False, sampling_args = None):
+    def reset(self, testing=False):
+        if "testing" in self.env_config:
+            testing = self.env_config["testing"]
         self.round = 1
         # Reseting microgrid
         self.mg.reset(testing=testing)
@@ -189,7 +186,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
 
         control_dict=[]
@@ -238,7 +234,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
         print(action)
 
@@ -289,7 +284,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
         control_dict={}
 
@@ -328,7 +322,6 @@ class Environment(gym.Env):
         grid power, normalized to 1
         binary variable whether genset is on or off
         genset power, normalized to 1
-
         '''
 
         mg = self.mg

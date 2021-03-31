@@ -28,6 +28,7 @@ import os
 import sys
 import pickle
 from IPython.display import display
+from pathlib import Path
 
 # MICROGRID_DEFAULT_CONFIG : {
 #     'load_type':'Folder', #or 'File'
@@ -111,7 +112,7 @@ class MicrogridGenerator:
     def __init__(self, nb_microgrid=10,
                  random_seed=42,
                  timestep=1,
-                 path=os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]+'/pymgrid'):
+                 path=str(Path(__file__).parent)):
         
         np.random.seed(random_seed)
         #todo manage simulation duration and different timesteps
@@ -405,7 +406,7 @@ class MicrogridGenerator:
 
         with open(self.path+'/data/scenario/'+scenario+'.pkl', 'rb') as input:
             temp_mgen = pickle.load(input)
-        temp_mgen.path = os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]
+        temp_mgen.path = str(Path(__file__).parent.parent)
         return temp_mgen
 
     def _create_microgrid(self):
