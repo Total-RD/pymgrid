@@ -265,10 +265,14 @@ class Environment(gym.Env):
                                                                      mg.grid.power_import))
                 control_dict['grid_export'] = max(0, (1 - action[2]) * min(action[3] * mg.grid.power_export,
                                                                            mg.grid.power_export))
+            else:
+                # avoid warnings
+                control_dict['grid_import'] = 0
+                control_dict['grid_export'] = 0
 
         if mg.architecture['genset'] == 1:
-            control_dict['genset'] = max(0, action[4] * min(action[5] * mg.genset.rated_power_import))
-
+            control_dict['genset'] = max(0, action[4] * min(action[5] * mg.genset.rated_power,
+                                                            mg.genset.rated_power))
         return control_dict
 
     def get_action_discrete(self, action):
