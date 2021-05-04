@@ -1,5 +1,5 @@
 import unittest
-from src.pymgrid.utils.DataGenerator import *
+from pymgrid.utils.DataGenerator import *
 from pandas import Series
 from pandas.testing import assert_frame_equal, assert_series_equal
 from numpy.testing import assert_array_equal, assert_array_almost_equal
