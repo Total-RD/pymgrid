@@ -666,15 +666,12 @@ class Microgrid:
             self._df_record_state = self._update_status(control_dict,
                                                         self._df_record_state, self._next_load, self._next_pv)
 
-
-
+        if self._tracking_timestep == self._data_length - self.horizon:
+            self.done = True
+            return self.get_updated_values()
 
         self._tracking_timestep += 1
         self.update_variables()
-
-        if self._tracking_timestep == self._data_length - self.horizon:
-            self.done = True
-
 
         return self.get_updated_values()
 
