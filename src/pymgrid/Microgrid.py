@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
 from IPython import get_ipython
-from pymgrid.algos.Control import Benchmarks
+from pymgrid_git.src.pymgrid.algos.Control import Benchmarks
 
 def in_ipynb():
     try:
@@ -666,7 +666,7 @@ class Microgrid:
             self._df_record_state = self._update_status(control_dict,
                                                         self._df_record_state, self._next_load, self._next_pv)
 
-        if self._tracking_timestep == self._data_length - self.horizon:
+        if self._tracking_timestep == self._data_length - self.horizon or self._tracking_timestep == self._data_length - 1:
             self.done = True
             return self.get_updated_values()
 
@@ -771,11 +771,8 @@ class Microgrid:
             self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
             self.load = self._load_ts.iloc[self._tracking_timestep, 0]
 
-            if self._tracking_timestep < self._data_length - 1:
-                self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
-                self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
-            else:
-                self._next_pv, self._next_load = None, None
+            self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
+            self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
 
 
         if self.architecture['grid']==1:
@@ -808,15 +805,10 @@ class Microgrid:
                 self.grid.price_export = self._grid_price_export.iloc[self._tracking_timestep, 0]
                 self.grid.co2 = self._grid_co2.iloc[self._tracking_timestep, 0]
 
-                if self._tracking_timestep < self._data_length - 1:
-                    self._next_grid_status = self._grid_status_ts.iloc[self._tracking_timestep + 1, 0]
-                    self._next_grid_price_import = self._grid_price_import.iloc[self._tracking_timestep + 1, 0]
-                    self._next_grid_price_export = self._grid_price_export.iloc[self._tracking_timestep + 1, 0]
-                    self._next_grid_co2 = self._grid_co2.iloc[self._tracking_timestep + 1, 0]
-                else:
-                    self._next_grid_status, self._next_grid_price_import, self._next_grid_price_export, \
-                    self._next_grid_co2 = None, None, None, None
-
+                self._next_grid_status = self._grid_status_ts.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_import = self._grid_price_import.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_price_export = self._grid_price_export.iloc[self._tracking_timestep + 1, 0]
+                self._next_grid_co2 = self._grid_co2.iloc[self._tracking_timestep + 1, 0]
 
         if self.architecture['battery'] == 1:
             self.battery.soc = self._df_record_state['battery_soc'][-1]
