@@ -436,7 +436,7 @@ class Microgrid:
 
         # Ensure various DataFrames exist and are in fact DataFrames
 
-        keys = ('parameters','load', 'pv', 'df_actions', 'df_status', 'df_actual_generation', 'df_cost')
+        keys = ('parameters', 'load', 'pv', 'df_actions', 'df_status', 'df_actual_generation', 'df_cost')
 
         for key in keys:
             try:
@@ -774,8 +774,11 @@ class Microgrid:
             self.pv = self._pv_ts.iloc[self._tracking_timestep, 0]
             self.load = self._load_ts.iloc[self._tracking_timestep, 0]
 
-            self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
-            self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
+            if self._tracking_timestep < self._data_length - 1:
+                self._next_pv = self._pv_ts.iloc[self._tracking_timestep+1, 0]
+                self._next_load = self._load_ts.iloc[self._tracking_timestep+1, 0]
+            else:
+                self._next_pv, self._next_load = None, None
 
 
         if self.architecture['grid']==1:
