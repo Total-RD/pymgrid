@@ -31,7 +31,7 @@ import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
 from IPython import get_ipython
-from pymgrid_git.src.pymgrid.algos.Control import Benchmarks
+from pymgrid.algos.Control import Benchmarks
 
 def in_ipynb():
     try:
