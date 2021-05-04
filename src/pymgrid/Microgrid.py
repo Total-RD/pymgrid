@@ -811,10 +811,14 @@ class Microgrid:
                 self.grid.price_export = self._grid_price_export.iloc[self._tracking_timestep, 0]
                 self.grid.co2 = self._grid_co2.iloc[self._tracking_timestep, 0]
 
-                self._next_grid_status = self._grid_status_ts.iloc[self._tracking_timestep + 1, 0]
-                self._next_grid_price_import = self._grid_price_import.iloc[self._tracking_timestep + 1, 0]
-                self._next_grid_price_export = self._grid_price_export.iloc[self._tracking_timestep + 1, 0]
-                self._next_grid_co2 = self._grid_co2.iloc[self._tracking_timestep + 1, 0]
+                if self._tracking_timestep < self._data_length - 1:
+                    self._next_grid_status = self._grid_status_ts.iloc[self._tracking_timestep + 1, 0]
+                    self._next_grid_price_import = self._grid_price_import.iloc[self._tracking_timestep + 1, 0]
+                    self._next_grid_price_export = self._grid_price_export.iloc[self._tracking_timestep + 1, 0]
+                    self._next_grid_co2 = self._grid_co2.iloc[self._tracking_timestep + 1, 0]
+                else:
+                    self._next_grid_status, self._next_grid_price_import, self._next_grid_price_export, \
+                    self._next_grid_co2 = None, None, None, None
 
 
         if self.architecture['battery'] == 1:
