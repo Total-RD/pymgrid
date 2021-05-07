@@ -254,10 +254,10 @@ class Environment(gym.Env):
         if mg.architecture['battery'] == 1:
             control_dict['battery_charge'] = max(0, action[0] * min(action[1] * mg.battery.capacity,
                                                                     mg.battery.capa_to_charge,
-                                                                    mg.battery.power_charge))
+                                                                    mg.battery.p_charge_max))
             control_dict['battery_discharge'] = max(0, (1 - action[0]) * min(action[1] * mg.battery.capacity,
                                                                              mg.battery.capa_to_discharge,
-                                                                             mg.battery.power_discharge))
+                                                                             mg.battery.p_discharge_max))
 
         if mg.architecture['grid'] == 1:
             if mg.grid.status == 1:
