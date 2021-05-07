@@ -235,7 +235,6 @@ class Environment(gym.Env):
         binary variable whether genset is on or off
         genset power, normalized to 1
         '''
-        print(action)
 
         mg = self.mg
         pv = mg.pv
