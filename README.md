@@ -137,4 +137,4 @@ This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/mast
 
 ## Contact
 
-For any question you can contact me at gonzague.henri [@] total.com
+For any question you can contact me at tanguy.levent [@] external.total.com
