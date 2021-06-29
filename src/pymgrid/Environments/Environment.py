@@ -80,7 +80,7 @@ class Environment(gym.Env):
         try:
             self.resampling_on_reset = env_config['resampling_on_reset']
         except:
-            self.resampling_on_reset = True
+            self.resampling_on_reset = False
         
         if self.resampling_on_reset == True:
             self.forecast_args = env_config['forecast_args']
