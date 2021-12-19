@@ -397,7 +397,6 @@ class ControlOutput(dict):
 
 class ModelPredictiveControl:
 
-    # TODO add a function that runs this on any of the microgrids in the generator to compare last 2/3 baselines
     """
     A class to run Model Predictive Control using the model outlined in the pymgrid paper
 
@@ -450,7 +449,6 @@ class ModelPredictiveControl:
             self.u_genset = cp.Variable((self.horizon,), boolean=True)
             self.costs = cp.Parameter(8 * self.horizon)
             self.inequality_rhs = cp.Parameter(9 * self.horizon)
-
 
         else:
             self.p_vars = cp.Variable((7*self.horizon,), pos=True)
@@ -885,7 +883,6 @@ class ModelPredictiveControl:
 
             return control_dicts
 
-
     def run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
         """
         Runs MPC on a sample over a number of iterations
@@ -903,8 +900,8 @@ class ModelPredictiveControl:
         """
         if not isinstance(sample, pd.DataFrame):
             raise TypeError('sample must be of type pd.DataFrame, is {}'.format(type(sample)))
-        if sample.shape != (8760, 3):
-            sample = sample.iloc[:8760]
+
+        sample = sample.iloc[:self.microgrid._data_length]
 
         # dataframes, copied API from _baseline_linprog
         self.microgrid.reset()
@@ -1293,7 +1290,7 @@ class RuleBasedControl:
 
         return control_dict
 
-    def run_rule_based(self, priority_list=0, length=8760):
+    def run_rule_based(self, priority_list=0, length=None):
 
         """ This function runs the rule based benchmark over the datasets (load and pv profiles) in the microgrid."""
 
@@ -1303,6 +1300,8 @@ class RuleBasedControl:
         baseline_priority_list_cost = deepcopy(self.microgrid._df_record_cost)
         baseline_priority_list_co2 = deepcopy(self.microgrid._df_record_co2)
 
+        if length is None:
+            length = self.microgrid._data_length
 
         n = length - self.microgrid.horizon
         print_ratio = n/100

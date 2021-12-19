@@ -409,6 +409,27 @@ class MicrogridGenerator:
         temp_mgen.path = str(Path(__file__).parent.parent)
         return temp_mgen
 
+    def _bin_genset_grid(self):
+        rand = np.random.rand()
+        bin_genset = 0
+        bin_grid = 0
+
+        if rand < 0.33:
+
+            bin_genset = 1
+
+        elif rand >= 0.33 and rand < 0.66:
+
+            bin_grid = 1
+
+        else:
+
+            bin_genset = 1
+            bin_grid = 1
+
+        return bin_genset, bin_grid
+
+
     def _create_microgrid(self):
         """
         Function used to create one microgrid. First selecting a load file, and a load size  and a randome architecture
@@ -419,23 +440,8 @@ class MicrogridGenerator:
         # get the sizing data
         # create microgrid object and append
         # return the list
-        rand = np.random.rand()
-        bin_genset = 0
-        bin_grid = 0
 
-        if rand <0.33:
-
-            bin_genset =1
-
-        elif rand>= 0.33 and rand <0.66:
-
-            bin_grid =1
-
-        else:
-
-            bin_genset=1
-            bin_grid=1
-
+        bin_genset, bin_grid = self._bin_genset_grid()
 
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
         size_load = np.random.randint(low=100,high=100001)
