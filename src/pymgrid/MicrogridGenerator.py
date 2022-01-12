@@ -429,6 +429,11 @@ class MicrogridGenerator:
 
         return bin_genset, bin_grid
 
+    def _size_load(self, size_load=None):
+        if size_load is None:
+            return np.random.randint(low=100,high=100001)
+        else:
+            return size_load
 
     def _create_microgrid(self):
         """
@@ -444,7 +449,7 @@ class MicrogridGenerator:
         bin_genset, bin_grid = self._bin_genset_grid()
 
         architecture = {'PV':1, 'battery':1, 'genset':bin_genset, 'grid':bin_grid}
-        size_load = np.random.randint(low=100,high=100001)
+        size_load = self._size_load()
         load = self._scale_ts(self._get_load_ts(), size_load, scaling_method='max') #obtain dataframe of loads
         size = self._size_mg(load, size_load) #obtain a dictionary of mg sizing components
         column_actions=[]
