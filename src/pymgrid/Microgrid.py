@@ -1183,7 +1183,7 @@ class Microgrid:
         co2_cost = self.parameters['cost_co2'].values[0] * df_co2['co2'][-1]
         df['co2'].append(co2_cost)
 
-        total_cost = np.sum([val[-1] for _, val in df.items()])
+        total_cost = np.sum([val[-1] for key, val in df.items() if key != 'total_cost'])
         df['total_cost'].append(total_cost)
 
         return df
