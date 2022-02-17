@@ -454,12 +454,13 @@ class MicrogridGenerator:
         size = self._size_mg(load, size_load) #obtain a dictionary of mg sizing components
         column_actions=[]
         column_actual_production=[]
+        column_cost = []
         grid_ts=[]
         grid_price_export_ts = []
         grid_price_import_ts = []
         grid_co2_ts = []
         df_parameters = pd.DataFrame()
-        df_cost = {'cost':[]}
+        # df_cost = {'cost':[]}
         df_status = {}
         df_co2 = {'co2':[]}
 
@@ -473,6 +474,9 @@ class MicrogridGenerator:
         column_actual_production.append('loss_load')
         column_actual_production.append('overgeneration')
         column_actions.append('load')
+        column_cost.append('loss_load')
+        column_cost.append('overgeneration')
+        column_cost.append('co2')
         if architecture['PV'] == 1:
 
             df_parameters['PV_rated_power'] = np.around(size['pv'],2)
@@ -499,6 +503,7 @@ class MicrogridGenerator:
             column_actual_production.append('battery_discharge')
             column_actions.append('battery_charge')
             column_actions.append('battery_discharge')
+            column_cost.append('battery')
             df_status['battery_soc'] = [battery['soc_0']]
 
             capa_to_charge = max(
@@ -537,6 +542,8 @@ class MicrogridGenerator:
             column_actual_production.append('grid_export')
             column_actions.append('grid_import')
             column_actions.append('grid_export')
+            column_cost.append('grid_import')
+            column_cost.append('grid_export')
             df_status['grid_status'] = [grid_ts.iloc[0,0]]
             #todo Switch back to random file to generate the new version of pymgrid25
             grid_co2_ts = self._get_co2_ts() 
@@ -561,10 +568,12 @@ class MicrogridGenerator:
             df_parameters['genset_co2'] = genset['co2']
             column_actual_production.append('genset')
             column_actions.append('genset')
+            column_cost.append('genset')
 
-
-        df_actions= {i:[] for i in column_actions}#pd.DataFrame(columns = column_actions, )
-        df_actual_production = {i:[] for i in column_actual_production}#pd.DataFrame(columns=column_actual_production)
+        column_cost.append('total_cost')
+        df_actions= {key:[] for key in column_actions}#pd.DataFrame(columns = column_actions, )
+        df_actual_production = {key:[] for key in column_actual_production}#pd.DataFrame(columns=column_actual_production)
+        df_cost = {key: [] for key in column_cost}
 
         microgrid_spec={
             'parameters':df_parameters, #Dictionary
