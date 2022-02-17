@@ -482,7 +482,7 @@ class Microgrid:
 
     def get_cost(self):
         """ Function that returns the cost associated the operation of the last time step. """
-        return self._df_record_cost['cost'][-1]
+        return self._df_record_cost['total_cost'][-1]
 
     def get_co2(self):
         """ Function that returns the co2 emissions associated to the operation of the last time step. """
@@ -1016,11 +1016,6 @@ class Microgrid:
         The mechanism to incure a penalty in case of over-generation is not yet in its final version.
         """
 
-        #todo enforce constraints
-        #todo make sure the control actions repect their respective constriants
-
-        #todo pv
-
         if not isinstance(df, dict):
             raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
 
@@ -1156,27 +1151,35 @@ class Microgrid:
         if not isinstance(df, dict):
             raise TypeError('We know this should be named differently but df needs to be dict, is {}'.format(type(df)))
 
-        cost = 0
-        cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
-        cost += control_dict['overgeneration'] * self.parameters['cost_overgeneration'].values[0]
+        cost_loss_load = control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
+        cost_overgeneration = control_dict['overgeneration'] * self.parameters['cost_overgeneration'].values[0]
+
+        df['loss_load'].append(cost_loss_load)
+        df['overgeneration'].append(cost_overgeneration)
+
+        # cost += control_dict['loss_load'] * self.parameters['cost_loss_load'].values[0]
+        # cost += control_dict['overgeneration'] * self.parameters['cost_overgeneration'].values[0]
 
         if self.architecture['genset'] == 1:
-            cost += control_dict['genset'] * self.parameters['fuel_cost'].values[0]
+            genset_cost = control_dict['genset'] * self.parameters['fuel_cost'].values[0]
+            df['genset'].append(genset_cost)
 
         if self.architecture['grid'] ==1:
-
-
-            cost +=( cost_import * control_dict['grid_import']
-                     - cost_export * control_dict['grid_export'])
+            grid_import_cost = cost_import * control_dict['grid_import']
+            grid_export_cost = - cost_export * control_dict['grid_export']
+            df['grid_import'].append(grid_import_cost)
+            df['grid_export'].append(grid_export_cost)
 
 
         if self.architecture['battery'] ==1 :
-            cost += (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
+            battery_cost = (control_dict['battery_charge']+control_dict['battery_discharge'])*self.parameters['battery_cost_cycle'].values[0]
+            df['battery'].append(battery_cost)
 
-        cost += self.parameters['cost_co2'].values[0] * df_co2['co2'][-1]
-        cost_dict= {'cost': cost}
+        co2_cost = self.parameters['cost_co2'].values[0] * df_co2['co2'][-1]
+        df['co2'].append(co2_cost)
 
-        df['cost'].append(cost)
+        total_cost = np.sum([val[-1] for _, val in df.items()])
+        df['total_cost'].append(total_cost)
 
         return df
 
