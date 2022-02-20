@@ -38,7 +38,7 @@ By default, this command will let you generate 10 microgrids. The object m_gen w
 
 First, you can get the control information with this command:
 ```python
-m_gen.microgrids[0].get_control_info()
+m_gen.microgrids[0].print_control_info()
 
 ```
 
