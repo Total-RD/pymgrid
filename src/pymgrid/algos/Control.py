@@ -1055,7 +1055,7 @@ class ModelPredictiveControl:
         """
 
         sample = return_underlying_data(self.microgrid)
-
+        sample = sample.reset_index(drop=True)
         return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
 
     def mpc_single_step(self, sample, previous_output, current_step):
