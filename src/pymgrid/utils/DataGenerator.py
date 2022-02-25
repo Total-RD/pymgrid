@@ -54,7 +54,7 @@ def return_underlying_data(microgrid):
         else:
             raise RuntimeError('Unable to handle microgrid._grid_status_ts of type {}.'.format(type(grid_data)))
     else:
-        grid_data = pd.Series(data=[0] * len(microgrid._load_ts), name='grid')
+        grid_data = pd.Series(data=[0] * len(microgrid._load_ts), index=pv_data.index, name='grid')
 
     return pd.concat([pv_data, load_data, grid_data], axis=1)
 
