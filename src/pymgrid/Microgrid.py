@@ -1088,6 +1088,22 @@ class Microgrid:
 
         return production_dict
 
+    def _record_co2(self, control_dict, df, grid_co2=0):
+        """ This function record the cost of operating the microgrid at each time step."""
+        co2 = 0
+
+        if self.architecture['genset'] == 1:
+            co2 += control_dict['genset'] * self.parameters['genset_co2'].values[0]
+
+        if self.architecture['grid'] == 1:
+            co2 += grid_co2 * control_dict['grid_import']
+
+        cost_dict = {'co2': co2}
+
+        df['co2'].append( co2)
+
+        return df
+
     def _record_cost(self, control_dict, df, df_co2, cost_import=0, cost_export=0):
         """ This function record the cost of operating the microgrid at each time step."""
 
