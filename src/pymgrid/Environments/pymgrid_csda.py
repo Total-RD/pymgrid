@@ -1,26 +1,8 @@
-"""
-Copyright 2020 Total S.A
-Authors:Gonzague Henri <gonzague.henri@total.com>
-Permission to use, modify, and distribute this software is given under the
-terms of the pymgrid License.
-NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
-$Date: 2020/10/21 07:43 $
-Gonzague Henri
-"""
-
-"""
-<pymgrid is a Python library to simulate microgrids>
-Copyright (C) <2020> <Total S.A.>
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-
-"""
 from pymgrid.Environments.Environment import Environment
 import numpy as np
+import gym
+from gym.utils import seeding
+from gym.spaces import Space, Discrete, Box
 
 
 class MicroGridEnv(Environment):
@@ -35,23 +17,25 @@ class MicroGridEnv(Environment):
                 Seed to be used to generate the needed random numbers to size microgrids.
 
     """
-
     def __init__(self, env_config, seed=42):
         super().__init__(env_config, seed)
+        self.Na = 4 + self.mg.architecture['grid'] * 3 + self.mg.architecture['genset'] * 1
 
+        action_limits = [int(self.mg._pv_ts.max().values[0]),
+                         int(self.mg.parameters['battery_power_charge'].values[0]),
+                         int(self.mg.parameters['battery_power_discharge'].values[0]),
+                         2,
+                         ]
+        if self.mg.architecture['genset'] ==1:
+            action_limits.append(int(self.mg.parameters['genset_rated_power'].values[0]* self.mg.parameters['genset_pmax'].values[0]))
 
-    # Transition function
-    def transition(self):
-        #         net_load = round(self.mg.load - self.mg.pv)
-        #         soc = round(self.mg.battery.soc,1)
-        #         s_ = (net_load, soc)  # next state
-        s_ = np.array(list(self.mg.get_updated_values().values()))
-        #np.array(self.mg.get_updated_values().values)#.astype(np.float)#self.mg.get_updated_values()
-        #s_ = [ s_[key] for key in s_.keys()]
-        return s_
+        if self.mg.architecture['grid'] == 1:
+            action_limits.append(int(self.mg.parameters['grid_power_import'].values[0]))
+            action_limits.append(int(self.mg.parameters['grid_power_export'].values[0]))
+            action_limits.append(2)
+
+        self.action_space = gym.spaces.Tuple([gym.spaces.Discrete(x) for x in action_limits])
+
 
     def get_action(self, action):
-        return self.get_action_discret(action)
-    
-
-
+        return self.get_action_discrete(action)

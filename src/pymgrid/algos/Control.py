@@ -807,7 +807,6 @@ class ModelPredictiveControl:
             
         self.problem.solve(warm_start=True)
 
-
         if self.problem.status == 'infeasible':
             print(self.problem.status)
             print('Infeasible problem on step {} of {}, retrying with GLPK_MI solver'.format(iteration,total_iterations))
@@ -1480,11 +1479,11 @@ class Benchmarks:
         elif algo == 'rbc':
             self.run_rule_based_benchmark()
         elif algo == 'saa':
-            self.run_saa_benchmark(verbose=verbose, preset_to_use=preset_to_use, **kwargs)
+            self.run_saa_benchmark(preset_to_use=preset_to_use, **kwargs)
         else:
             self.run_mpc_benchmark(verbose=verbose, **kwargs)
             self.run_rule_based_benchmark()
-            self.run_saa_benchmark(verbose=verbose, preset_to_use=preset_to_use, **kwargs)
+            self.run_saa_benchmark(preset_to_use=preset_to_use, **kwargs)
 
         if verbose:
             self.describe_benchmarks()
