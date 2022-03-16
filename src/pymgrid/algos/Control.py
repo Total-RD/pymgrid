@@ -805,8 +805,7 @@ class ModelPredictiveControl:
                         e_max, e_min, p_max_charge, p_max_discharge,
                         p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
             
-        self.problem.solve(warm_start = True)
-
+        self.problem.solve(warm_start=True)
 
         if self.problem.status == 'infeasible':
             print(self.problem.status)
