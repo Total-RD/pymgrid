@@ -889,13 +889,13 @@ class Microgrid:
         new_soc =np.nan
         if self.architecture['battery'] == 1:
             new_soc = df['battery_soc'][-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
-                                                        - control_dict['battery_discharge']/self.parameters['battery_efficiency'].values[0])/self.parameters['battery_capacity'].values[0]
+                                                        - control_dict['battery_discharge']*self.parameters['battery_efficiency'].values[0])/self.parameters['battery_capacity'].values[0]
             #if col == 'net_load':
             capa_to_charge = max(
                 (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
                  new_soc *
                  self.parameters['battery_capacity'].values[0]
-                 ) / self.parameters['battery_efficiency'].values[0], 0)
+                 ) * self.parameters['battery_efficiency'].values[0], 0)
 
             capa_to_discharge = max((new_soc *
                                      self.parameters['battery_capacity'].values[0]
@@ -971,14 +971,12 @@ class Microgrid:
 
         if p_charge > self._zero and p_discharge > self._zero:
             pass
-            #print ('cannot import and export at the same time')
-            #todo how to deal with that?
 
         capa_to_charge = max(
                         (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
                          status['battery_soc'][-1] *
                          self.parameters['battery_capacity'].values[0]
-                         ) / self.parameters['battery_efficiency'].values[0], 0)
+                         ) * self.parameters['battery_efficiency'].values[0], 0)
 
         capa_to_discharge = max((status['battery_soc'][-1] *
                                  self.parameters['battery_capacity'].values[0]

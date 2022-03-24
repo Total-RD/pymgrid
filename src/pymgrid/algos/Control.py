@@ -1299,8 +1299,8 @@ class RuleBasedControl:
         baseline_priority_list_cost = deepcopy(self.microgrid._df_record_cost)
         baseline_priority_list_co2 = deepcopy(self.microgrid._df_record_co2)
 
-        if length is None:
-            length = self.microgrid._data_length
+        if length is None or length >= self.microgrid._data_length:
+            length = self.microgrid._data_length-1
 
         n = length - self.microgrid.horizon
         print_ratio = n/100
