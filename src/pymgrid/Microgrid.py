@@ -650,7 +650,7 @@ class Microgrid:
 
             self._df_record_cost = self._record_cost({ i:self._df_record_actual_production[i][-1] for i in self._df_record_actual_production},
                                                                self._df_record_cost, self._df_record_co2, self.grid.price_import, self.grid.price_export)
-            self._df_record_state = self._update_status(control_dict,
+            self._df_record_state = self._update_status({key: value[-1] for key, value in self._df_record_actual_production.items()},
                                                         self._df_record_state, self._next_load, self._next_pv,
                                                         self._next_grid_status, self._next_grid_price_import,
                                                         self._next_grid_price_export, self._next_grid_co2)
@@ -874,7 +874,7 @@ class Microgrid:
         return df
 
 
-    def _update_status(self, control_dict, df, next_load, next_pv, next_grid = 0, next_price_import =0, next_price_export = 0, next_co2 = 0):
+    def _update_status(self, production_dict, df, next_load, next_pv, next_grid = 0, next_price_import =0, next_price_export = 0, next_co2 = 0):
         """ This function update the parameters of the microgrid that change with time. """
         #self.df_status = self.df_status.append(self.new_row, ignore_index=True)
 
@@ -888,8 +888,8 @@ class Microgrid:
         }
         new_soc =np.nan
         if self.architecture['battery'] == 1:
-            new_soc = df['battery_soc'][-1] + (control_dict['battery_charge']*self.parameters['battery_efficiency'].values[0]
-                                                        - control_dict['battery_discharge']/self.parameters['battery_efficiency'].values[0])/self.parameters['battery_capacity'].values[0]
+            new_soc = df['battery_soc'][-1] + (production_dict['battery_charge'] * self.parameters['battery_efficiency'].values[0]
+                                               - production_dict['battery_discharge'] / self.parameters['battery_efficiency'].values[0]) / self.parameters['battery_capacity'].values[0]
             #if col == 'net_load':
             capa_to_charge = max(
                 (self.parameters['battery_soc_max'].values[0] * self.parameters['battery_capacity'].values[0] -
