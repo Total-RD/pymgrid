@@ -1513,7 +1513,7 @@ class Benchmarks:
 
         t_vals = []
         for key in self.outputs_dict:
-            t_vals.append(len(self.outputs_dict[key]['cost']['cost']))
+            t_vals.append(len(self.outputs_dict[key]['cost']['total_cost']))
 
         if not all([t_val == t_vals[0] for t_val in t_vals]):
             raise ValueError('Outputs are of different lengths')
@@ -1541,61 +1541,49 @@ class Benchmarks:
             percent = round(test_ratio * 100, 1)
 
             if self.has_mpc_benchmark and 'mpc' in algorithms:
-                cost = round(np.sum(self.mpc_output['cost']['cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
+                cost = round(np.sum(self.mpc_output['cost']['total_cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
                 print('Cost of the last {} steps ({} percent of all steps) using MPC: {}'.format(steps, percent, cost))
 
             if self.has_rule_based_benchmark and 'rbc' in algorithms:
-                cost = round(np.sum(self.rule_based_output['cost']['cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
+                cost = round(np.sum(self.rule_based_output['cost']['total_cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
                 print('Cost of the last {} steps ({} percent of all steps) using rule-based control: {}'.format(steps, percent, cost))
 
             if self.has_saa_benchmark and 'saa' in algorithms:
-                cost = round(np.sum(self.saa_output['cost']['cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
+                cost = round(np.sum(self.saa_output['cost']['total_cost'][int(np.ceil(T*(1-test_ratio))):]), 2)
                 print('Cost of the last {} steps ({} percent of all steps) using sample-average MPC control: {}'.format(steps, percent, cost))
 
         else:
 
             if self.has_mpc_benchmark and 'mpc' in algorithms:
-                cost_train = round(np.sum(self.mpc_output['cost']['cost'][:test_index]), 2)
-                cost_test = round(np.sum(self.mpc_output['cost']['cost'][test_index:]), 2)
+                cost_train = round(np.sum(self.mpc_output['cost']['total_cost'][:test_index]), 2)
+                cost_test = round(np.sum(self.mpc_output['cost']['total_cost'][test_index:]), 2)
 
                 print('Test set cost using MPC: {}'.format(cost_test))
                 print('Train set cost using MPC: {}'.format(cost_train))
 
             if self.has_rule_based_benchmark and 'rbc' in algorithms:
-                cost_train = round(np.sum(self.rule_based_output['cost']['cost'][:test_index]), 2)
-                cost_test = round(np.sum(self.rule_based_output['cost']['cost'][test_index:]), 2)
+                cost_train = round(np.sum(self.rule_based_output['cost']['total_cost'][:test_index]), 2)
+                cost_test = round(np.sum(self.rule_based_output['cost']['total_cost'][test_index:]), 2)
 
                 print('Test set cost using RBC: {}'.format(cost_test))
                 print('Train set cost using RBC: {}'.format(cost_train))
 
             if self.has_saa_benchmark and 'saa' in algorithms:
-                cost_train = round(np.sum(self.saa_output['cost']['cost'][:test_index]), 2)
-                cost_test = round(np.sum(self.saa_output['cost']['cost'][test_index:]), 2)
+                cost_train = round(np.sum(self.saa_output['cost']['total_cost'][:test_index]), 2)
+                cost_test = round(np.sum(self.saa_output['cost']['total_cost'][test_index:]), 2)
 
                 print('Test set cost using SAA: {}'.format(cost_test))
                 print('Train set cost using SAA: {}'.format(cost_train))
 
 
-if __name__=='__main__':
-    # TODO this has new code, you need to debug SAA
+if __name__ == '__main__':
 
-    import pymgrid
-    print('pymgrid' in sys.modules.keys())
     from src.pymgrid import MicrogridGenerator
 
     m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25)
     m_gen.generate_microgrid(verbose=False)
     microgrid = m_gen.microgrids[4]
-    # benchmark = Benchmarks(microgrid)
-    # # microgrid.benchmarks.run_saa_benchmark(preset_to_use=85, n_samples=10)
-    # # microgrid.benchmarks.describe_benchmarks(test_split=True, test_ratio=0.67)
-    # microgrid.benchmarks.run_saa_benchmark(preset_to_use=70,n_samples=10)
-    # microgrid.benchmarks.describe_benchmarks(test_split=True, test_ratio=0.67)
 
-    for i in range(5, 25):
-        print(f'microgrid {i}')
-
-    microgrid = m_gen.microgrids[4]
     benchmark = Benchmarks(microgrid)
     benchmark.run_saa_benchmark(preset_to_use=70)
     benchmark.describe_benchmarks(test_split=True, test_ratio=0.33)
