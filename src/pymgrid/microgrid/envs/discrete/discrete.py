@@ -1,12 +1,10 @@
-from src.pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
+from pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
 from itertools import permutations
 from warnings import warn
 import numpy as np
 from gym.spaces import Discrete
 from math import isclose
-from src.pymgrid.microgrid.modules.utils import ModuleLogger
-
-np.random.seed(1)
+from pymgrid.microgrid.utils.logger import ModularLogger
 
 
 class DiscreteMicrogridEnv(BaseMicrogridEnv):
@@ -37,7 +35,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
                          overgeneration_cost=overgeneration_cost)
 
         self.action_space, self.actions_list = self._get_action_space()
-        self.log_dict = ModuleLogger()
+        self.log_dict = ModularLogger()
 
     def _get_action_space(self):
         """
@@ -160,20 +158,3 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         return self.action_space.sample()
 
-
-if __name__ == '__main__':
-    from src.pymgrid.MicrogridGenerator import MicrogridGenerator
-    from src.pymgrid.microgrid.convert.convert import to_modular, to_nonmodular
-
-    mgen = MicrogridGenerator(nb_microgrid=3)
-    mgen.generate_microgrid()
-    microgrid = mgen.microgrids[2]
-
-    modular_microgrid = to_modular(microgrid)
-    env = DiscreteMicrogridEnv.from_microgrid(modular_microgrid)
-    env.battery[0].soc = 0.5
-
-    for j in range(2):
-        obs, reward, done, info = env.step(env.action_space.sample())
-    out = env.get_log()
-    print(modular_microgrid)
