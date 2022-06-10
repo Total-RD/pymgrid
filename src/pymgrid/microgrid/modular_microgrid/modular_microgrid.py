@@ -1,10 +1,12 @@
-from src.pymgrid.microgrid.modules import *
+from pymgrid.microgrid.utils.step import MicrogridStep
+from pymgrid.microgrid.modules import *
 import numpy as np
 import pandas as pd
 from copy import deepcopy
 from warnings import warn
-from src.pymgrid.microgrid.modules.utils import ModuleLogger
-from src.pymgrid.microgrid.modules.module_container import ModuleContainer
+from pymgrid.microgrid.utils.logger import ModularLogger
+from pymgrid.microgrid.modules.module_container import ModuleContainer
+
 
 class ModularMicrogrid:
     def __init__(self,
@@ -23,7 +25,7 @@ class ModularMicrogrid:
                                                     add_unbalanced_module,
                                                     loss_load_cost,
                                                     overgeneration_cost)
-        self._balance_logger = ModuleLogger()
+        self._balance_logger = ModularLogger()
 
     def _get_unbalanced_energy_module(self,
                                       loss_load_cost,
@@ -239,7 +241,7 @@ class ModularMicrogrid:
         return to_nonmodular(self)
 
     def __repr__(self):
-        module_str = [name + ' x ' + str(len(modules)) for name, modules in self.flat_modules.items()]
+        module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]
         module_str = ', '.join(module_str)
         return f'ModularMicrogrid([{module_str}])'
 
@@ -248,51 +250,3 @@ class ModularMicrogrid:
             return getattr(self._modules, item)
         except AttributeError:
             raise AttributeError(f'ModularMicrogrid has no attribute {item}')
-
-
-
-class MicrogridStep:
-    def __init__(self):
-        self._obs = dict()
-        self._reward = 0.0
-        self._done = False
-        self._info = dict(absorbed_energy=[], provided_energy=[])
-
-    def append(self, module_name, obs, reward, done, info):
-        try:
-            self._obs[module_name].append(obs)
-        except KeyError:
-            self._obs[module_name] = [obs]
-        self._reward += reward
-        if done:
-            self._done = True
-        for key, value in info.items():
-            try:
-                self._info[key].append(value)
-            except KeyError:
-                pass
-                # print(f'Ignoring key {key} in info dictionary')
-
-    def balance(self):
-        provided_energy = np.sum(self._info['provided_energy'])
-        absorbed_energy = np.sum(self._info['absorbed_energy'])
-        return provided_energy, absorbed_energy, self._reward
-
-    def output(self):
-        return self._obs, self._reward, self._done, self._info
-
-    @property
-    def obs(self):
-        return self._obs
-
-    @property
-    def reward(self):
-        return self._reward
-
-    @property
-    def done(self):
-        return self._done
-
-    @property
-    def info(self):
-        return self._info
