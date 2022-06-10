@@ -1,8 +1,6 @@
-from gym import Env
-from gym.spaces import Box, Dict, Tuple
-from src.pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
+from gym.spaces import Dict, Tuple
 from src.pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
-
+from warnings import warn
 
 class ContinuousMicrogridEnv(BaseMicrogridEnv):
     def __init__(self,
@@ -16,22 +14,24 @@ class ContinuousMicrogridEnv(BaseMicrogridEnv):
                          loss_load_cost=loss_load_cost,
                          overgeneration_cost=overgeneration_cost)
 
-
     def _get_action_space(self):
-        return Dict({name:
-                         Tuple([module.action_spaces['normalized'] for module in modules_list]) for
-                     name, modules_list in self.fixed_modules.items()})
+        return Dict({name: Tuple([module.action_spaces['normalized'] for module in modules_list])
+                                 for name, modules_list in self.fixed.iterdict() if modules_list[0].is_source})
+
+    def _get_action(self, action):
+        # Action does not have fixed sinks (loads); add those values.
+        assert action in self.action_space, 'Action is not in action space.'
+        action = action.copy()
+        for name, module_list in self.fixed.sinks.iterdict():
+            action[name] = [module.to_normalized(-1 * module.max_consumption, act=True) for module in module_list]
+        return action
+
+    def step(self, action):
+        action = self._get_action(action)
+        return super().run(action)
+
+    def run(self, action, normalized=True):
+        warn('run() should be called directly in environments.')
+        return super().run(action, normalized=normalized)
 
 
-if __name__ == '__main__':
-    from src.pymgrid.MicrogridGenerator import MicrogridGenerator
-    from src.pymgrid.microgrid.convert.convert import to_modular, to_nonmodular
-
-    mgen = MicrogridGenerator(nb_microgrid=3)
-    mgen.generate_microgrid()
-    microgrid = mgen.microgrids[2]
-
-    modular_microgrid = to_modular(microgrid)
-    env = ContinuousMicrogridEnv.from_microgrid(modular_microgrid)
-    obs, reward, done, info = env.run(env.action_space.sample())
-    print(modular_microgrid)
