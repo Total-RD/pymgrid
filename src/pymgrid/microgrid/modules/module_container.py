@@ -1,5 +1,5 @@
 from collections import UserDict
-from src.pymgrid.microgrid.modules import BaseMicrogridModule
+from src.pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
 class ModuleContainer(UserDict):
@@ -111,18 +111,15 @@ class ModuleContainer(UserDict):
 
 
 class _ModulePointer(UserDict):
+    """
+    Points to fixed, flex, source, sink, etc.
+    Do not initialize this directly
+    """
     def __getattr__(self, item):
         try:
             return self.__getitem__(item)
         except KeyError:
             raise AttributeError(item)
-
-    def iterlist(self):
-        for module in self.list_modules():
-            yield module
-
-    def __len__(self):
-        return sum(len(v) for k, v in self.items())
 
     def list_modules(self):
         l = []
@@ -139,6 +136,13 @@ class _ModulePointer(UserDict):
     def iterdict(self):
         for name, modules in self.module_dict().items():
             yield name, modules
+
+    def iterlist(self):
+        for module in self.list_modules():
+            yield module
+
+    def __len__(self):
+        return sum(len(v) for k, v in self.items())
 
 
 def get_subcontainers(modules):
@@ -203,11 +207,7 @@ def get_subcontainers(modules):
 class _ModuleSubContainer(UserDict):
     """
     One of these for fixed sources, flex sources, etc.
-    Attributes:
-        sources
-        sinks
-        fixed
-        flex
+    Do not initialize this directly
     """
     def __init__(self, modules_dict):
         fixed_or_flex, source_or_sink = self._check_modules(modules_dict)
@@ -244,19 +244,11 @@ class _ModuleSubContainer(UserDict):
 
         return fixed_or_flex, source_or_sink
 
-    def __getattr__(self, item):
-        if item == 'data':
-            raise AttributeError
-        return self.__getitem__(item)
-
     def list_modules(self):
         l = []
         for _, values in self.data.items():
             l.extend(values)
         return l
-
-    def __len__(self):
-        return sum([len(v) for k, v in self.items()])
 
     def iterlist(self):
         for module in self.list_modules():
@@ -265,4 +257,14 @@ class _ModuleSubContainer(UserDict):
     def iterdict(self):
         for name, modules in self.items():
             yield name, modules
+
+
+    def __len__(self):
+        return sum([len(v) for k, v in self.items()])
+
+    def __getattr__(self, item):
+        if item == 'data':
+            raise AttributeError
+        return self.__getitem__(item)
+
 

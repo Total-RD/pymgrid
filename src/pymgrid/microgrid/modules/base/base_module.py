@@ -1,7 +1,7 @@
-from abc import abstractmethod, ABC, ABCMeta
+from abc import abstractmethod
 import numpy as np
-from warnings import warn
-from src.pymgrid.microgrid.modules.utils import IdentityNormalize, Normalize, ModuleLogger
+from pymgrid.microgrid.utils.logger import ModularLogger
+from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
 from gym.spaces import Box
 
 
@@ -30,7 +30,7 @@ class BaseMicrogridModule:
         self._action_spaces = self._get_action_spaces()
         self._observation_spaces = self._get_observation_spaces()
         self._provided_energy_name, self._absorbed_energy_name = provided_energy_name, absorbed_energy_name
-        self._logger = ModuleLogger()
+        self._logger = ModularLogger()
         self.name = (None, None)
 
     def _get_normalizer(self, normalize_pos, obs=False, act=False):
@@ -89,7 +89,7 @@ class BaseMicrogridModule:
 
     def reset(self):
         self._current_step = 0
-        self._logger = ModuleLogger()
+        self._logger = ModularLogger()
 
     def _raise_error(self, ask_value, available_value, as_source=False, as_sink=False, lower_bound=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
@@ -342,71 +342,4 @@ class BaseMicrogridModule:
     def is_sink(self):
         return False
 
-"""
-Modular Microgrid:
 
-def run(self, controls):
-controls should be a class with attributes for each module
-call Module.step(modular_controls) for each module
-compute loss load and overgeneration
-compile obs, costs, info
-
-Modules:
-Attributes:
-max_value: maximum value (as both source and sink?)
-min_value, minimum value (as both source and sink?)
-obs, list or ndarray of non-normalized obs (to be added via run)
-normalized_obs, list or ndarray of normalized_obs (to be added via run)
-
-
-
-"""
-
-
-class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
-    def __init__(self, time_series,
-                 raise_errors,
-                 *args,
-                 **kwargs):
-        self._time_series = self._set_time_series(time_series)
-        self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
-        super().__init__(raise_errors,
-                         *args,
-                         **kwargs)
-
-    def _set_time_series(self, time_series):
-        _time_series = np.array(time_series)
-        return _time_series
-
-    def get_bounds(self):
-        _min, _max = np.min(self._time_series), np.max(self._time_series)
-        if self.is_sink and not self.is_source:
-            _min, _max = -1*_max, -1*_min
-            _max = 0.0
-        else:
-            _min = 0.0
-
-        # if not (self.is_sink and self.is_source):
-        #     return _min, 0.0, _max, _max
-
-        return _min, _max, _min, _max
-
-    @property
-    def time_series(self):
-        return self._time_series
-
-    @property
-    def min_obs(self):
-        return self._min_obs
-
-    @property
-    def max_obs(self):
-        return self._max_obs
-
-    @property
-    def min_act(self):
-        return self._min_act
-
-    @property
-    def max_act(self):
-        return self._max_act

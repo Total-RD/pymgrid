@@ -1,5 +1,5 @@
 import numpy as np
-from src.pymgrid.microgrid.modules.base_module import BaseTimeSeriesMicrogridModule
+from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class RenewableModule(BaseTimeSeriesMicrogridModule):
