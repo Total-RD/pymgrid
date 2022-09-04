@@ -27,9 +27,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         else:
             _min = 0.0
 
-        # if not (self.is_sink and self.is_source):
-        #     return _min, 0.0, _max, _max
-
         return _min, _max, _min, _max
 
     @property
