@@ -1,8 +1,10 @@
+from abc import ABC
+
 import numpy as np
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
-class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
+class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
     def __init__(self, time_series,
                  raise_errors,
                  *args,
