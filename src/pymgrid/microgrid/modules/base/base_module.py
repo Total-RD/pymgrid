@@ -1,11 +1,11 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import numpy as np
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
 from gym.spaces import Box
 
 
-class BaseMicrogridModule:
+class BaseMicrogridModule(ABC):
     """
     Base class for all microgrid _modules.
     All values passed to step(self) that result in non-negative
