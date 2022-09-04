@@ -5,15 +5,18 @@ from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
 class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
-    def __init__(self, time_series,
+    def __init__(self,
+                 time_series,
                  raise_errors,
-                 *args,
-                 **kwargs):
+                 provided_energy_name='provided_energy',
+                 absorbed_energy_name='absorbed_energy',
+                 normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
         super().__init__(raise_errors,
-                         *args,
-                         **kwargs)
+                         provided_energy_name=provided_energy_name,
+                         absorbed_energy_name=absorbed_energy_name,
+                         normalize_pos=normalize_pos)
 
     def _set_time_series(self, time_series):
         _time_series = np.array(time_series)
