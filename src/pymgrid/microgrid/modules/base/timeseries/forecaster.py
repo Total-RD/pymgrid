@@ -1,5 +1,6 @@
 import numpy as np
 from pandas.api.types import is_number
+from abc import abstractmethod
 
 
 def get_forecaster(forecaster, time_series):
@@ -22,7 +23,65 @@ def get_forecaster(forecaster, time_series):
     forecast, callable[float, float, int]. The forecasting function.
     """
     if callable(forecaster):
-        _validate_callable_forecaster(forecaster, time_series)
+        return UserDefinedForecaster(forecaster, time_series)
+    if forecaster == "oracle":
+        return OracleForecaster()
+    elif is_number(forecaster):
+        return GaussianNoiseForecaster(forecaster)
+
+
+class Forecaster:
+    @abstractmethod
+    def __call__(self, val_c, val_c_n, n):
+        pass
+
+
+class UserDefinedForecaster(Forecaster):
+    def __init__(self, forecaster, time_series):
+        is_vectorized_forecaster = _validate_callable_forecaster(forecaster, time_series)
+        if not is_vectorized_forecaster:
+            forecaster = vectorize_scalar_forecaster(forecaster)
+        self._forecaster = forecaster
+
+    def __call__(self, val_c, val_c_n, n):
+        return self._forecaster(val_c, val_c_n, n)
+
+
+class OracleForecaster(Forecaster):
+    def __call__(self, val_c, val_c_n, n):
+        return val_c_n
+
+
+class GaussianNoiseForecaster(Forecaster):
+    def __init__(self, noise_std, increase_uncertainty=False):
+        self.input_noise_std = noise_std
+        self.increase_uncertainty=increase_uncertainty
+        self._noise_size = None
+        self._noise_std = None
+
+    def _get_noise_std(self):
+        if self.increase_uncertainty:
+            return self.input_noise_std+(1+np.log(np.arange(self._noise_size)))
+        else:
+            return self.input_noise_std
+
+    def _get_noise(self, size):
+        if not self._noise_size:
+            self._noise_size = size
+        if size != self._noise_size:
+            raise ValueError(f"size {size} incompatible with previous size {self._noise_size}")
+        return np.random.normal(scale=self.noise_std, size=size)
+
+    @property
+    def noise_std(self):
+        if not self._noise_std:
+            self._noise_std = self._get_noise_std()
+        return self._noise_std
+
+    def __call__(self, val_c, val_c_n, n):
+        forecast =  val_c_n + self._get_noise(val_c_n.shape)
+        forecast[(forecast*val_c_n) < 0] = 0
+        return forecast
 
 
 def _validate_callable_forecaster(forecaster, time_series):
@@ -44,7 +103,7 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
         vectorized_forecast = forecaster(val_c, vector_true_forecast, n)
     except Exception as e:
         raise ValueError("Unable to call forecaster with vector inputs."
-                         f"\nFunc call forecaster(val_c={val_c}, val_c_plus_n={vector_true_forecast}, n={n})"
+                         f"\nFunc call forecaster(val_c={val_c}, val_c_n={vector_true_forecast}, n={n})"
                          f"\nraised {e}") from e
     else:
         # vectorized function call succeeded
@@ -89,3 +148,11 @@ def _validate_forecasted_value(forecaster_output, true_forecast, val_c, n):
             "Unable to validate forecaster. Forecaster must return output of same sign (or zero) as"
             f"input but returned output {forecaster_output} with inputs"
             f"val_c={val_c}, val_c_plus_n={true_forecast}, n={n}")
+
+
+def vectorize_scalar_forecaster(forecaster):
+    def vectorized(val_c, val_c_n, n):
+        if n != len(val_c_n):
+            raise ValueError(f"Incompatible true values length ({val_c_n}) to forecast {n}-steps ahead.")
+        return np.array([forecaster(val_c, val_c_n_i, n_i) for n_i, val_c_n_i in enumerate(val_c_n)])
+    return vectorized
