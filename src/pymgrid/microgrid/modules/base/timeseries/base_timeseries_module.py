@@ -1,11 +1,8 @@
 from abc import ABC
 
 import numpy as np
-import logging
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 from pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
-
-logger = logging.getLogger(__name__)
 
 
 class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
