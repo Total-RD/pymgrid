@@ -141,13 +141,13 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
 
 def _validate_forecasted_value(forecaster_output, true_forecast, val_c, n):
     if not is_number(forecaster_output):
-        raise ValueError(
-            "Unable to validate forecaster. Forecaster must return numeric output but returned"
+        raise TypeError(
+            "Unable to validate forecaster. Forecaster must return numeric output but returned "
             f"output of type {type(forecaster_output)}: {forecaster_output}")
     elif not (forecaster_output * true_forecast >= 0):
         raise ValueError(
-            "Unable to validate forecaster. Forecaster must return output of same sign (or zero) as"
-            f"input but returned output {forecaster_output} with inputs"
+            "Unable to validate forecaster. Forecaster must return output of same sign (or zero) as "
+            f"input but returned output {forecaster_output} with inputs "
             f"val_c={val_c}, val_c_plus_n={true_forecast}, n={n}")
 
 
