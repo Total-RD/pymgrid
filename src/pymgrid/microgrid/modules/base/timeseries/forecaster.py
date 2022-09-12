@@ -91,10 +91,11 @@ def _validate_callable_forecaster(forecaster, time_series):
     try:
         _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n)
         is_vectorized_forecaster = True
-    except Exception:
+    except NotImplementedError:
         scalar_true_forecast = vector_true_forecast[-1]
         _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n)
         is_vectorized_forecaster = False
+
     return is_vectorized_forecaster
 
 
@@ -102,7 +103,7 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
     try:
         vectorized_forecast = forecaster(val_c, vector_true_forecast, n)
     except Exception as e:
-        raise ValueError("Unable to call forecaster with vector inputs."
+        raise NotImplementedError("Unable to call forecaster with vector inputs. "
                          f"\nFunc call forecaster(val_c={val_c}, val_c_n={vector_true_forecast}, n={n})"
                          f"\nraised {e}") from e
     else:
