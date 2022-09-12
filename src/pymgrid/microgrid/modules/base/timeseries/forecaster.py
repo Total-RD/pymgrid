@@ -3,7 +3,7 @@ from pandas.api.types import is_number
 from abc import abstractmethod
 
 
-def get_forecaster(forecaster, time_series):
+def get_forecaster(forecaster, time_series=None):
     """
     Get the forecasting function for the time series module.
     :param forecaster: callable, float, or "oracle" default "oracle". Function that gives a forecast n-steps ahead.
