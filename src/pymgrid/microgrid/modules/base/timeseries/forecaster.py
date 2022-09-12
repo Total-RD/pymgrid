@@ -3,7 +3,7 @@ from pandas.api.types import is_number
 from abc import abstractmethod
 
 
-def get_forecaster(forecaster, time_series=None):
+def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
     :param forecaster: callable, float, or "oracle" default "oracle". Function that gives a forecast n-steps ahead.
@@ -22,15 +22,20 @@ def get_forecaster(forecaster, time_series=None):
     :param time_series: ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
+
+    :param increase_uncertainty: bool, default False. Whether to increase uncertainty for farther-out dates if using
+        a GaussianNoiseForecaster. Ignored otherwise.
+
     :return:
     forecast, callable[float, float, int]. The forecasting function.
     """
+
     if callable(forecaster):
         return UserDefinedForecaster(forecaster, time_series)
     if forecaster == "oracle":
         return OracleForecaster()
     elif is_number(forecaster):
-        return GaussianNoiseForecaster(forecaster)
+        return GaussianNoiseForecaster(forecaster, increase_uncertainty=increase_uncertainty)
     else:
         raise ValueError(f"Unable to parse forecaster of type {type(forecaster)}")
 
