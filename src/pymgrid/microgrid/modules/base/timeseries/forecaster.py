@@ -31,6 +31,8 @@ def get_forecaster(forecaster, time_series=None):
         return OracleForecaster()
     elif is_number(forecaster):
         return GaussianNoiseForecaster(forecaster)
+    else:
+        raise ValueError(f"Unable to parse forecaster of type {type(forecaster)}")
 
 
 class Forecaster:
