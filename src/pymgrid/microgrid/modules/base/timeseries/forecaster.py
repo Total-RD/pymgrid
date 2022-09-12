@@ -66,7 +66,7 @@ class GaussianNoiseForecaster(Forecaster):
             return self.input_noise_std
 
     def _get_noise(self, size):
-        if not self._noise_size:
+        if self._noise_size is None:
             self._noise_size = size
         if size != self._noise_size:
             raise ValueError(f"size {size} incompatible with previous size {self._noise_size}")
@@ -74,7 +74,7 @@ class GaussianNoiseForecaster(Forecaster):
 
     @property
     def noise_std(self):
-        if not self._noise_std:
+        if self._noise_std is None:
             self._noise_std = self._get_noise_std()
         return self._noise_std
 
