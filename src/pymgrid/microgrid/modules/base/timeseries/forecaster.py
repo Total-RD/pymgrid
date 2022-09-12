@@ -61,7 +61,7 @@ class GaussianNoiseForecaster(Forecaster):
 
     def _get_noise_std(self):
         if self.increase_uncertainty:
-            return self.input_noise_std+(1+np.log(np.arange(self._noise_size)))
+            return self.input_noise_std*(1+np.log(1+np.arange(self._noise_size)))
         else:
             return self.input_noise_std
 
