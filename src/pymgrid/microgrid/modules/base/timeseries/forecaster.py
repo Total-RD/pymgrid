@@ -37,11 +37,11 @@ class Forecaster:
 
 
 class UserDefinedForecaster(Forecaster):
-    def __init__(self, forecaster, time_series):
-        is_vectorized_forecaster = _validate_callable_forecaster(forecaster, time_series)
+    def __init__(self, forecaster_function, time_series):
+        is_vectorized_forecaster = _validate_callable_forecaster(forecaster_function, time_series)
         if not is_vectorized_forecaster:
-            forecaster = vectorize_scalar_forecaster(forecaster)
-        self._forecaster = forecaster
+            forecaster_function = vectorize_scalar_forecaster(forecaster_function)
+        self._forecaster = forecaster_function
 
     def __call__(self, val_c, val_c_n, n):
         return self._forecaster(val_c, val_c_n, n)
