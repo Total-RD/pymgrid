@@ -19,6 +19,9 @@ def get_forecaster(forecaster, time_series=None):
 
         If "oracle", gives a perfect forecast.
 
+    :param time_series: ndarray[float] or None, default None.
+        The underlying time series, used to validate UserDefinedForecaster.
+        Only used if callable(forecaster).
     :return:
     forecast, callable[float, float, int]. The forecasting function.
     """
