@@ -10,12 +10,15 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
                  time_series,
                  raise_errors,
                  forecaster="oracle",
+                 forecaster_increase_uncertainty=False,
                  provided_energy_name='provided_energy',
                  absorbed_energy_name='absorbed_energy',
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
-        self.forecaster = get_forecaster(forecaster, self.time_series)
+        self.forecaster = get_forecaster(forecaster,
+                                         self.time_series,
+                                         increase_uncertainty=forecaster_increase_uncertainty)
         super().__init__(raise_errors,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name,
