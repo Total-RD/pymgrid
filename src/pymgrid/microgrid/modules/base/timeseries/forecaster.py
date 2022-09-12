@@ -116,7 +116,7 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
             try:
                 _validate_forecasted_value(forecast, true_forecast, val_c, n)
             except Exception as e:
-                raise ValueError(f"Failed validating forecast at position {i} due to exception {e}") from e
+                raise type(e)(f"Failed validating forecast at position {i} due to exception {e}") from e
 
 
 def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
