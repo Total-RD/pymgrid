@@ -55,7 +55,7 @@ class OracleForecaster(Forecaster):
 class GaussianNoiseForecaster(Forecaster):
     def __init__(self, noise_std, increase_uncertainty=False):
         self.input_noise_std = noise_std
-        self.increase_uncertainty=increase_uncertainty
+        self.increase_uncertainty = increase_uncertainty
         self._noise_size = None
         self._noise_std = None
 
