@@ -197,9 +197,6 @@ class GensetModule(BaseMicrogridModule):
     def sample_action(self, strict_bound=False, **kwargs):
         return np.array([np.random.rand(), super().sample_action(strict_bound=strict_bound)])
 
-    def state_dict(self):
-        return dict(zip(('status','goal_status','steps_until_up', 'steps_until_down'), self.current_obs))
-
     def _raise_error(self, ask_value, available_value, as_source=False, as_sink=False, lower_bound=False):
         try:
             super()._raise_error(ask_value, available_value, as_source=as_source, as_sink=as_sink, lower_bound=lower_bound)
@@ -230,6 +227,10 @@ class GensetModule(BaseMicrogridModule):
 
     def next_min_production(self, goal_status):
         return self.next_status(goal_status) * self._min_production
+
+    @property
+    def state_dict(self):
+        return dict(zip(('status','goal_status','steps_until_up', 'steps_until_down'), self.current_obs))
 
     @property
     def current_obs(self):

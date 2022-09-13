@@ -36,6 +36,7 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
         else:
             raise RuntimeError
 
+    @property
     def state_dict(self):
         return dict()
 

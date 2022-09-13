@@ -88,8 +88,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def as_fixed(self):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
+    @property
     def state_dict(self):
-        return dict(zip(('import_cost','export_cost'), self.current_obs))
+        return dict(zip(('import_cost', 'export_cost'), self.current_obs))
 
     @property
     def current_obs(self):

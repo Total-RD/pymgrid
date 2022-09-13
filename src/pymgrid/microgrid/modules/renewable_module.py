@@ -28,6 +28,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
 
         return np.array(next_renewable), 0.0, done, info
 
+    @property
     def state_dict(self):
         return dict(current_renewable=self.current_renewable.item())
 

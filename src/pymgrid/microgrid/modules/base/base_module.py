@@ -116,7 +116,7 @@ class BaseMicrogridModule:
             if not isinstance(action, (float, int)):
                 raise TypeError('action must be a float or singleton Numpy array.')
 
-        state_dict = self.state_dict()
+        state_dict = self.state_dict
         unnormalized_action = self._act_normalizer.from_normalized(action) if normalized else action
         step_out = self._unnormalized_step(unnormalized_action)
         obs, reward, done, info = self._conform_output(*step_out)
@@ -228,6 +228,7 @@ class BaseMicrogridModule:
         pass
 
     @abstractmethod
+    @property
     def state_dict(self):
         return NotImplemented
 
