@@ -1,17 +1,28 @@
+from abc import ABC
+
 import numpy as np
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
+from pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
 
 
-class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
-    def __init__(self, time_series,
+class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
+    def __init__(self,
+                 time_series,
                  raise_errors,
-                 *args,
-                 **kwargs):
+                 forecaster="oracle",
+                 forecaster_increase_uncertainty=False,
+                 provided_energy_name='provided_energy',
+                 absorbed_energy_name='absorbed_energy',
+                 normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
+        self.forecaster = get_forecaster(forecaster,
+                                         self.time_series,
+                                         increase_uncertainty=forecaster_increase_uncertainty)
         super().__init__(raise_errors,
-                         *args,
-                         **kwargs)
+                         provided_energy_name=provided_energy_name,
+                         absorbed_energy_name=absorbed_energy_name,
+                         normalize_pos=normalize_pos)
 
     def _set_time_series(self, time_series):
         _time_series = np.array(time_series)
@@ -24,9 +35,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             _max = 0.0
         else:
             _min = 0.0
-
-        # if not (self.is_sink and self.is_source):
-        #     return _min, 0.0, _max, _max
 
         return _min, _max, _min, _max
 

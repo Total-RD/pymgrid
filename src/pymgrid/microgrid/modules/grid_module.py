@@ -1,6 +1,7 @@
 from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 import numpy as np
 
+
 class GridModule(BaseTimeSeriesMicrogridModule):
     module_type = ('grid', 'fixed')
 
