@@ -133,7 +133,7 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
     try:
         scalar_forecast = forecaster(val_c, scalar_true_forecast, n)
     except Exception as e_scalar:
-        raise ValueError("Unable to call forecaster with scalar inputs."
+        raise ValueError("Unable to call forecaster with scalar inputs. "
                          f"\nFunc call forecaster(val_c={val_c}, val_c_plus_n={scalar_true_forecast}, n={n})"
                          f"\nraised {e_scalar}") from e_scalar
     else:  # scalar function call succeeded
