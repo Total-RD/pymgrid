@@ -139,14 +139,16 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
     else:  # scalar function call succeeded
         # check shape
         try:
-            scalar_forecast_item = scalar_forecast.item()
-        except AttributeError:
-            pass
-        except ValueError:
-            raise ValueError("Unable to validate forecaster. Forecaster must return scalar output with scalar"
-                             f"input but returned {scalar_forecast}")
-        else:
-            _validate_forecasted_value(scalar_forecast_item, scalar_true_forecast, val_c, n)
+            assert is_number(scalar_forecast)
+            scalar_forecast_item = scalar_forecast
+        except AssertionError:
+            try:
+                scalar_forecast_item = scalar_forecast.item()
+            except (ValueError, AttributeError):
+                raise ValueError("Unable to validate forecaster. Forecaster must return scalar output with scalar "
+                                f"input but returned {scalar_forecast}")
+
+        _validate_forecasted_value(scalar_forecast_item, scalar_true_forecast, val_c, n)
 
 
 def _validate_forecasted_value(forecaster_output, true_forecast, val_c, n):
