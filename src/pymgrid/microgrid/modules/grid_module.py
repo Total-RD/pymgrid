@@ -49,7 +49,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             next_costs = self._time_series[self.current_step+1]
             done = False
         except IndexError:
-            next_costs = np.empty((3))
+            next_costs = np.empty(3)
             next_costs[:] = np.nan
             done = True
 
