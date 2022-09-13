@@ -227,11 +227,6 @@ class BaseMicrogridModule:
     def update(self, external_energy_change, as_source=False, as_sink=False):
         pass
 
-    @abstractmethod
-    @property
-    def state_dict(self):
-        return NotImplemented
-
     def sample_action(self, strict_bound=False):
         """
         Need to change this in the case of non-singleton action space
@@ -282,6 +277,15 @@ class BaseMicrogridModule:
     @property
     def logger_last(self):
         return {k: v[-1] for k, v in self._logger}
+
+    @abstractmethod
+    @property
+    def state_dict(self):
+        return NotImplemented
+
+    @property
+    def state(self):
+        return np.array([*self.state_dict.values()])
 
     @property
     def current_step(self):
