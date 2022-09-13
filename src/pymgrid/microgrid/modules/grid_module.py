@@ -49,8 +49,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             next_costs = self._time_series[self.current_step+1]
             done = False
         except IndexError:
-            next_costs = np.empty(3)
-            next_costs[:] = np.nan
+            next_costs = np.array([np.nan]*3)
             done = True
 
         reward = self.get_cost(external_energy_change, as_source, as_sink)
