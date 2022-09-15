@@ -28,6 +28,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
 
     def _set_time_series(self, time_series):
         _time_series = np.array(time_series)
+        try:
+            shape = (-1, _time_series.shape[1])
+        except IndexError:
+            shape = (-1, 1)
+        _time_series = _time_series.reshape(shape)
+        assert len(_time_series) == len(time_series)
         return _time_series
 
     def get_bounds(self):
