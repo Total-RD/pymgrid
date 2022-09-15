@@ -5,9 +5,10 @@ from pymgrid.microgrid.modules.base.timeseries.forecaster import (
 
 
 def get_test_inputs(n=None, negative=False):
-    val_c = 10 * np.random.rand()
     n = n if n else np.random.randint(low=2, high=10)
     val_c_n = 10 * np.random.rand(n)
+    val_c = val_c_n[0]
+    val_c_n = val_c_n.reshape((-1, 1))
     if negative:
         return -val_c, -val_c_n, n
     else:
@@ -136,7 +137,7 @@ class TestGaussianNoiseForecaster(TestCase):
 class TestUserDefinedForecaster(TestCase):
     def setUp(self) -> None:
         self.oracle_forecaster = OracleForecaster()
-        self.simple_time_series = np.arange(10)
+        self.simple_time_series = np.arange(10).reshape((-1, 1))
 
     @staticmethod
     def oracle_scalar_forecaster(val_c, val_c_n, n):
@@ -171,8 +172,8 @@ class TestUserDefinedForecaster(TestCase):
                                       time_series=self.simple_time_series)
 
     def test_vectorized_forecaster_bad_output_type(self):
-        bad_output_type_forecaster = lambda val_c, val_c_n, n: np.array([str(x) for x in val_c_n])
-        with self.assertRaisesRegex(TypeError, "Forecaster must return numeric output but returned "
+        bad_output_type_forecaster = lambda val_c, val_c_n, n: np.array([str(x) for x in val_c_n]).reshape((-1, 1))
+        with self.assertRaisesRegex(TypeError, "Forecaster must return numeric np.ndarray or number but returned "
                                                "output of type"):
             _ = UserDefinedForecaster(forecaster_function=bad_output_type_forecaster,
                                       time_series=self.simple_time_series)
@@ -209,7 +210,7 @@ class TestUserDefinedForecaster(TestCase):
 
 class TestGetForecaster(TestCase):
     def setUp(self) -> None:
-        self.simple_time_series = np.arange(10)
+        self.simple_time_series = np.arange(10).reshape((-1, 1))
 
     def test_user_defined_forecaster(self):
         user_defined_forecaster = OracleForecaster()
