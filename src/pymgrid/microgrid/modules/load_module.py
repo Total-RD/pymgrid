@@ -37,8 +37,8 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         return loss_load, loss_load_cost
 
     @property
-    def state_dict(self):
-        return dict(current_load=self.current_load.item())
+    def state_components(self) -> np.ndarray[str]:
+        return np.array("load")
 
     @property
     def max_consumption(self):

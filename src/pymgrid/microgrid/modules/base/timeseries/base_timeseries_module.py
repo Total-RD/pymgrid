@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
@@ -46,6 +46,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
 
         return _min, _max, _min, _max
 
+    def forecast(self):
+        val_c_n = self.time_series[self.current_step:self.current_step+self.forecast_horizon, :]
+        return self.forecaster(val_c=self.time_series[self.current_step, :],
+                               val_c_n=val_c_n,
+                               n=self.forecast_horizon)
+
     @property
     def current_obs(self):
         return self.time_series[self.current_step, :]
@@ -69,3 +75,18 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
     @property
     def max_act(self):
         return self._max_act
+
+    @property
+    @abstractmethod
+    def state_components(self) -> np.ndarray[str]:
+        pass
+
+    @property
+    @abstractmethod
+    def state_dict(self):
+        forecast = self.forecast()
+        state_dict = dict(zip(self.state_components + "_current", self.current_obs))
+        for j in range(1, self.forecast_horizon):
+            state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[:, j])))
+        return state_dict
+

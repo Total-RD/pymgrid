@@ -88,8 +88,8 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
     @property
-    def state_dict(self):
-        return dict(zip(('import_cost', 'export_cost', 'co2_per_kwh'), self.current_obs))
+    def state_components(self) -> np.ndarray[str]:
+        return np.array(['import_cost', 'export_cost', 'co2_per_kwh'])
 
     @property
     def max_production(self):
