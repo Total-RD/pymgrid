@@ -278,8 +278,8 @@ class BaseMicrogridModule:
     def logger_last(self):
         return {k: v[-1] for k, v in self._logger}
 
-    @abstractmethod
     @property
+    @abstractmethod
     def state_dict(self):
         return NotImplemented
 
