@@ -46,8 +46,16 @@ def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
 
 class Forecaster:
     @abstractmethod
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         pass
+
+    def _correct_current_val(self, val_c_n, forecast):
+        forecast[0] = val_c_n[0]
+        return forecast
+
+    def __call__(self, val_c, val_c_n, n):
+        forecast = self._forecast(val_c, val_c_n, n)
+        return self._correct_current_val(val_c_n, forecast)
 
 
 class UserDefinedForecaster(Forecaster):
@@ -57,12 +65,12 @@ class UserDefinedForecaster(Forecaster):
             forecaster_function = vectorize_scalar_forecaster(forecaster_function)
         self._forecaster = forecaster_function
 
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         return self._forecaster(val_c, val_c_n, n)
 
 
 class OracleForecaster(Forecaster):
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         return val_c_n
 
 
@@ -92,7 +100,7 @@ class GaussianNoiseForecaster(Forecaster):
             self._noise_std = self._get_noise_std()
         return self._noise_std
 
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         forecast = val_c_n + self._get_noise(len(val_c_n))
         forecast[(forecast*val_c_n) < 0] = 0
         return forecast
