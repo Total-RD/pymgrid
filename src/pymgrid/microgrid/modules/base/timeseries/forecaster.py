@@ -50,10 +50,12 @@ class Forecaster:
         pass
 
     def _correct_current_val(self, val_c_n, forecast):
-        forecast[0] = val_c_n[0]
+        forecast[0, :] = val_c_n[0, :]
         return forecast
 
     def __call__(self, val_c, val_c_n, n):
+        if len(val_c_n.shape) == 1:
+            val_c_n = val_c_n.reshape((-1, 1))
         forecast = self._forecast(val_c, val_c_n, n)
         return self._correct_current_val(val_c_n, forecast)
 
@@ -179,5 +181,10 @@ def vectorize_scalar_forecaster(forecaster):
     def vectorized(val_c, val_c_n, n):
         if n != len(val_c_n):
             raise ValueError(f"Incompatible true values length ({val_c_n}) to forecast {n}-steps ahead.")
-        return np.array([forecaster(val_c, val_c_n_i, n_i) for n_i, val_c_n_i in enumerate(val_c_n)])
+        vectorized_output = np.array([forecaster(val_c, val_c_n_i, n_i) for n_i, val_c_n_i in enumerate(val_c_n)])
+        try:
+            shape = (-1, vectorized_output.shape[1])
+        except IndexError:
+            shape = (-1, 1)
+        return vectorized_output.reshape(shape)
     return vectorized
