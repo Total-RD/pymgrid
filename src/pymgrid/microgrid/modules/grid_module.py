@@ -92,10 +92,6 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return dict(zip(('import_cost', 'export_cost', 'co2_per_kwh'), self.current_obs))
 
     @property
-    def current_obs(self):
-        return self.time_series[self.current_step, :]
-
-    @property
     def max_production(self):
         return self.max_import
 

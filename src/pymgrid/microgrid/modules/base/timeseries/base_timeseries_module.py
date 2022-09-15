@@ -47,6 +47,10 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         return _min, _max, _min, _max
 
     @property
+    def current_obs(self):
+        return self.time_series[self.current_step, :]
+
+    @property
     def time_series(self):
         return self._time_series
 
