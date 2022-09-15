@@ -129,7 +129,7 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
     except Exception as e:
         raise NotImplementedError("Unable to call forecaster with vector inputs. "
                          f"\nFunc call forecaster(val_c={val_c}, val_c_n={vector_true_forecast}, n={n})"
-                         f"\nraised {e}") from e
+                         f"\nraised {type(e).__name__}: {e}") from e
     else:
         # vectorized function call succeeded
         if vectorized_forecast.shape != vector_true_forecast.shape:
@@ -149,7 +149,7 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
     except Exception as e_scalar:
         raise ValueError("Unable to call forecaster with scalar inputs. "
                          f"\nFunc call forecaster(val_c={val_c}, val_c_plus_n={scalar_true_forecast}, n={n})"
-                         f"\nraised {e_scalar}") from e_scalar
+                         f"\nraised {type(e_scalar).__name__}: {e_scalar}") from e_scalar
     else:  # scalar function call succeeded
         # check shape
         try:
