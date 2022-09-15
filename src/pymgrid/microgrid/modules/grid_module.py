@@ -49,8 +49,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             next_costs = self._time_series[self.current_step+1]
             done = False
         except IndexError:
-            next_costs = np.empty((3))
-            next_costs[:] = np.nan
+            next_costs = np.array([np.nan]*3)
             done = True
 
         reward = self.get_cost(external_energy_change, as_source, as_sink)
@@ -88,8 +87,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def as_fixed(self):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
+    @property
     def state_dict(self):
-        return dict(zip(('import_cost','export_cost'), self.current_obs))
+        return dict(zip(('import_cost', 'export_cost', 'co2_per_kwh'), self.current_obs))
 
     @property
     def current_obs(self):

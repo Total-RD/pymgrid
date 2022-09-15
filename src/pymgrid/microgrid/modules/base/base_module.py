@@ -116,7 +116,7 @@ class BaseMicrogridModule:
             if not isinstance(action, (float, int)):
                 raise TypeError('action must be a float or singleton Numpy array.')
 
-        state_dict = self.state_dict()
+        state_dict = self.state_dict
         unnormalized_action = self._act_normalizer.from_normalized(action) if normalized else action
         step_out = self._unnormalized_step(unnormalized_action)
         obs, reward, done, info = self._conform_output(*step_out)
@@ -227,10 +227,6 @@ class BaseMicrogridModule:
     def update(self, external_energy_change, as_source=False, as_sink=False):
         pass
 
-    @abstractmethod
-    def state_dict(self):
-        return NotImplemented
-
     def sample_action(self, strict_bound=False):
         """
         Need to change this in the case of non-singleton action space
@@ -281,6 +277,15 @@ class BaseMicrogridModule:
     @property
     def logger_last(self):
         return {k: v[-1] for k, v in self._logger}
+
+    @abstractmethod
+    @property
+    def state_dict(self):
+        return NotImplemented
+
+    @property
+    def state(self):
+        return np.array([*self.state_dict.values()])
 
     @property
     def current_step(self):

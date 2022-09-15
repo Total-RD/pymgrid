@@ -6,7 +6,7 @@ from abc import abstractmethod
 def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
-    :param forecaster: callable, float, or "oracle" default "oracle". Function that gives a forecast n-steps ahead.
+    :param forecaster: callable, float, "oracle", or None, default None. Function that gives a forecast n-steps ahead.
         If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
             val_c is the current value in the time series: self.time_series[self.current_step],
             val_{c+n} is the value in the time series n steps in the future,
@@ -19,6 +19,8 @@ def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
 
         If "oracle", gives a perfect forecast.
 
+        If None, no forecast.
+
     :param time_series: ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
@@ -30,9 +32,11 @@ def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
     forecast, callable[float, float, int]. The forecasting function.
     """
 
-    if callable(forecaster):
+    if forecaster is None:
+        return None
+    elif callable(forecaster):
         return UserDefinedForecaster(forecaster, time_series)
-    if forecaster == "oracle":
+    elif forecaster == "oracle":
         return OracleForecaster()
     elif is_number(forecaster):
         return GaussianNoiseForecaster(forecaster, increase_uncertainty=increase_uncertainty)
@@ -42,8 +46,16 @@ def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
 
 class Forecaster:
     @abstractmethod
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         pass
+
+    def _correct_current_val(self, val_c_n, forecast):
+        forecast[0] = val_c_n[0]
+        return forecast
+
+    def __call__(self, val_c, val_c_n, n):
+        forecast = self._forecast(val_c, val_c_n, n)
+        return self._correct_current_val(val_c_n, forecast)
 
 
 class UserDefinedForecaster(Forecaster):
@@ -53,12 +65,12 @@ class UserDefinedForecaster(Forecaster):
             forecaster_function = vectorize_scalar_forecaster(forecaster_function)
         self._forecaster = forecaster_function
 
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         return self._forecaster(val_c, val_c_n, n)
 
 
 class OracleForecaster(Forecaster):
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         return val_c_n
 
 
@@ -88,7 +100,7 @@ class GaussianNoiseForecaster(Forecaster):
             self._noise_std = self._get_noise_std()
         return self._noise_std
 
-    def __call__(self, val_c, val_c_n, n):
+    def _forecast(self, val_c, val_c_n, n):
         forecast = val_c_n + self._get_noise(len(val_c_n))
         forecast[(forecast*val_c_n) < 0] = 0
         return forecast

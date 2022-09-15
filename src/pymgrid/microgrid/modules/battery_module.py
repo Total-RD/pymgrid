@@ -68,6 +68,7 @@ class BatteryModule(BaseMicrogridModule):
     def get_cost(self, energy_change):
         return np.abs(energy_change)*self.battery_cost_cycle
 
+    @property
     def state_dict(self):
         return dict(zip(('soc', 'current_charge'), self.current_obs))
 
