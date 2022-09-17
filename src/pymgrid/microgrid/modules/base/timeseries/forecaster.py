@@ -59,6 +59,8 @@ class Forecaster:
         if len(val_c_n.shape) == 1:
             val_c_n = val_c_n.reshape((-1, 1))
         forecast = self._forecast(val_c, val_c_n, n)
+        if forecast is None:
+            return None
         return self._correct_current_val(val_c_n, forecast)
 
 
@@ -108,6 +110,11 @@ class GaussianNoiseForecaster(Forecaster):
         forecast = val_c_n + self._get_noise(len(val_c_n))
         forecast[(forecast*val_c_n) < 0] = 0
         return forecast
+
+
+class NoForecaster(Forecaster):
+    def _forecast(self, val_c, val_c_n, n):
+        return None
 
 
 def _validate_callable_forecaster(forecaster, time_series):
