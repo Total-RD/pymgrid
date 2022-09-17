@@ -78,7 +78,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
 
     @property
     @abstractmethod
-    def state_components(self) -> np.ndarray[str]:
+    def state_components(self):
         pass
 
     @property

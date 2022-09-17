@@ -35,7 +35,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
         return np.array(next_renewable), 0.0, done, info
 
     @property
-    def state_components(self) -> np.ndarray[str]:
+    def state_components(self):
         return np.array("renewable")
 
     @property

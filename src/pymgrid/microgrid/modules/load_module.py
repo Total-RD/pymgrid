@@ -37,7 +37,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         return loss_load, loss_load_cost
 
     @property
-    def state_components(self) -> np.ndarray[str]:
+    def state_components(self):
         return np.array("load")
 
     @property

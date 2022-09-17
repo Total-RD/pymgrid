@@ -88,7 +88,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
     @property
-    def state_components(self) -> np.ndarray[str]:
+    def state_components(self):
         return np.array(['import_cost', 'export_cost', 'co2_per_kwh'])
 
     @property
