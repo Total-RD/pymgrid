@@ -17,10 +17,10 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
-        self.forecast_horizon = forecast_horizon
-        self.forecaster = get_forecaster(forecaster,
-                                         self.time_series,
-                                         increase_uncertainty=forecaster_increase_uncertainty)
+        self.forecaster, self.forecast_horizon = get_forecaster(forecaster,
+                                                                forecast_horizon,
+                                                                self.time_series,
+                                                                increase_uncertainty=forecaster_increase_uncertainty)
         super().__init__(raise_errors,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name,
