@@ -82,7 +82,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         pass
 
     @property
-    @abstractmethod
     def state_dict(self):
         forecast = self.forecast()
         state_dict = dict(zip(self.state_components + "_current", self.current_obs))
