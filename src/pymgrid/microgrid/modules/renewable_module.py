@@ -7,9 +7,15 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
 
     def __init__(self, time_series,
                  raise_errors=False,
+                 forecaster=None,
+                 forecast_horizon=24,
+                 forecaster_increase_uncertainty=False,
                  provided_energy_name='renewable_used'):
         super().__init__(time_series,
                          raise_errors,
+                         forecaster=forecaster,
+                         forecast_horizon=forecast_horizon,
+                         forecaster_increase_uncertainty=forecaster_increase_uncertainty,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=None)
         self.name = ('renewable', None)
@@ -29,8 +35,8 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
         return np.array(next_renewable), 0.0, done, info
 
     @property
-    def state_dict(self):
-        return dict(current_renewable=self.current_renewable.item())
+    def state_components(self) -> np.ndarray[str]:
+        return np.array("renewable")
 
     @property
     def max_production(self):
