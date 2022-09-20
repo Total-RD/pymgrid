@@ -210,26 +210,33 @@ class TestUserDefinedForecaster(TestCase):
 class TestGetForecaster(TestCase):
     def setUp(self) -> None:
         self.simple_time_series = np.arange(10).reshape((-1, 1))
+        self.forecaster_horizon = 24
 
     def test_user_defined_forecaster(self):
         user_defined_forecaster = OracleForecaster()
-        forecaster = get_forecaster(user_defined_forecaster, self.simple_time_series)
+        forecaster, forecaster_horizon = get_forecaster(user_defined_forecaster, self.forecaster_horizon, self.simple_time_series)
         self.assertIsInstance(forecaster, UserDefinedForecaster)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
 
     def test_oracle_forecaster(self):
-        forecaster = get_forecaster("oracle")
-        self.assertNotEqual(forecaster, OracleForecaster)
+        forecaster, forecaster_horizon = get_forecaster("oracle", self.forecaster_horizon)
+        self.assertIsInstance(forecaster, OracleForecaster)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
+
 
     def test_gaussian_noise_forecaster(self):
         noise_std = 0.5
-        forecaster = get_forecaster(noise_std)
+        forecaster, forecaster_horizon = get_forecaster(noise_std, self.forecaster_horizon)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
 
     def test_gaussian_noise_forecaster_increase_uncertainty(self):
         noise_std = 0.5
-        forecaster = get_forecaster(noise_std, increase_uncertainty=True)
+        forecaster, forecaster_horizon = get_forecaster(noise_std, self.forecaster_horizon, increase_uncertainty=True)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
+
         with self.assertRaisesRegex(TypeError, "unsupported operand type\(s\)"):
             _ = forecaster.noise_std
