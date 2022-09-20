@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+from src.pymgrid.microgrid.modules.base import BaseMicrogridModule
 import numpy as np
 
 

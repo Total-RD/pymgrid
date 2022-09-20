@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
-from pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
+from src.pymgrid.microgrid.modules.base import BaseMicrogridModule
+from src.pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
 
 
 class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):

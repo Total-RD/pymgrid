@@ -1,2 +1,2 @@
-from pymgrid.microgrid.modules.base.base_module import BaseMicrogridModule
-from pymgrid.microgrid.modules.base.base_timeseries_module import BaseTimeSeriesMicrogridModule
+from src.pymgrid.microgrid.modules.base.base_module import BaseMicrogridModule
+from src.pymgrid.microgrid.modules.base.timeseries.base_timeseries_module import BaseTimeSeriesMicrogridModule

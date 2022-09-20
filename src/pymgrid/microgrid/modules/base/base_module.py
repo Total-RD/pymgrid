@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from pymgrid.microgrid.utils.logger import ModularLogger
-from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
+from src.pymgrid.microgrid.utils.logger import ModularLogger
+from src.pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
 from gym.spaces import Box
 
 
