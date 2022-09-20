@@ -51,8 +51,8 @@ class BaseMicrogridModule:
         try:
             normalize_position = normalize_pos['obs' if obs else 'act']
             val_min, val_max = val_min[normalize_position], val_max[normalize_position]
-        except (KeyError, TypeError) as e:
-            print(e)
+        except TypeError:
+            pass
 
         if val_min is None or np.isnan(val_min).any() or val_max is None or np.isnan(val_max).any():
             print(f'One of min_{_str} or max_{_str} attributes is None or NaN for module {self.__class__.__name__}. Returni'
