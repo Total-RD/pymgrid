@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from pymgrid.microgrid.utils.logger import ModularLogger
-from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
+from src.pymgrid.microgrid.utils.logger import ModularLogger
+from src.pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
 from gym.spaces import Box
 
 
@@ -51,8 +51,8 @@ class BaseMicrogridModule:
         try:
             normalize_position = normalize_pos['obs' if obs else 'act']
             val_min, val_max = val_min[normalize_position], val_max[normalize_position]
-        except (KeyError, TypeError) as e:
-            print(e)
+        except TypeError:
+            pass
 
         if val_min is None or np.isnan(val_min).any() or val_max is None or np.isnan(val_max).any():
             print(f'One of min_{_str} or max_{_str} attributes is None or NaN for module {self.__class__.__name__}. Returni'
@@ -118,43 +118,13 @@ class BaseMicrogridModule:
 
         state_dict = self.state_dict
         unnormalized_action = self._act_normalizer.from_normalized(action) if normalized else action
-        step_out = self._unnormalized_step(unnormalized_action)
-        obs, reward, done, info = self._conform_output(*step_out)
-        obs = self._obs_normalizer.to_normalized(obs)
+        reward, done, info = self._unnormalized_step(unnormalized_action)
         self._log(state_dict, reward=reward, **info)
         self._current_step += 1
 
+        obs = self.to_normalized(self.state, obs=True)
+
         return obs, reward, done, info
-
-    def _conform_output(self, obs, reward, done, info):
-        """
-        Is this necessary? Make sure that for your modules at least it isnt
-        :param obs:
-        :param reward:
-        :param done:
-        :param info:
-        :return:
-        """
-        def _squeeze_value(value):
-            try:
-                return value.squeeze()
-            except AttributeError:
-                return value
-
-        _obs = np.array(obs).squeeze()
-        try:
-            _reward = reward.item()
-        except AttributeError:
-            _reward = reward
-
-        _info = {k: _squeeze_value(v) for k, v in info.items()}
-        try:
-            assert _obs == obs or _obs.size == 0 and obs.size == 0 or (np.isnan(_obs).all() and np.isnan(obs).all())
-        except ValueError:
-            assert (_obs == obs).all() or (np.isnan(_obs).all() and np.isnan(obs).all())
-        assert _reward == reward
-        assert _info == info
-        return _obs, _reward, done, _info
 
     def _unnormalized_step(self, unnormalized_action):
         if unnormalized_action > 0:
@@ -278,8 +248,8 @@ class BaseMicrogridModule:
     def logger_last(self):
         return {k: v[-1] for k, v in self._logger}
 
-    @abstractmethod
     @property
+    @abstractmethod
     def state_dict(self):
         return NotImplemented
 

@@ -13,8 +13,8 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
     The env assumes that you need to meet the consumption in fixed sink (e.g. load) modules and that
     you would like to use as much of your flex source modules (e.g. PV) as possible.
 
-    The Env assumes that all module actions are either singletons or len-2. In that latter case, assumes that the value is
-    boolean.
+    The Env assumes that all module actions are either singletons or have length 2. In the latter case, assumes that
+        the first value is boolean.
 
     Attributes
     -----------------
@@ -68,7 +68,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
 
     def _get_action(self, action_num):
         if action_num not in self.action_space:
-            raise ValueError(action_num)
+            raise ValueError(f" Action {action_num} not in action space {self.action_space}")
 
         action = self.get_empty_action()
         loads, total_load = self._get_load()
@@ -93,7 +93,10 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
                     action[module_name][element_number] = [module_action_number]
 
             if isclose(remaining_load, 0.0, abs_tol=1e-4): # Don't need to do anything
-                action[module_name][element_number] = 0.0
+                try:
+                    action[module_name][element_number].append(0.0)
+                except AttributeError:
+                    action[module_name][element_number] = 0.0
 
             elif remaining_load > 0: # Need to produce
                 try:

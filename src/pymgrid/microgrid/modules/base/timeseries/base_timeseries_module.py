@@ -1,8 +1,8 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 
 import numpy as np
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
-from pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
+from src.pymgrid.microgrid.modules.base import BaseMicrogridModule
+from src.pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
 
 
 class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
@@ -17,10 +17,10 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
-        self.forecast_horizon = forecast_horizon
-        self.forecaster = get_forecaster(forecaster,
-                                         self.time_series,
-                                         increase_uncertainty=forecaster_increase_uncertainty)
+        self.forecaster, self.forecast_horizon = get_forecaster(forecaster,
+                                                                forecast_horizon,
+                                                                self.time_series,
+                                                                increase_uncertainty=forecaster_increase_uncertainty)
         super().__init__(raise_errors,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name,
@@ -28,6 +28,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
 
     def _set_time_series(self, time_series):
         _time_series = np.array(time_series)
+        try:
+            shape = (-1, _time_series.shape[1])
+        except IndexError:
+            shape = (-1, 1)
+        _time_series = _time_series.reshape(shape)
+        assert len(_time_series) == len(time_series)
         return _time_series
 
     def get_bounds(self):
@@ -39,6 +45,20 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
             _min = 0.0
 
         return _min, _max, _min, _max
+
+    def forecast(self):
+        val_c_n = self.time_series[self.current_step:self.current_step+self.forecast_horizon, :]
+        return self.forecaster(val_c=self.time_series[self.current_step, :],
+                               val_c_n=val_c_n,
+                               n=self.forecast_horizon)
+
+    @property
+    def current_obs(self):
+        factor = -1 if (self.is_sink and not self.is_source) else 1
+        try:
+            return factor * self.time_series[self.current_step, :]
+        except IndexError:
+            return np.nan*np.ones(self.time_series.shape[1])
 
     @property
     def time_series(self):
@@ -59,3 +79,17 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
     @property
     def max_act(self):
         return self._max_act
+
+    @property
+    @abstractmethod
+    def state_components(self):
+        pass
+
+    @property
+    def state_dict(self):
+        forecast = self.forecast()
+        state_dict = dict(zip(self.state_components + "_current", self.current_obs))
+        for j in range(1, self.forecast_horizon):
+            state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[j, :])))
+        return state_dict
+

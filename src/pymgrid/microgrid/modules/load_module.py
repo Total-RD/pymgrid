@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
+from src.pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 import numpy as np
 
 
@@ -28,7 +28,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
 
         info = {'absorbed_energy': external_energy_change, 'loss_load': loss_load}
 
-        return next_load, loss_load_cost, done, info
+        return loss_load_cost, done, info
 
     def _get_loss_load(self, load_met):
         loss_load = self.current_load - load_met
@@ -37,8 +37,8 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         return loss_load, loss_load_cost
 
     @property
-    def state_dict(self):
-        return dict(current_load=self.current_load.item())
+    def state_components(self):
+        return np.array(["load"], dtype=object)
 
     @property
     def max_consumption(self):

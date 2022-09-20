@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
+from src.pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 import numpy as np
 
 
@@ -56,7 +56,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         info_key = 'provided_energy' if as_source else 'absorbed_energy'
         info = {info_key: external_energy_change,
                 'co2_production': self.get_co2_production(external_energy_change, as_source, as_sink)}
-        return next_costs, reward, done, info
+        return reward, done, info
 
     def get_cost(self, import_export, as_source, as_sink):
         if as_source:                                               # Import
@@ -88,12 +88,8 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
     @property
-    def state_dict(self):
-        return dict(zip(('import_cost', 'export_cost', 'co2_per_kwh'), self.current_obs))
-
-    @property
-    def current_obs(self):
-        return self.time_series[self.current_step, :]
+    def state_components(self):
+        return np.array(['import_cost', 'export_cost', 'co2_per_kwh'], dtype=object)
 
     @property
     def max_production(self):

@@ -32,31 +32,12 @@ class GensetModule(BaseMicrogridModule):
         self.start_up_time, self.wind_down_time, self.allow_abortion = start_up_time, wind_down_time, allow_abortion
         self._running, self._status_goal = init_start_up, init_start_up
         self._steps_until_up, self._steps_until_down = self._reset_up_down_times()
-        self.name = ('genset',None)
+        self.name = ('genset', None)
 
         super().__init__(raise_errors,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=None,
                          normalize_pos=dict(obs=..., act=-1))
-
-    # def _set_cost_function(self, genset_cost):
-    #     if callable(genset_cost):
-    #         def _cost_func(energy_production):
-    #             return genset_cost(energy_production) + self.get_co2_cost(energy_production)
-    #     else:
-    #         def _cost_func(energy_production):
-    #             return genset_cost * energy_production + self.get_co2_cost(energy_production)
-    #
-    #     assert _cost_func(100) > 0, 'genset_cost function must return a positive cost for positive production.'
-    #     return _cost_func
-
-    # def _get_action_spaces(self):
-    #     spaces = super()._get_action_spaces()
-    #     return spaces
-    #
-    # def _get_observation_spaces(self):
-    #     spaces = super()._get_observation_spaces()
-    #     return spaces
 
     def step(self, action, normalized=True):
         goal_status = action[0]
@@ -71,6 +52,8 @@ class GensetModule(BaseMicrogridModule):
         return self.cost_per_unit_co2 * self.get_co2(production)
 
     def _get_fuel_cost(self, production):
+        if callable(self.fuel_cost_per_unit):
+            return self.fuel_cost_per_unit(production)
         return self.fuel_cost_per_unit*production
 
     def get_cost(self, production):
@@ -83,7 +66,7 @@ class GensetModule(BaseMicrogridModule):
         info = {'provided_energy': external_energy_change,
                 'co2_production': self.get_co2(external_energy_change)}
 
-        return self.current_obs, reward, False, info
+        return reward, False, info
 
     def _reset_up_down_times(self):
         if self._status_goal != self._running:

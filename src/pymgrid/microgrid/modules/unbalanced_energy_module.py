@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+from src.pymgrid.microgrid.modules.base import BaseMicrogridModule
 import numpy as np
 
 
@@ -26,7 +26,7 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
         assert reward <= 0
         info = {info_key: external_energy_change}
 
-        return np.array([]), reward, False, info
+        return reward, False, info
 
     def get_cost(self, energy_amount, as_source, as_sink):
         if as_source: # loss-load
@@ -39,6 +39,10 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
     @property
     def state_dict(self):
         return dict()
+
+    @property
+    def state(self):
+        return np.array([])
 
     @property
     def min_obs(self):

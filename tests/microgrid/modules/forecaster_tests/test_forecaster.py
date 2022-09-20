@@ -1,13 +1,14 @@
 import numpy as np
-from to_test_helpers.test_case import TestCase
-from pymgrid.microgrid.modules.base.timeseries.forecaster import (
-    get_forecaster, OracleForecaster, GaussianNoiseForecaster, UserDefinedForecaster)
+from tests.helpers.test_case import TestCase
+from src.pymgrid.microgrid.modules.base.timeseries.forecaster import (
+    get_forecaster, OracleForecaster, GaussianNoiseForecaster, UserDefinedForecaster, NoForecaster)
 
 
 def get_test_inputs(n=None, negative=False):
-    val_c = 10 * np.random.rand()
     n = n if n else np.random.randint(low=2, high=10)
     val_c_n = 10 * np.random.rand(n)
+    val_c = val_c_n[0]
+    val_c_n = val_c_n.reshape((-1, 1))
     if negative:
         return -val_c, -val_c_n, n
     else:
@@ -136,7 +137,7 @@ class TestGaussianNoiseForecaster(TestCase):
 class TestUserDefinedForecaster(TestCase):
     def setUp(self) -> None:
         self.oracle_forecaster = OracleForecaster()
-        self.simple_time_series = np.arange(10)
+        self.simple_time_series = np.arange(10).reshape((-1, 1))
 
     @staticmethod
     def oracle_scalar_forecaster(val_c, val_c_n, n):
@@ -171,8 +172,8 @@ class TestUserDefinedForecaster(TestCase):
                                       time_series=self.simple_time_series)
 
     def test_vectorized_forecaster_bad_output_type(self):
-        bad_output_type_forecaster = lambda val_c, val_c_n, n: np.array([str(x) for x in val_c_n])
-        with self.assertRaisesRegex(TypeError, "Forecaster must return numeric output but returned "
+        bad_output_type_forecaster = lambda val_c, val_c_n, n: np.array([str(x) for x in val_c_n]).reshape((-1, 1))
+        with self.assertRaisesRegex(TypeError, "Forecaster must return numeric np.ndarray or number but returned "
                                                "output of type"):
             _ = UserDefinedForecaster(forecaster_function=bad_output_type_forecaster,
                                       time_series=self.simple_time_series)
@@ -180,9 +181,8 @@ class TestUserDefinedForecaster(TestCase):
     def test_vectorized_forecaster_bad_output_signs(self):
         def bad_output_type_forecaster(val_c, val_c_n, n):
             out = val_c_n.copy()
-            pos = np.random.randint(low=0, high=len(out))
+            pos = np.random.randint(low=1, high=len(out))
             out[pos] *= -1
-            print(out)
             return out
 
         with self.assertRaisesRegex(ValueError, "Forecaster must return output of same "
@@ -209,27 +209,38 @@ class TestUserDefinedForecaster(TestCase):
 
 class TestGetForecaster(TestCase):
     def setUp(self) -> None:
-        self.simple_time_series = np.arange(10)
+        self.simple_time_series = np.arange(10).reshape((-1, 1))
+        self.forecaster_horizon = 24
 
     def test_user_defined_forecaster(self):
         user_defined_forecaster = OracleForecaster()
-        forecaster = get_forecaster(user_defined_forecaster, self.simple_time_series)
+        forecaster, forecaster_horizon = get_forecaster(user_defined_forecaster, self.forecaster_horizon, self.simple_time_series)
         self.assertIsInstance(forecaster, UserDefinedForecaster)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
 
     def test_oracle_forecaster(self):
-        forecaster = get_forecaster("oracle")
-        self.assertNotEqual(forecaster, OracleForecaster)
+        forecaster, forecaster_horizon = get_forecaster("oracle", self.forecaster_horizon)
+        self.assertIsInstance(forecaster, OracleForecaster)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
+
+    def test_no_forecaster(self):
+        forecaster, forecaster_horizon = get_forecaster(None, self.forecaster_horizon)
+        self.assertIsInstance(forecaster, NoForecaster)
+        self.assertEqual(forecaster_horizon, 0)
 
     def test_gaussian_noise_forecaster(self):
         noise_std = 0.5
-        forecaster = get_forecaster(noise_std)
+        forecaster, forecaster_horizon = get_forecaster(noise_std, self.forecaster_horizon)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
 
     def test_gaussian_noise_forecaster_increase_uncertainty(self):
         noise_std = 0.5
-        forecaster = get_forecaster(noise_std, increase_uncertainty=True)
+        forecaster, forecaster_horizon = get_forecaster(noise_std, self.forecaster_horizon, increase_uncertainty=True)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
+        self.assertEqual(forecaster_horizon, self.forecaster_horizon)
+
         with self.assertRaisesRegex(TypeError, "unsupported operand type\(s\)"):
             _ = forecaster.noise_std

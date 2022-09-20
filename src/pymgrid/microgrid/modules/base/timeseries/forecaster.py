@@ -1,9 +1,9 @@
 import numpy as np
-from pandas.api.types import is_number
+from pandas.api.types import is_number, is_numeric_dtype
 from abc import abstractmethod
 
 
-def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
+def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
     :param forecaster: callable, float, "oracle", or None, default None. Function that gives a forecast n-steps ahead.
@@ -21,6 +21,8 @@ def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
 
         If None, no forecast.
 
+    :param forecast_horizon: int. Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+
     :param time_series: ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
@@ -33,13 +35,13 @@ def get_forecaster(forecaster, time_series=None, increase_uncertainty=False):
     """
 
     if forecaster is None:
-        return None
+        return NoForecaster(), 0
     elif callable(forecaster):
-        return UserDefinedForecaster(forecaster, time_series)
+        return UserDefinedForecaster(forecaster, time_series), forecast_horizon
     elif forecaster == "oracle":
-        return OracleForecaster()
+        return OracleForecaster(), forecast_horizon
     elif is_number(forecaster):
-        return GaussianNoiseForecaster(forecaster, increase_uncertainty=increase_uncertainty)
+        return GaussianNoiseForecaster(forecaster, increase_uncertainty=increase_uncertainty), forecast_horizon
     else:
         raise ValueError(f"Unable to parse forecaster of type {type(forecaster)}")
 
@@ -50,11 +52,15 @@ class Forecaster:
         pass
 
     def _correct_current_val(self, val_c_n, forecast):
-        forecast[0] = val_c_n[0]
+        forecast[0, :] = val_c_n[0, :]
         return forecast
 
     def __call__(self, val_c, val_c_n, n):
+        if len(val_c_n.shape) == 1:
+            val_c_n = val_c_n.reshape((-1, 1))
         forecast = self._forecast(val_c, val_c_n, n)
+        if forecast is None:
+            return None
         return self._correct_current_val(val_c_n, forecast)
 
 
@@ -106,6 +112,11 @@ class GaussianNoiseForecaster(Forecaster):
         return forecast
 
 
+class NoForecaster(Forecaster):
+    def _forecast(self, val_c, val_c_n, n):
+        return None
+
+
 def _validate_callable_forecaster(forecaster, time_series):
     val_c = time_series[0]
     n = np.random.randint(2, len(time_series))
@@ -127,7 +138,7 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
     except Exception as e:
         raise NotImplementedError("Unable to call forecaster with vector inputs. "
                          f"\nFunc call forecaster(val_c={val_c}, val_c_n={vector_true_forecast}, n={n})"
-                         f"\nraised {e}") from e
+                         f"\nraised {type(e).__name__}: {e}") from e
     else:
         # vectorized function call succeeded
         if vectorized_forecast.shape != vector_true_forecast.shape:
@@ -147,7 +158,7 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
     except Exception as e_scalar:
         raise ValueError("Unable to call forecaster with scalar inputs. "
                          f"\nFunc call forecaster(val_c={val_c}, val_c_plus_n={scalar_true_forecast}, n={n})"
-                         f"\nraised {e_scalar}") from e_scalar
+                         f"\nraised {type(e_scalar).__name__}: {e_scalar}") from e_scalar
     else:  # scalar function call succeeded
         # check shape
         try:
@@ -164,10 +175,10 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
 
 
 def _validate_forecasted_value(forecaster_output, true_forecast, val_c, n):
-    if not is_number(forecaster_output):
+    if not is_numeric_dtype(np.array(forecaster_output)):
         raise TypeError(
-            "Unable to validate forecaster. Forecaster must return numeric output but returned "
-            f"output of type {type(forecaster_output)}: {forecaster_output}")
+            "Unable to validate forecaster. Forecaster must return numeric np.ndarray or number but returned "
+            f"output of type {np.array(forecaster_output).dtype}: {forecaster_output}")
     elif not (forecaster_output * true_forecast >= 0):
         raise ValueError(
             "Unable to validate forecaster. Forecaster must return output of same sign (or zero) as "
@@ -179,5 +190,10 @@ def vectorize_scalar_forecaster(forecaster):
     def vectorized(val_c, val_c_n, n):
         if n != len(val_c_n):
             raise ValueError(f"Incompatible true values length ({val_c_n}) to forecast {n}-steps ahead.")
-        return np.array([forecaster(val_c, val_c_n_i, n_i) for n_i, val_c_n_i in enumerate(val_c_n)])
+        vectorized_output = np.array([forecaster(val_c, val_c_n_i, n_i) for n_i, val_c_n_i in enumerate(val_c_n)])
+        try:
+            shape = (-1, vectorized_output.shape[1])
+        except IndexError:
+            shape = (-1, 1)
+        return vectorized_output.reshape(shape)
     return vectorized
