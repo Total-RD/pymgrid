@@ -118,43 +118,12 @@ class BaseMicrogridModule:
 
         state_dict = self.state_dict
         unnormalized_action = self._act_normalizer.from_normalized(action) if normalized else action
-        step_out = self._unnormalized_step(unnormalized_action)
-        obs, reward, done, info = self._conform_output(*step_out)
-        obs = self._obs_normalizer.to_normalized(obs)
+        obs, reward, done, info = self._unnormalized_step(unnormalized_action)
+        obs = self.to_normalized(obs, obs=True)
         self._log(state_dict, reward=reward, **info)
         self._current_step += 1
 
         return obs, reward, done, info
-
-    def _conform_output(self, obs, reward, done, info):
-        """
-        Is this necessary? Make sure that for your modules at least it isnt
-        :param obs:
-        :param reward:
-        :param done:
-        :param info:
-        :return:
-        """
-        def _squeeze_value(value):
-            try:
-                return value.squeeze()
-            except AttributeError:
-                return value
-
-        _obs = np.array(obs).squeeze()
-        try:
-            _reward = reward.item()
-        except AttributeError:
-            _reward = reward
-
-        _info = {k: _squeeze_value(v) for k, v in info.items()}
-        try:
-            assert _obs == obs or _obs.size == 0 and obs.size == 0 or (np.isnan(_obs).all() and np.isnan(obs).all())
-        except ValueError:
-            assert (_obs == obs).all() or (np.isnan(_obs).all() and np.isnan(obs).all())
-        assert _reward == reward
-        assert _info == info
-        return _obs, _reward, done, _info
 
     def _unnormalized_step(self, unnormalized_action):
         if unnormalized_action > 0:
