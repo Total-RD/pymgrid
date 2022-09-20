@@ -56,7 +56,7 @@ class BatteryModule(BaseMicrogridModule):
         self._update_state(internal_energy_change)
         reward = -1.0 * self.get_cost(internal_energy_change)
         info = {info_key: external_energy_change}
-        return self.current_obs, reward, False, info
+        return reward, False, info
 
     def _update_state(self, energy_change):
         self._current_charge += energy_change

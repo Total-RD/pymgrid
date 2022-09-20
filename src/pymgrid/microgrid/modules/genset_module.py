@@ -83,7 +83,7 @@ class GensetModule(BaseMicrogridModule):
         info = {'provided_energy': external_energy_change,
                 'co2_production': self.get_co2(external_energy_change)}
 
-        return self.current_obs, reward, False, info
+        return reward, False, info
 
     def _reset_up_down_times(self):
         if self._status_goal != self._running:

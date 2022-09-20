@@ -28,7 +28,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
 
         info = {'absorbed_energy': external_energy_change, 'loss_load': loss_load}
 
-        return next_load, loss_load_cost, done, info
+        return loss_load_cost, done, info
 
     def _get_loss_load(self, load_met):
         loss_load = self.current_load - load_met

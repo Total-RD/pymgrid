@@ -26,7 +26,7 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
         assert reward <= 0
         info = {info_key: external_energy_change}
 
-        return np.array([]), reward, False, info
+        return reward, False, info
 
     def get_cost(self, energy_amount, as_source, as_sink):
         if as_source: # loss-load

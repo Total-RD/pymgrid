@@ -56,7 +56,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         info_key = 'provided_energy' if as_source else 'absorbed_energy'
         info = {info_key: external_energy_change,
                 'co2_production': self.get_co2_production(external_energy_change, as_source, as_sink)}
-        return next_costs, reward, done, info
+        return reward, done, info
 
     def get_cost(self, import_export, as_source, as_sink):
         if as_source:                                               # Import

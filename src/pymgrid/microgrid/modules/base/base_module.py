@@ -118,10 +118,11 @@ class BaseMicrogridModule:
 
         state_dict = self.state_dict
         unnormalized_action = self._act_normalizer.from_normalized(action) if normalized else action
-        obs, reward, done, info = self._unnormalized_step(unnormalized_action)
-        obs = self.to_normalized(obs, obs=True)
+        reward, done, info = self._unnormalized_step(unnormalized_action)
         self._log(state_dict, reward=reward, **info)
         self._current_step += 1
+
+        obs = self.to_normalized(self.state, obs=True)
 
         return obs, reward, done, info
 

@@ -24,15 +24,13 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
         assert as_source, f'Class {self.__class__.__name__} can only be used as a source.'
         assert external_energy_change <= self.current_renewable, f'Cannot provide more than {self.current_renewable}'
         try:
-            next_renewable = self._time_series[self.current_step+1]
             done = False
         except IndexError:
-            next_renewable = np.nan
             done = True
 
         info = {'provided_energy': external_energy_change, 'curtailment': self.current_renewable-external_energy_change}
 
-        return np.array(next_renewable), 0.0, done, info
+        return 0.0, done, info
 
     @property
     def state_components(self):
