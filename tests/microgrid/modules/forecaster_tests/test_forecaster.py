@@ -181,9 +181,8 @@ class TestUserDefinedForecaster(TestCase):
     def test_vectorized_forecaster_bad_output_signs(self):
         def bad_output_type_forecaster(val_c, val_c_n, n):
             out = val_c_n.copy()
-            pos = np.random.randint(low=0, high=len(out))
+            pos = np.random.randint(low=1, high=len(out))
             out[pos] *= -1
-            print(out)
             return out
 
         with self.assertRaisesRegex(ValueError, "Forecaster must return output of same "
