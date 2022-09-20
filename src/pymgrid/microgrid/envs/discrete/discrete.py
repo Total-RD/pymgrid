@@ -68,7 +68,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
 
     def _get_action(self, action_num):
         if action_num not in self.action_space:
-            raise ValueError(action_num)
+            raise ValueError(f" Action {action_num} not in action space {self.action_space}")
 
         action = self.get_empty_action()
         loads, total_load = self._get_load()
