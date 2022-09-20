@@ -32,7 +32,7 @@ class GensetModule(BaseMicrogridModule):
         self.start_up_time, self.wind_down_time, self.allow_abortion = start_up_time, wind_down_time, allow_abortion
         self._running, self._status_goal = init_start_up, init_start_up
         self._steps_until_up, self._steps_until_down = self._reset_up_down_times()
-        self.name = ('genset',None)
+        self.name = ('genset', None)
 
         super().__init__(raise_errors,
                          provided_energy_name=provided_energy_name,
