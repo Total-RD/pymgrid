@@ -1,7 +1,7 @@
 import numpy as np
-from pymgrid.microgrid.modules.base.timeseries.forecaster import (
-    get_forecaster, OracleForecaster, GaussianNoiseForecaster, UserDefinedForecaster)
 from tests.helpers.test_case import TestCase
+from src.pymgrid.microgrid.modules.base.timeseries.forecaster import (
+    get_forecaster, OracleForecaster, GaussianNoiseForecaster, UserDefinedForecaster, NoForecaster)
 
 
 def get_test_inputs(n=None, negative=False):
@@ -223,6 +223,10 @@ class TestGetForecaster(TestCase):
         self.assertIsInstance(forecaster, OracleForecaster)
         self.assertEqual(forecaster_horizon, self.forecaster_horizon)
 
+    def test_no_forecaster(self):
+        forecaster, forecaster_horizon = get_forecaster(None, self.forecaster_horizon)
+        self.assertIsInstance(forecaster, NoForecaster)
+        self.assertEqual(forecaster_horizon, 0)
 
     def test_gaussian_noise_forecaster(self):
         noise_std = 0.5
