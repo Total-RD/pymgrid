@@ -17,7 +17,6 @@ class BaseMicrogridEnv(ModularMicrogrid, Env):
                                   overgeneration_cost=overgeneration_cost)
         self.action_space = self._get_action_space()
         self.observation_space = self._get_observation_space()
-        print('here')
 
     @abstractmethod
     def _get_action_space(self):
