@@ -93,7 +93,10 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
                     action[module_name][element_number] = [module_action_number]
 
             if isclose(remaining_load, 0.0, abs_tol=1e-4): # Don't need to do anything
-                action[module_name][element_number] = 0.0
+                try:
+                    action[module_name][element_number].append(0.0)
+                except AttributeError:
+                    action[module_name][element_number] = 0.0
 
             elif remaining_load > 0: # Need to produce
                 try:
