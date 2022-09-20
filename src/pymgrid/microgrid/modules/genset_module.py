@@ -39,25 +39,6 @@ class GensetModule(BaseMicrogridModule):
                          absorbed_energy_name=None,
                          normalize_pos=dict(obs=..., act=-1))
 
-    # def _set_cost_function(self, genset_cost):
-    #     if callable(genset_cost):
-    #         def _cost_func(energy_production):
-    #             return genset_cost(energy_production) + self.get_co2_cost(energy_production)
-    #     else:
-    #         def _cost_func(energy_production):
-    #             return genset_cost * energy_production + self.get_co2_cost(energy_production)
-    #
-    #     assert _cost_func(100) > 0, 'genset_cost function must return a positive cost for positive production.'
-    #     return _cost_func
-
-    # def _get_action_spaces(self):
-    #     spaces = super()._get_action_spaces()
-    #     return spaces
-    #
-    # def _get_observation_spaces(self):
-    #     spaces = super()._get_observation_spaces()
-    #     return spaces
-
     def step(self, action, normalized=True):
         goal_status = action[0]
         assert 0 <= goal_status <= 1
