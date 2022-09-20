@@ -89,6 +89,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         forecast = self.forecast()
         state_dict = dict(zip(self.state_components + "_current", self.current_obs))
         for j in range(1, self.forecast_horizon):
-            state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[:, j])))
+            state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[j, :])))
         return state_dict
 
