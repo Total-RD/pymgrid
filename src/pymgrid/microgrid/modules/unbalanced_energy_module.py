@@ -41,6 +41,10 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
         return dict()
 
     @property
+    def state(self):
+        return np.array([])
+
+    @property
     def min_obs(self):
         # Min charge amount, min soc
         return np.nan
