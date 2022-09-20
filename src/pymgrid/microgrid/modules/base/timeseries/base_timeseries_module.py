@@ -54,8 +54,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
 
     @property
     def current_obs(self):
+        factor = -1 if (self.is_sink and not self.is_source) else 1
         try:
-            return self.time_series[self.current_step, :]
+            return factor * self.time_series[self.current_step, :]
         except IndexError:
             return np.nan*np.ones(self.time_series.shape[1])
 
