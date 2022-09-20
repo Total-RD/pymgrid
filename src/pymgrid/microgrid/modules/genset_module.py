@@ -52,6 +52,8 @@ class GensetModule(BaseMicrogridModule):
         return self.cost_per_unit_co2 * self.get_co2(production)
 
     def _get_fuel_cost(self, production):
+        if callable(self.fuel_cost_per_unit):
+            return self.fuel_cost_per_unit(production)
         return self.fuel_cost_per_unit*production
 
     def get_cost(self, production):
