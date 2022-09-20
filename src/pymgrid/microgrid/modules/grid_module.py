@@ -89,7 +89,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def state_components(self):
-        return np.array(['import_cost', 'export_cost', 'co2_per_kwh'])
+        return np.array(['import_cost', 'export_cost', 'co2_per_kwh'], dtype=object)
 
     @property
     def max_production(self):

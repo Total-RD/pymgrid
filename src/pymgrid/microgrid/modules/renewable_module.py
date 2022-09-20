@@ -34,7 +34,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def state_components(self):
-        return np.array("renewable")
+        return np.array(["renewable"], dtype=object)
 
     @property
     def max_production(self):

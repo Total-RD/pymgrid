@@ -38,7 +38,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def state_components(self):
-        return np.array("load")
+        return np.array(["load"], dtype=object)
 
     @property
     def max_consumption(self):
