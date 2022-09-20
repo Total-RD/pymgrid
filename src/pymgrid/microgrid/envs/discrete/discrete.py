@@ -13,8 +13,8 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
     The env assumes that you need to meet the consumption in fixed sink (e.g. load) modules and that
     you would like to use as much of your flex source modules (e.g. PV) as possible.
 
-    The Env assumes that all module actions are either singletons or len-2. In that latter case, assumes that the value is
-    boolean.
+    The Env assumes that all module actions are either singletons or have length 2. In the latter case, assumes that
+        the first value is boolean.
 
     Attributes
     -----------------
