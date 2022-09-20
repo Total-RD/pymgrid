@@ -1,7 +1,7 @@
-import pytest
 import numpy as np
-from to_test_helpers.genset_module_testing_utils import default_params, get_genset, normalize_production
-from to_test_helpers.test_case import TestCase
+from tests.helpers.genset_module_testing_utils import default_params, get_genset, normalize_production
+from tests.helpers.test_case import TestCase
+
 
 class TestGensetModule(TestCase):
     def setUp(self) -> None:
@@ -150,7 +150,3 @@ class TestGensetModule(TestCase):
                 self.assertEqual(obs, np.array([1, 1, 0, 0]))
                 self.assertFalse(done)
                 self.assertEqual(info['provided_energy'], possible)
-
-if __name__ == '__main__':
-    pytest.main(args=[__file__])
-

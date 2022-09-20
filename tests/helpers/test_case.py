@@ -11,4 +11,3 @@ class TestCase(unittest.TestCase):
                 return np.testing.assert_equal(first, second)
             else:
                 return np.testing.assert_equal(first, second, err_msg=msg)
-

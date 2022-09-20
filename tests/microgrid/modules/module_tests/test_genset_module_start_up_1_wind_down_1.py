@@ -1,5 +1,5 @@
-from to_test_helpers.genset_module_testing_utils import default_params, get_genset, normalize_production
-from to_test_helpers.test_case import TestCase
+from tests.helpers.genset_module_testing_utils import get_genset, normalize_production
+from tests.helpers.test_case import TestCase
 import numpy as np
 from copy import deepcopy
 

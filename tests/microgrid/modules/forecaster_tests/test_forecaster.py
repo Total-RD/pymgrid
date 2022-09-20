@@ -1,7 +1,7 @@
 import numpy as np
-from to_test_helpers.test_case import TestCase
 from pymgrid.microgrid.modules.base.timeseries.forecaster import (
     get_forecaster, OracleForecaster, GaussianNoiseForecaster, UserDefinedForecaster)
+from tests.helpers.test_case import TestCase
 
 
 def get_test_inputs(n=None, negative=False):
