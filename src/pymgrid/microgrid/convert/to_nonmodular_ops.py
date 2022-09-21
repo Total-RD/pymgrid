@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from warnings import warn
 
-_empty_params = dict(parameters=dict(), # This needs to be a pd.DataFrame, convert it at the end
+_empty_params = dict(parameters=dict(),
                      df_actions=dict(),
                      architecture=dict(PV=0, battery=0, genset=0, grid=0),
                      df_status=dict(hour=[0]),
@@ -13,10 +13,10 @@ _empty_params = dict(parameters=dict(), # This needs to be a pd.DataFrame, conve
                      df_co2=dict(co2=[]),
                      pv=None,
                      load=None,
-                     grid_ts=None, # do you pass this if no grid?
+                     grid_ts=None,
                      control_dict=[],
-                     grid_price_import=None, # do you pass this if no grid?
-                     grid_price_export=None,# do you pass this if no grid?
+                     grid_price_import=None,
+                     grid_price_export=None,
                      grid_co2=None,
                     )
 
@@ -77,10 +77,6 @@ def add_params_from_module(module, params_dict):
 
 
 def add_load_params(load_module, params_dict):
-    # params_dict['parameters']['load'] = [-1 * load_module.min_act]
-    # params_dict['parameters']['cost_loss_load'] = load_module.loss_load_cost
-    # params_dict['control_dict'].append('load')
-    # params_dict['df_actual_generation']['loss_load'] = []
     params_dict['load'] = pd.DataFrame(load_module.time_series)
     _add_to_parameters(params_dict,
                        load=-1 * load_module.min_act,
@@ -92,8 +88,6 @@ def add_load_params(load_module, params_dict):
 
 
 def add_pv_params(pv_module, params_dict):
-    # params_dict['parameters']['PV_rated_power'] = [pv_module.max_act]
-    # params_dict['architecture']['PV'] = 1
     params_dict['pv'] = pd.DataFrame(pv_module.time_series)
     _add_to_architecture(params_dict, 'PV')
     _add_to_parameters(params_dict, PV_rated_power=pv_module.max_act)
@@ -101,13 +95,6 @@ def add_pv_params(pv_module, params_dict):
     _add_to_df_status(params_dict, pv=[pv_module.current_renewable.item()])
     _add_to_df_actual_generation(params_dict, 'pv_consummed','pv_curtailed')
     _add_to_control_dict(params_dict, 'pv_consummed', 'pv_curtailed', 'pv')
-    # params_dict['df_actions']['pv_consummed'] = []
-    # params_dict['df_actions']['pv_curtailed'] = []
-    # params_dict['df_actions']['pv'] = []
-    # params_dict['df_status']['pv'] = [pv_module.current_renewable.item()]
-    # params_dict['df_actual_generation']['pv_consummed'] = []
-    # params_dict['df_actual_generation']['pv_curtailed'] = []
-    # params_dict['control_dict'].extend(['pv_consummed', 'pv_curtailed', 'pv'])
 
 
 def add_battery_params(battery_module, params_dict):
