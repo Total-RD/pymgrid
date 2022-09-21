@@ -5,7 +5,6 @@ from pymgrid.Microgrid import Microgrid
 from pymgrid.MicrogridGenerator import MicrogridGenerator
 from copy import deepcopy
 from pymgrid.algos.Control import SampleAverageApproximation, ModelPredictiveControl
-from spinup.utils.logx import EpochLogger
 
 
 logger = logging.getLogger(__name__)
@@ -184,7 +183,6 @@ class ContinuousMicrogridEnv(MicrogridEnv):
         super().__init__(microgrid, trajectory_len=trajectory_len, max_episode_len=max_episode_len)
 
         self.logger = kwargs['logger'] if 'logger' in kwargs else None
-        assert self.logger is None or isinstance(self.logger, EpochLogger)
 
         action_dim = 5+self.has_genset
         upper_bound, lower_bound = self._get_action_ub_lb()

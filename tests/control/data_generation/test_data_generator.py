@@ -64,8 +64,6 @@ class TestNoisyPV(unittest.TestCase):
         for name in NPV.feature_names:
              assert_array_equal(NPV.feature_functions[name](NPV.daily_maxes['cumulative_hr']).values, NPV.daily_maxes[name].values)
 
-    # TODO Finish wriitng these starting at max_min_curve_interpolate
-
 
 class TestNoisyGrid(unittest.TestCase):
 
@@ -159,7 +157,8 @@ class TestNoisyGrid(unittest.TestCase):
         assert_array_equal(sample, np.ones(48))
 
     def test_sample_with_outages_naive(self):
-        # This is a ridiculous unit test
+        # This is a ridiculous unit test All it does is check that the data generated from the probability distribution
+        #             matches the distribution. Thus, can fail randomly.
         np.random.seed(0)
         num_tests = 50
 
@@ -177,7 +176,12 @@ class TestNoisyGrid(unittest.TestCase):
         assert_array_almost_equal(self.with_outages_data['naive_probabilities'], transition_prob_mean, decimal=2)
 
     def test_sample_with_outages_markov(self):
-        # This is also a ridiculous unit test
+        """
+        This is also a ridiculous unit test. All it does is check that the data generated from the probability distribution
+            matches the distribution. Thus, can fail randomly.
+        :return:
+        """
+
         np.random.seed(0)
         num_tests = 50
 
@@ -230,23 +234,18 @@ class TestNoisyLoad(unittest.TestCase):
 
             slice = self.load_data[24*j:24*(j+1)].values
 
-            for k in range(1,(self.n_days-j) // 7 + 1):
-                if (j+k*7)>=self.n_days:
+            for k in range(1, (self.n_days-j) // 7 + 1):
+                if (j+k*7) >= self.n_days:
                     continue
                 slice = np.stack((slice,self.load_data[24*(j+k*7):24*(j+k*7+1)]))
 
             if len(slice.shape) == 1:
-                slice = slice.reshape((1,24))
+                slice = slice.reshape((1, 24))
                 assert_array_almost_equal(NLD_computed_avg, np.mean(slice, axis=0))
             else:
                 assert_array_almost_equal(NLD_computed_avg, np.mean(slice, axis=0))
                 assert_array_almost_equal(NLD_computed_std, np.std(slice, axis=0, ddof=1))
 
-        # Todo finish this test
-
-
-
 if __name__ == '__main__':
-
     unittest.main()
 
