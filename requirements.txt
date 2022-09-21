@@ -1,8 +1,9 @@
-cvxpy
-pandas
-numpy
-matplotlib
-plotly
-seaborn
-cufflinks
-statsmodels
+cufflinks>=0.17.3
+cvxpy>=1.1.4
+gym>=0.15.7
+matplotlib>=3.1.1
+numpy>=1.19.5
+pandas>=1.0.3
+plotly>=4.9.0
+scipy>=1.5.3
+statsmodels>=0.11.1
