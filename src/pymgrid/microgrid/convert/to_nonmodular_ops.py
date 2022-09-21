@@ -30,7 +30,7 @@ def check_viability(modular):
     classes_str = '\n'.join([str(x) for x in classes])
     n_modules_by_cls = dict(zip(classes, [0]*len(classes)))
 
-    for name, module_list in modular.flat_modules.items():
+    for name, module_list in modular.modules.iterdict():
         if len(module_list) > 1:
             raise ValueError('Cannot convert modular microgrid with multiple modules of same type. '
                          f'The following module name has multiple modules: {name}')
