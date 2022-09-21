@@ -38,7 +38,7 @@ def to_nonmodular(modular):
     """
     check_viability(modular)
     microgrid_params = get_empty_params()
-    for _, module_list in modular.flat_modules.items():
+    for _, module_list in modular.modules.iterdict():
         add_params_from_module(module_list[0], microgrid_params)
     finalize_params(microgrid_params)
     return Microgrid(parameters=microgrid_params)
