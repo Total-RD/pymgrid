@@ -1,8 +1,8 @@
-from src.pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
-from src.pymgrid.Microgrid import Microgrid
-from src.pymgrid.microgrid.modules import LoadModule, RenewableModule, BatteryModule, GridModule, GensetModule
-from src.pymgrid.microgrid.convert.get_module import get_module
-from src.pymgrid.microgrid.convert.to_nonmodular_ops import check_viability, add_params_from_module, get_empty_params, finalize_params
+from pymgrid.Microgrid import Microgrid
+from pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
+from pymgrid.microgrid.modules import LoadModule, RenewableModule, BatteryModule, GridModule, GensetModule
+from pymgrid.microgrid.convert.get_module import get_module
+from pymgrid.microgrid.convert.to_nonmodular_ops import check_viability, add_params_from_module, get_empty_params, finalize_params
 
 
 def to_modular(nonmodular, raise_errors=False):

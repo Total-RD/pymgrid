@@ -233,11 +233,11 @@ class ModularMicrogrid:
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
-        from src.pymgrid.microgrid.convert.convert import to_modular
+        from pymgrid.microgrid.convert.convert import to_modular
         return to_modular(nonmodular)
 
     def to_nonmodular(self):
-        from src.pymgrid.microgrid.convert.convert import to_nonmodular
+        from pymgrid.microgrid.convert.convert import to_nonmodular
         return to_nonmodular(self)
 
     def __repr__(self):

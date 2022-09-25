@@ -1,6 +1,8 @@
 from gym.spaces import Dict, Tuple
-from src.pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
 from warnings import warn
+
+from pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
+
 
 class ContinuousMicrogridEnv(BaseMicrogridEnv):
     def __init__(self,

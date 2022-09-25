@@ -1,5 +1,5 @@
 import pandas as pd
-from src.pymgrid.microgrid.modules import LoadModule, RenewableModule, BatteryModule, GridModule, GensetModule, UnbalancedEnergyModule
+from pymgrid.microgrid.modules import LoadModule, RenewableModule, BatteryModule, GridModule, GensetModule, UnbalancedEnergyModule
 
 
 def get_module(component, nonmodular, raise_errors):

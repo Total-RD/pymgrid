@@ -1,5 +1,5 @@
 from collections import UserDict
-from src.pymgrid.microgrid.modules.base import BaseMicrogridModule
+from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
 class ModuleContainer(UserDict):
