@@ -1,6 +1,6 @@
 from gym import Env
 from gym.spaces import Box, Dict, Tuple
-from src.pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
+from pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
 from abc import abstractmethod
 
 

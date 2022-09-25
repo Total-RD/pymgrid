@@ -1264,10 +1264,10 @@ class Microgrid:
 
     @classmethod
     def from_modular(cls, modular):
-        from src.pymgrid.microgrid.convert.convert import to_nonmodular
+        from pymgrid.microgrid.convert.convert import to_nonmodular
         return to_nonmodular(modular)
 
     def to_modular(self):
-        from src.pymgrid.microgrid.convert.convert import to_modular
+        from pymgrid.microgrid.convert.convert import to_modular
         return to_modular(self)
 
