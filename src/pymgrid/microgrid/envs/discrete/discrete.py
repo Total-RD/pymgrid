@@ -1,9 +1,10 @@
-from pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
 from itertools import permutations
 from warnings import warn
 import numpy as np
 from gym.spaces import Discrete
 from math import isclose
+
+from pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
 from pymgrid.microgrid.utils.logger import ModularLogger
 
 

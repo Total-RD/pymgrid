@@ -1,11 +1,12 @@
-from pymgrid.microgrid.utils.step import MicrogridStep
-from pymgrid.microgrid.modules import *
 import numpy as np
 import pandas as pd
 from copy import deepcopy
 from warnings import warn
-from pymgrid.microgrid.utils.logger import ModularLogger
+
+from pymgrid.microgrid.modules import *
 from pymgrid.microgrid.modules.module_container import ModuleContainer
+from pymgrid.microgrid.utils.logger import ModularLogger
+from pymgrid.microgrid.utils.step import MicrogridStep
 
 
 class ModularMicrogrid:
