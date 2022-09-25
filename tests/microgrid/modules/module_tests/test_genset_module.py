@@ -136,14 +136,23 @@ class TestGensetModule(TestCase):
     def test_step_genset_production_request_out_of_range_no_error_raise(self):
         genset, params = self.get_genset(raise_errors=False)
 
-        requested_possible =  [(params['min_production']*np.random.rand(), params['min_production']),
-                               (params['max_production'] * (1+np.random.rand()), params['max_production'])]
+        requested_possible_warn =  [(params['min_production']*np.random.rand(), params['min_production'], False),
+                               (params['max_production'] * (1+np.random.rand()), params['max_production'], True)]
 
-        # First requested value is below min_production, second is above max_production
-        for requested, possible in requested_possible:
+
+        # First requested value is below min_production, second is above max_production.
+        # Second should raise a warning.
+
+        for requested, possible, raises_warn in requested_possible_warn:
             with self.subTest(requested_production=requested, possible_production=possible):
                 action = np.array([1.0, normalize_production(requested)])
-                obs, reward, done, info = genset.step(action)
+
+                if raises_warn:
+                    with self.assertWarns(Warning):
+                        obs, reward, done, info = genset.step(action)
+                else:
+                    obs, reward, done, info = genset.step(action)
+
                 self.assertEqual(reward, -1.0 * params['genset_cost']*possible)
                 self.assertTrue(genset.is_running)
                 self.assertEqual(genset.status_goal, 1)
