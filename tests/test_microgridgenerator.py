@@ -33,7 +33,7 @@ class TesttMicogridGenerator(unittest.TestCase):
 
     def test_scale_ts(self):
         ts =pd.DataFrame( [i for i in range(10)])
-        self.assertEqual(ts.sum()*4,mgen._scale_ts(ts, 4).sum() )
+        self.assertEqual(ts.sum()*4,self.mgen._scale_ts(ts, 4).sum() )
 
     def test_resize_timeseries(self):
         np.test()
