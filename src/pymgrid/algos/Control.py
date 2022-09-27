@@ -30,8 +30,6 @@ from scipy.sparse import csr_matrix
 import operator
 
 
-# TODO commented type checks to test imports in Microgrid/Benchmarks
-
 class SampleAverageApproximation(SampleGenerator):
     """
     A class to run a Sample Average Approximation version of Stochastic MPC.
@@ -160,9 +158,6 @@ class SampleAverageApproximation(SampleGenerator):
 
                 sample.iloc[j] = self.underlying_data.iloc[j]  # overwrite with actual data
 
-                # TODO return controls of all steps in horizon
-                # TODO then, pick 0th step controls of sample with 'percentile' cost over horizon
-
                 horizon_output = self.mpc.mpc_single_step(sample, output, j)
 
                 horizon_outputs.append(horizon_output)
@@ -193,9 +188,6 @@ class SampleAverageApproximation(SampleGenerator):
                 print('iter {}'.format(j))
 
                 sample.iloc[j] = self.underlying_data.iloc[j]  # overwrite with actual data
-
-                # TODO return controls of all steps in horizon
-                # TODO then, pick 0th step controls of sample with 'percentile' cost over horizon
 
                 horizon_output = self.mpc.mpc_single_step(sample, output, j)
 
@@ -1176,7 +1168,6 @@ class RuleBasedControl:
         """
 
         temp_load = load
-        # todo add reserves to pymgrid
         excess_gen = 0
 
         p_charge = 0

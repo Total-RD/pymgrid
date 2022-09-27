@@ -1,5 +1,6 @@
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 import numpy as np
+from warnings import warn
 
 
 class BatteryModule(BaseMicrogridModule):
@@ -32,7 +33,7 @@ class BatteryModule(BaseMicrogridModule):
 
     def _init_battery(self, init_capacity, init_soc):
         if init_capacity is not None and init_soc is not None:
-            print('Passed both init_capacity and init_soc. Using init_capacity and ignoring init_soc')
+            warn('Passed both init_capacity and init_soc. Using init_capacity and ignoring init_soc')
         elif init_soc is not None:
             init_capacity = init_soc*self.max_capacity
         else:
