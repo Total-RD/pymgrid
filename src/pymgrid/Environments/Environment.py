@@ -165,7 +165,7 @@ class Environment(gym.Env):
         if testing == True:
             self.TRAIN = False
         elif self.resampling_on_reset == True:
-            Preprocessing.sample_reset(self.mg.architecture['grid'] == 1, self.saa, self.mg, sampling_args=sampling_args)
+            Preprocessing.sample_reset(self.mg.architecture['grid'] == 1, self.saa, self.mg, sampling_args=self.sampling_args)
         
         
         self.state, self.reward, self.done, self.info =  self.transition(), 0, False, {}
