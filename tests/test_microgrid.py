@@ -33,7 +33,7 @@ class TestMicrogrid(unittest.TestCase):
 
     def test_set_horizon(self):
         self.mg.set_horizon(25)
-        self.assertEqual(25, self.mg._horizon)
+        self.assertEqual(25, self.mg.horizon)
 
 
     def test_get_updated_values(self):
