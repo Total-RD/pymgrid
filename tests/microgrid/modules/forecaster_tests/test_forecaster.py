@@ -3,10 +3,6 @@ from tests.helpers.test_case import TestCase
 from src.pymgrid.microgrid.modules.base.timeseries.forecaster import (
     get_forecaster, OracleForecaster, GaussianNoiseForecaster, UserDefinedForecaster, NoForecaster)
 
-import sys
-from warnings import warn
-path = "\n".join(sys.path)
-warn(f"Path:\n{path}")
 
 def get_test_inputs(n=None, negative=False):
     n = n if n else np.random.randint(low=2, high=10)
