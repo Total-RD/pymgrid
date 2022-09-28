@@ -71,7 +71,7 @@ class TestMicogridGenerator(unittest.TestCase):
         self.assertEqual(40, self.mgen._size_battery([10, 10, 10]))
 
     def test_generate_microgrid(self):
-        microgrids = self.mgen.generate_microgrid()
+        microgrids = self.mgen.generate_microgrid().microgrids
 
         self.assertEqual (self.mgen.nb_microgrids, len(microgrids))
 
