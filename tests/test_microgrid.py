@@ -7,14 +7,11 @@ NO WARRANTY IS EXPRESSED OR IMPLIED.  USE AT YOUR OWN RISK.
 $Date: 2020/08/27 08:04 $
 Gonzague Henri
 """
-
-import os, sys
-import numpy as np
-sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-
-from src.pymgrid.MicrogridGenerator import MicrogridGenerator
-
 import unittest
+import numpy as np
+
+from pymgrid.MicrogridGenerator import MicrogridGenerator
+
 
 class TestMicrogrid(unittest.TestCase):
 
