@@ -58,10 +58,6 @@ class TestMicogridGenerator(unittest.TestCase):
         grid = self.mgen.MicrogridGenerator()
         self.assertEqual(1000, grid['grid_power_import'])
 
-    def test_generate_weak_grid_profile(self):
-        outage = self.mgen._generate_weak_grid_profile(1,24,10)
-        self.assertEqual(0, outage.iloc[0,0])
-
     def test_size_mg(self):
         ts = pd.DataFrame([i for i in range(10)])
         mg = self.mgen._size_mg(ts, 10)
