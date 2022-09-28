@@ -39,12 +39,6 @@ class TestMicogridGenerator(unittest.TestCase):
         ts =pd.DataFrame( [i for i in range(10)])
         self.assertEqual(ts.sum()*4,self.mgen._scale_ts(ts, 4).sum() )
 
-    def test_resize_timeseries(self):
-        np.test()
-        ts = pd.DataFrame([i for i in range(10)])
-        self.assertEqual (ts.shape[0] * 4, self.mgen._resize_timeseries(ts,1, 0.25).shape[0])
-
-
     def test_get_genset(self):
         genset = self.mgen._get_genset()
         self.assertEqual (1000, genset['rated_power'])
