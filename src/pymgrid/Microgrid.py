@@ -31,7 +31,6 @@ import matplotlib.pyplot as plt
 import cufflinks as cf
 from IPython.display import display
 from IPython import get_ipython
-from pymgrid.algos.Control import Benchmarks
 
 def in_ipynb():
     try:
@@ -392,8 +391,6 @@ class Microgrid:
         self.control_dict = parameters['control_dict']
         self._data_set_to_use_default = 'all'
         self._data_set_to_use = 'all'
-
-        self.benchmarks = Benchmarks(self)
 
         if self.architecture['battery'] == 1:
             self.battery = Battery(self.parameters,
@@ -1198,16 +1195,18 @@ class Microgrid:
         This function prints the cumulative cost of the different benchmark ran and different part of the dataset
         depending on if split it in train/test or not.
         """
+        from pymgrid.algos.Control import Benchmarks
+        benchmarks = Benchmarks(self)
 
-        if len(self.benchmarks.outputs_dict) == 0:
+        if len(benchmarks.outputs_dict) == 0:
             print('No benchmark algorithms have been run, running all.')
             #self.benchmarks.run_benchmarks()
 
         if self._has_train_test_split:
-            self.benchmarks.describe_benchmarks(test_split=self._has_train_test_split, test_index=self._limit_index)
+            benchmarks.describe_benchmarks(test_split=self._has_train_test_split, test_index=self._limit_index)
 
         else:
-            self.benchmarks.describe_benchmarks(test_split=False)
+            benchmarks.describe_benchmarks(test_split=False)
 
     def print_info(self):
         """ This function prints the main information regarding the microgrid."""
