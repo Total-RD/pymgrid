@@ -55,7 +55,7 @@ class TestMicogridGenerator(unittest.TestCase):
         self.assertEqual (0.2, price[8])
 
     def test_get_grid(self):
-        grid = self.mgen.MicrogridGenerator()
+        grid = self.mgen._get_grid()
         self.assertEqual(1000, grid['grid_power_import'])
 
     def test_size_mg(self):
