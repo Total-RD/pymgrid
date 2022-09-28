@@ -401,6 +401,8 @@ class MicrogridGenerator:
         if verbose == True:
             self.print_mg_parameters()
 
+        return self
+
 
     def load(self, scenario):
 
