@@ -149,13 +149,23 @@ class MicrogridGenerator:
 
         return df_ts
 
-    def _resize_timeseries(self, timeserie, current_time_step, new_time_step):
+    def _resize_timeseries(self, timeseries, current_time_step, new_time_step):
         """ Change the frequency of a time series. """
 
         index = pd.date_range('1/1/2015 00:00:00', freq=str(int(current_time_step * 60)) + 'Min',
-                              periods=(len(timeserie)))  # , freq='0.9S')
+                              periods=(len(timeseries)))  # , freq='0.9S')
 
-        unsampled = pd.Series(timeserie, index=index)
+        try:
+            timeseries = timeseries.squeeze()
+        except AttributeError:
+            pass
+
+        try:
+            timeseries = timeseries.values
+        except AttributeError:
+            pass
+
+        unsampled = pd.Series(timeseries, index=index)
         resampled = unsampled.resample(rule=str(int(new_time_step * 60)) + 'Min').mean().interpolate(method='linear')
 
         return resampled.values
