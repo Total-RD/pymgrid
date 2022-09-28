@@ -48,7 +48,7 @@ class TestMicrogrid(unittest.TestCase):
         self.mg.set_horizon(24)
         forecast = self.mg.forecast_load()
 
-        self.assertEqual (24, len(forecast['load']))
+        self.assertEqual (24, len(forecast))
 
 
     def test_run(self):
