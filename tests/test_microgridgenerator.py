@@ -49,8 +49,8 @@ class TestMicogridGenerator(unittest.TestCase):
         self.assertEqual (1000, battery['capa'])
 
     def test_get_grid_price_ts(self):
-        price = self.mgen._get_grid_price_ts(0.2, 10)
-        self.assertEqual (0.2, price[8])
+        price = self.mgen._get_grid_price_ts(10, price=0.2)
+        self.assertTrue(all([p == 0.2 for p in price]))
 
     def test_get_grid(self):
         grid = self.mgen._get_grid()
