@@ -9,6 +9,7 @@ Gonzague Henri
 """
 
 import os, sys
+import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 from src.pymgrid.MicrogridGenerator import MicrogridGenerator
@@ -20,6 +21,15 @@ class TestMicrogrid(unittest.TestCase):
     def setUp(self):
         mgen = MicrogridGenerator()
         self.mg = mgen._create_microgrid()
+
+    @staticmethod
+    def random_control():
+        return dict(pv_consummed=np.random.rand(),
+                    battery_charge=np.random.rand(),
+                    battery_discharge=np.random.rand(),
+                    grid_import=np.random.rand(),
+                    grid_export=np.random.rand()
+                    )
 
     def test_set_horizon(self):
         self.mg.set_horizon(25)
@@ -53,8 +63,7 @@ class TestMicrogrid(unittest.TestCase):
 
     def test_run(self):
         pv1 = self.mg.forecast_pv()[1]
-        control={}
-        self.mg.run(control)
+        self.mg.run(self.random_control())
         pv2 =  self.mg.pv
 
         self.assertEqual(pv1, pv2)
@@ -66,8 +75,7 @@ class TestMicrogrid(unittest.TestCase):
         self.assertEqual('training',self.mg._data_set_to_use)
 
     def test_reset(self):
-        control = {}
-        self.mg.run(control)
+        self.mg.run(self.random_control())
         self.mg.reset()
 
         self.assertEqual (0, self.mg._tracking_timestep)
