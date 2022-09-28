@@ -27,8 +27,8 @@ class TestMicrogrid(unittest.TestCase):
 
 
     def test_get_updated_values(self):
-        mg_data = self.mg.get_updates_values()
-        self.assertEqual(0, self.mg_data['pv'].iloc[0])
+        mg_data = self.mg.get_updated_values()
+        self.assertEqual(0, mg_data['pv'])
 
     def test_forecast_all(self):
         self.mg.set_horizon(24)
