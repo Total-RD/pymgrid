@@ -26,10 +26,14 @@ class TestMicogridGenerator(unittest.TestCase):
         self.mgen = MicrogridGenerator()
 
     def test_get_random_file(self):
-        path = os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]
-        path = path+'/data/pv/'
-        self.mgen._get_random_file(path)
-        self.assertEqual(pd.columns,'Data')
+        import inspect, pymgrid
+        from pathlib import Path
+
+        path = Path(inspect.getfile(pymgrid)).parent
+        path = path / 'data/pv'
+        data = self.mgen._get_random_file(path)
+
+        self.assertEqual(len(data), 8760)
 
     def test_scale_ts(self):
         ts =pd.DataFrame( [i for i in range(10)])
