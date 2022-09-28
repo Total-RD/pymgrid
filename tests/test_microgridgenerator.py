@@ -20,7 +20,7 @@ from src.pymgrid.MicrogridGenerator import MicrogridGenerator
 import unittest
 
 
-class TesttMicogridGenerator(unittest.TestCase):
+class TestMicogridGenerator(unittest.TestCase):
 
     def setUp(self):
         self.mgen = MicrogridGenerator()
