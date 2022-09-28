@@ -10,7 +10,7 @@ from pymgrid.utils.DataGenerator import return_underlying_data
 from scipy.sparse import csr_matrix
 
 
-class NonModularModelPredictiveControl:
+class ModelPredictiveControl:
 
     """
     A class to run Model Predictive Control using the model outlined in the pymgrid paper
