@@ -129,19 +129,12 @@ class MicrogridGenerator:
     ###########################################
     def _get_random_file(self, path):
         """ Based on a path, and a folder containing data files, return a file chosen randomly."""
-
-        onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
-        #todo check for files name in a cleanedr way
-        onlyfiles.remove('__init__.py')
-        if '.DS_Store'  in onlyfiles:
-            onlyfiles.remove('.DS_Store')
-
-        file = pd.read_csv(path + onlyfiles[np.random.randint(low=0, high=len(onlyfiles))])
-
-        # get number of files in our database
-        # generate a random integer to select the files
-        # Resample the file if needed
-        return file
+        from pathlib import Path
+        _path = Path(path)
+        data_files = list(_path.glob("*.csv"))
+        if not len(data_files):
+            raise NameError(f"Unable to find csv data files in {path}")
+        return pd.read_csv(np.random.choice(data_files))
 
     def _scale_ts(self, df_ts, size, scaling_method='sum'):
         """ Scales a time series based on either the sum or the maximum of the time series."""
@@ -246,7 +239,6 @@ class MicrogridGenerator:
         """ This functions is used to generate time series of import and export prices."""
         if tou == 0  and rt ==0:
             price_ts = [price for i in range(nb_time_step_per_year)]
-
 
         return price_ts
 
