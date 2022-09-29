@@ -384,8 +384,7 @@ class MicrogridGenerator:
     def _size_battery(self, load):
         """ Function that returns the capacity of the battery, equivalent to 3 to 5 hours of mean load. """
         #energy duration
-        battery = int(np.ceil(np.random.randint(low=3,high=6)*np.mean(load.values)))
-        #todo duration & power
+        battery = int(np.ceil(np.random.randint(low=3,high=6)*np.mean(load).item()))
         return battery
 
 
