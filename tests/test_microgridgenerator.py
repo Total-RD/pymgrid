@@ -63,7 +63,7 @@ class TestMicogridGenerator(unittest.TestCase):
         ts = pd.DataFrame([i for i in range(10)])
         mg = self.mgen._size_mg(ts, 10)
 
-        self.assertEqual(20, mg['grid'])
+        self.assertEqual(18, mg['grid'])
 
     def test_size_genset(self):
         self.assertEqual(int(np.ceil(10/0.9)), self.mgen._size_genset([10, 10, 10]))
