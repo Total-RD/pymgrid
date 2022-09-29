@@ -10,6 +10,7 @@ Gonzague Henri
 
 import numpy as np
 import pandas as pd
+from numpy.testing import assert_allclose
 
 
 import os, sys
@@ -36,8 +37,10 @@ class TestMicogridGenerator(unittest.TestCase):
         self.assertEqual(len(data), 8760)
 
     def test_scale_ts(self):
-        ts =pd.DataFrame( [i for i in range(10)])
-        self.assertEqual(ts.sum()*4,self.mgen._scale_ts(ts, 4).sum() )
+        ts = pd.DataFrame( [i for i in range(10)])
+        factor = 4
+        scaled = self.mgen._scale_ts(ts, factor)
+        assert_allclose(ts/ts.sum()*factor, scaled)
 
     def test_get_genset(self):
         genset = self.mgen._get_genset()
