@@ -376,7 +376,7 @@ class MicrogridGenerator:
         #random number > 3 < 20
         # polynomial for fuel consumption
 
-        _size_genset = int(np.ceil(np.max(load.values)/max_operating_loading))
+        _size_genset = int(np.ceil(np.max(load)/max_operating_loading))
 
         return _size_genset
 
