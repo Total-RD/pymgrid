@@ -10,36 +10,37 @@ Gonzague Henri
 
 import numpy as np
 import pandas as pd
+from numpy.testing import assert_allclose
 
 
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from src.pymgrid import MicrogridGenerator
+from src.pymgrid.MicrogridGenerator import MicrogridGenerator
 
 import unittest
 
 
-class TesttMicogridGenerator(unittest.TestCase):
+class TestMicogridGenerator(unittest.TestCase):
 
     def setUp(self):
         self.mgen = MicrogridGenerator()
 
     def test_get_random_file(self):
-        path = os.path.split(os.path.dirname(sys.modules['pymgrid'].__file__))[0]
-        path = path+'/data/pv/'
-        self.mgen._get_random_file(path)
-        self.assertEqual(pd.columns,'Data')
+        import inspect, pymgrid
+        from pathlib import Path
+
+        path = Path(inspect.getfile(pymgrid)).parent
+        path = path / 'data/pv'
+        data = self.mgen._get_random_file(path)
+
+        self.assertEqual(len(data), 8760)
 
     def test_scale_ts(self):
-        ts =pd.DataFrame( [i for i in range(10)])
-        self.assertEqual(ts.sum()*4,mgen._scale_ts(ts, 4).sum() )
-
-    def test_resize_timeseries(self):
-        np.test()
-        ts = pd.DataFrame([i for i in range(10)])
-        self.assertEqual (ts.shape[0] * 4, self.mgen._resize_timeseries(ts,1, 0.25).shape[0])
-
+        ts = pd.DataFrame( [i for i in range(10)])
+        factor = 4
+        scaled = self.mgen._scale_ts(ts, factor)
+        assert_allclose(ts/ts.sum()*factor, scaled)
 
     def test_get_genset(self):
         genset = self.mgen._get_genset()
@@ -48,34 +49,32 @@ class TesttMicogridGenerator(unittest.TestCase):
 
     def test_get_battery(self):
         battery = self.mgen._get_battery()
-        self.assertEqual (1000, battery['capacity'])
+        self.assertEqual (1000, battery['capa'])
 
     def test_get_grid_price_ts(self):
-        price = self.mgen._get_grid_price_ts(0.2, 10)
-        self.assertEqual (0.2, price[8])
+        price = self.mgen._get_grid_price_ts(10, price=0.2)
+        self.assertTrue(all([p == 0.2 for p in price]))
 
     def test_get_grid(self):
-        grid = self.mgen.MicrogridGenerator()
+        grid = self.mgen._get_grid()
         self.assertEqual(1000, grid['grid_power_import'])
-
-    def test_generate_weak_grid_profile(self):
-        outage = self.mgen._generate_weak_grid_profile(1,24,10)
-        self.assertEqual(0, outage.iloc[0,0])
 
     def test_size_mg(self):
         ts = pd.DataFrame([i for i in range(10)])
         mg = self.mgen._size_mg(ts, 10)
 
-        self.assertEqual(20, mg['grid'])
+        self.assertEqual(18, mg['grid'])
 
     def test_size_genset(self):
-        self.assertEqual (10/0.9, self.mgen._size_genset([10, 10, 10]))
+        self.assertEqual(int(np.ceil(10/0.9)), self.mgen._size_genset([10, 10, 10]))
 
     def test_size_battery(self):
-        self.assertEqual(40, self.mgen._size_battery([10, 10, 10]))
+        size = self.mgen._size_battery([10, 10, 10])
+        self.assertLessEqual(30, size)
+        self.assertGreaterEqual(50, size)
 
     def test_generate_microgrid(self):
-        microgrids = self.mgen.generate_microgrid()
+        microgrids = self.mgen.generate_microgrid().microgrids
 
         self.assertEqual (self.mgen.nb_microgrids, len(microgrids))
 

@@ -129,19 +129,12 @@ class MicrogridGenerator:
     ###########################################
     def _get_random_file(self, path):
         """ Based on a path, and a folder containing data files, return a file chosen randomly."""
-
-        onlyfiles = [f for f in listdir(path) if isfile(join(path, f))]
-        #todo check for files name in a cleanedr way
-        onlyfiles.remove('__init__.py')
-        if '.DS_Store'  in onlyfiles:
-            onlyfiles.remove('.DS_Store')
-
-        file = pd.read_csv(path + onlyfiles[np.random.randint(low=0, high=len(onlyfiles))])
-
-        # get number of files in our database
-        # generate a random integer to select the files
-        # Resample the file if needed
-        return file
+        from pathlib import Path
+        _path = Path(path)
+        data_files = list(_path.glob("*.csv"))
+        if not len(data_files):
+            raise NameError(f"Unable to find csv data files in {path}")
+        return pd.read_csv(np.random.choice(data_files))
 
     def _scale_ts(self, df_ts, size, scaling_method='sum'):
         """ Scales a time series based on either the sum or the maximum of the time series."""
@@ -156,13 +149,23 @@ class MicrogridGenerator:
 
         return df_ts
 
-    def _resize_timeseries(self, timeserie, current_time_step, new_time_step):
+    def _resize_timeseries(self, timeseries, current_time_step, new_time_step):
         """ Change the frequency of a time series. """
 
         index = pd.date_range('1/1/2015 00:00:00', freq=str(int(current_time_step * 60)) + 'Min',
-                              periods=(len(timeserie)))  # , freq='0.9S')
+                              periods=(len(timeseries)))  # , freq='0.9S')
 
-        unsampled = pd.Series(timeserie, index=index)
+        try:
+            timeseries = timeseries.squeeze()
+        except AttributeError:
+            pass
+
+        try:
+            timeseries = timeseries.values
+        except AttributeError:
+            pass
+
+        unsampled = pd.Series(timeseries, index=index)
         resampled = unsampled.resample(rule=str(int(new_time_step * 60)) + 'Min').mean().interpolate(method='linear')
 
         return resampled.values
@@ -246,7 +249,6 @@ class MicrogridGenerator:
         """ This functions is used to generate time series of import and export prices."""
         if tou == 0  and rt ==0:
             price_ts = [price for i in range(nb_time_step_per_year)]
-
 
         return price_ts
 
@@ -374,7 +376,7 @@ class MicrogridGenerator:
         #random number > 3 < 20
         # polynomial for fuel consumption
 
-        _size_genset = int(np.ceil(np.max(load.values)/max_operating_loading))
+        _size_genset = int(np.ceil(np.max(load)/max_operating_loading))
 
         return _size_genset
 
@@ -382,8 +384,7 @@ class MicrogridGenerator:
     def _size_battery(self, load):
         """ Function that returns the capacity of the battery, equivalent to 3 to 5 hours of mean load. """
         #energy duration
-        battery = int(np.ceil(np.random.randint(low=3,high=6)*np.mean(load.values)))
-        #todo duration & power
+        battery = int(np.ceil(np.random.randint(low=3,high=6)*np.mean(load).item()))
         return battery
 
 
@@ -400,6 +401,8 @@ class MicrogridGenerator:
         
         if verbose == True:
             self.print_mg_parameters()
+
+        return self
 
 
     def load(self, scenario):
