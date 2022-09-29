@@ -66,7 +66,7 @@ class TestMicogridGenerator(unittest.TestCase):
         self.assertEqual(20, mg['grid'])
 
     def test_size_genset(self):
-        self.assertEqual (10/0.9, self.mgen._size_genset([10, 10, 10]))
+        self.assertEqual(int(np.ceil(10/0.9)), self.mgen._size_genset([10, 10, 10]))
 
     def test_size_battery(self):
         size = self.mgen._size_battery([10, 10, 10])
