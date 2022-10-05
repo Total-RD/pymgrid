@@ -1,6 +1,6 @@
 # pymgrid
 
-![Build](https://github.com/Total-RD/pymgrid/workflows/Build/badge.svg)
+![Build](https://github.com/Total-RD/pymgrid/workflows/build/badge.svg)
 
 pymgrid (PYthon MicroGRID) is a python library to generate and simulate a large number of microgrids.
 
