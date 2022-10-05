@@ -1,4 +1,5 @@
 import numpy as np
+
 from tests.helpers.genset_module_testing_utils import default_params, get_genset, normalize_production
 from tests.helpers.test_case import TestCase
 
@@ -94,7 +95,8 @@ class TestGensetModule(TestCase):
 
         unnormalized_production = 0
         action = np.array([0.0, normalize_production(unnormalized_production)])
-        # try:
+
+        self.assertTrue(genset.is_running)
 
         obs, reward, done, info = genset.step(action, normalized=True)
 
