@@ -4,8 +4,8 @@ from gym import Env
 from pymgrid.Microgrid import Microgrid
 from pymgrid.MicrogridGenerator import MicrogridGenerator
 from copy import deepcopy
-from pymgrid.algos.Control import SampleAverageApproximation, ModelPredictiveControl
-
+from pymgrid.algos.saa.saa import SampleAverageApproximation
+from pymgrid.algos.mpc.MPC import ModelPredictiveControl
 
 logger = logging.getLogger(__name__)
 LOG = False
