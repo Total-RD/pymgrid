@@ -52,8 +52,8 @@ class ModelPredictiveControl:
 
     """
     def __init__(self, microgrid):
-        self.horizon = microgrid.horizon
         self.microgrid, self.is_modular = self._verify_microgrid(microgrid)
+        self.horizon = self._get_horizon()
         if self.microgrid.architecture['genset']==1:
             self.has_genset = True
         else:
@@ -87,6 +87,12 @@ class ModelPredictiveControl:
                 return microgrid, True
             except Exception as e:
                 raise ValueError(f"Unable to verify microgrid as modular or nonmodular.") from e
+
+    def _get_horizon(self):
+        if self.is_modular:
+            return self.microgrid.get_forecast_horizon()
+        return self.microgrid.horizon
+
 
     def _parse_microgrid(self):
         """
