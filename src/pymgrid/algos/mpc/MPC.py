@@ -21,7 +21,7 @@ class ModelPredictiveControl:
 
     Attributes:
     --------------
-    microgrid: Microgrid.Microgrid
+    microgrid: Union[Microgrid.Microgrid, modular_microgrid.ModularMicrogrid]
         The underlying microgrid
 
     horizon: int
