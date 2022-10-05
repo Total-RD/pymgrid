@@ -92,15 +92,16 @@ class ModelPredictiveControl:
             try:
                 microgrid.to_nonmodular()
                 return microgrid, True
-            except Exception as e:
-                raise ValueError(f"Unable to verify microgrid as modular or nonmodular.") from e
+            except AttributeError as e:
+                raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
+            except Exception as e_2:
+                raise ValueError(f"Modular microgrid must be convertable to nonmodular. "
+                                 f"Is not due to:\n{type(e_2)}: {e_2}") from e_2
 
     def _get_horizon(self):
         if self.is_modular:
             return self.microgrid.get_forecast_horizon()
         return self.microgrid.horizon
-
-
 
     def _parse_microgrid(self):
         """
