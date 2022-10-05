@@ -2,6 +2,7 @@ from tests.helpers.genset_module_testing_utils import get_genset, normalize_prod
 from tests.helpers.test_case import TestCase
 import numpy as np
 from copy import deepcopy
+from itertools import product
 
 
 class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
@@ -211,3 +212,52 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(genset.current_obs, np.array([0, 0, 2, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
+
+
+class TestManyStatusChanges(TestCase):
+
+    def test_many_status_changes(self):
+
+        n_steps = 5
+
+        def next_status(genset, goal_status):
+            if goal_status:
+                if genset._running:
+                    return 1
+                elif genset._steps_until_up == 0:
+                    return 1
+                else:
+                    return 0
+            else:
+                if not genset._running:
+                    return 0
+                elif genset._steps_until_down == 0:
+                    return 0
+                else:
+                    return 1
+
+        for _running in True, False:
+            for start_up_time in range(0, n_steps):
+                for wind_down_time in range(0, n_steps):
+                    for goal_status in 0, 1:
+
+                        intermediate_goal_statuses = product([0, 1], repeat=n_steps - 1)
+
+                        for steps in intermediate_goal_statuses:
+                            genset, _ = get_genset(init_start_up=_running,
+                                                   start_up_time=start_up_time,
+                                                   wind_down_time=wind_down_time)
+
+                            _s = (goal_status, *steps)
+                            for j, sub_goal_status in enumerate(_s):
+                                with self.subTest(_running=_running,
+                                                  _steps_until_up=start_up_time,
+                                                  _steps_until_down=wind_down_time,
+                                                  goal_status=goal_status,
+                                                  step_combination=_s,
+                                                  step=j,
+                                                  goal_status_at_step=sub_goal_status):
+                                    predicted_status = next_status(genset, sub_goal_status)
+                                    genset.update_status(goal_status=sub_goal_status)
+                                    self.assertEqual(predicted_status, genset.is_running)
+

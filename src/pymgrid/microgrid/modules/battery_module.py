@@ -13,6 +13,7 @@ class BatteryModule(BaseMicrogridModule):
                  max_discharge,
                  efficiency,
                  battery_cost_cycle=0.0,
+                 battery_transition_model=None,
                  init_charge=None,
                  init_soc=None,
                  raise_errors=False):
@@ -22,6 +23,7 @@ class BatteryModule(BaseMicrogridModule):
         self.max_charge = max_charge            # Maximum charge in one step
         self.max_discharge = max_discharge      # Maximum discharge in one step.
         self.efficiency = efficiency
+        self.battery_transition_model = battery_transition_model
         self.battery_cost_cycle = battery_cost_cycle
 
         self.min_soc, self.max_soc = min_capacity/max_capacity, 1
@@ -47,11 +49,11 @@ class BatteryModule(BaseMicrogridModule):
 
         if as_source:
             info_key = 'provided_energy'
-            internal_energy_change = -1.0 * external_energy_change / self.efficiency
+            internal_energy_change = self.model_transition(-1.0 * external_energy_change)
             assert internal_energy_change <= 0
         else:
             info_key = 'absorbed_energy'
-            internal_energy_change = external_energy_change*self.efficiency
+            internal_energy_change = self.model_transition(external_energy_change)
             assert internal_energy_change >= 0
 
         self._update_state(internal_energy_change)
@@ -68,6 +70,36 @@ class BatteryModule(BaseMicrogridModule):
 
     def get_cost(self, energy_change):
         return np.abs(energy_change)*self.battery_cost_cycle
+
+    def model_transition(self, energy):
+        if self.battery_transition_model is None:
+            return self.default_transition_model(energy, **self.transition_kwargs())
+        return self.battery_transition_model(energy, **self.transition_kwargs())
+
+    def transition_kwargs(self):
+        return dict(max_capacity=self.max_capacity,
+                    min_capacity=self.min_capacity,
+                    max_charge=self.max_charge,
+                    max_discharge=self.max_discharge,
+                    efficiency=self.efficiency,
+                    battery_cost_cycle=self.battery_cost_cycle,
+                    max_production=self.max_production,
+                    max_consumption=self.max_consumption,
+                    state_dict=self.state_dict
+                    )
+
+    @staticmethod
+    def default_transition_model(energy, efficiency, **transition_kwargs):
+        """
+        :param energy: float.
+            If >0, it is energy that is absorbed by the battery, i.e. charging.
+            If <0, it is energy provided by the battery, i.e. discharging.
+        :return: internal_energy_change
+        """
+        if energy < 0:
+            return energy / efficiency
+        else:
+            return energy * efficiency
 
     @property
     def state_dict(self):

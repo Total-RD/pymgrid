@@ -119,41 +119,41 @@ class GensetModule(BaseMicrogridModule):
             assert self._steps_until_down == 0 or self._steps_until_up == 0
             return
 
-        self._finish_in_progress_change()
+        instant_up = self.start_up_time == 0 and goal_status == 1
+        instant_down = self.wind_down_time == 0 and goal_status == 0
+        if goal_status != self._status_goal and (self.allow_abortion or instant_up or instant_down):
+            self._status_goal = goal_status
 
-        # Instantaneous changes
-        if self.start_up_time == 0 and goal_status == 1:
-            self._instant_up()
-        elif self.wind_down_time == 0 and goal_status == 0:
-            self._instant_down()
-        else:
+        finished_change = self._finish_in_progress_change()
+
+        if not finished_change:
             self._non_instantaneous_update(goal_status)
 
-        assert self._running == next_prediction, 'This is to check is self.next_status works. If raised, it doesn\'t.'
+        if not self._running == next_prediction:
+            raise ValueError('This is to check is self.next_status works. If raised, it doesn\'t.')
 
     def _finish_in_progress_change(self):
         if self._steps_until_up == 0 and self._status_goal == 1:
             self._running = True
             self._reset_up_down_times()
+            return True
         elif self._steps_until_down == 0 and self._status_goal == 0:
             self._running = False
             self._reset_up_down_times()
+            return True
+        return False
 
     def _instant_up(self):
-        goal_status = 1
-        self._status_goal = goal_status
-        if self._running:
-            self._update_up_down_times()
-        else:
+        self._status_goal = 1
+
+        if not self._running:
             self._running = True
             self._reset_up_down_times()
 
     def _instant_down(self):
-        goal_status = 0
-        self._status_goal = goal_status
-        if not self._running:
-            self._update_up_down_times()
-        else:
+        self._status_goal = 0
+
+        if self._running:
             self._running = False
             self._reset_up_down_times()
 
@@ -185,9 +185,9 @@ class GensetModule(BaseMicrogridModule):
             super()._raise_error(ask_value, available_value, as_source=as_source, as_sink=as_sink, lower_bound=lower_bound)
         except ValueError as e:
             if not self._running:
-                raise ValueError(f'{e}\n This may be because this genset module is not currently running.')
+                raise ValueError(f'{e}\n This may be because this genset module is not currently running.') from e
             else:
-                raise ValueError(f'{e}\n This is despite the fact this genset module is currently running.')
+                raise ValueError(f'{e}\n This is despite the fact this genset module is currently running.') from e
 
     def next_status(self, goal_status):
         if goal_status:
