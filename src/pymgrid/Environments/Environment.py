@@ -21,7 +21,7 @@ import gym
 from gym.utils import seeding
 from gym.spaces import Space, Discrete, Box
 from . import Preprocessing
-from pymgrid.algos.Control import SampleAverageApproximation
+from pymgrid.algos.saa.saa import SampleAverageApproximation
 
 DEFAULT_CONFIG={
     'microgrid': None, #need to be passed by user
