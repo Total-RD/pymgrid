@@ -52,8 +52,8 @@ class ModelPredictiveControl:
 
     """
     def __init__(self, microgrid):
-        self.microgrid = microgrid
         self.horizon = microgrid.horizon
+        self.microgrid, self.is_modular = self._verify_microgrid(microgrid)
         if self.microgrid.architecture['genset']==1:
             self.has_genset = True
         else:
@@ -76,6 +76,17 @@ class ModelPredictiveControl:
         parameters = self._parse_microgrid()
 
         self.problem = self._create_problem(*parameters)
+
+    def _verify_microgrid(self, microgrid):
+        try:
+            microgrid.to_modular()
+            return microgrid, False
+        except AttributeError:
+            try:
+                microgrid.to_nonmodular()
+                return microgrid, True
+            except Exception as e:
+                raise ValueError(f"Unable to verify microgrid as modular or nonmodular.") from e
 
     def _parse_microgrid(self):
         """
