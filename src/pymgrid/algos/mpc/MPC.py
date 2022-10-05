@@ -54,10 +54,6 @@ class ModelPredictiveControl:
     def __init__(self, microgrid):
         self.microgrid, self.is_modular = self._verify_microgrid(microgrid)
         self.horizon = self._get_horizon()
-        if self.microgrid.architecture['genset']==1:
-            self.has_genset = True
-        else:
-            self.has_genset = False
 
         if self.has_genset:
             self.p_vars = cp.Variable((8*self.horizon,), pos=True)
@@ -77,6 +73,17 @@ class ModelPredictiveControl:
 
         self.problem = self._create_problem(*parameters)
 
+    @property
+    def has_genset(self):
+        if self.is_modular:
+            try:
+                _ = self.microgrid.genset
+                return True
+            except AttributeError:
+                return False
+        else:
+            return self.microgrid.architecture["genset"] == 1
+
     def _verify_microgrid(self, microgrid):
         try:
             microgrid.to_modular()
@@ -92,6 +99,7 @@ class ModelPredictiveControl:
         if self.is_modular:
             return self.microgrid.get_forecast_horizon()
         return self.microgrid.horizon
+
 
 
     def _parse_microgrid(self):
