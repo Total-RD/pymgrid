@@ -123,7 +123,12 @@ class ModelPredictiveControl:
             p_genset_max: float
                 maximum production of the genset
         """
+        if self.is_modular:
+            return self._parse_modular_microgrid()
+        else:
+            return self._parse_nonmodular_microgrid()
 
+    def _parse_nonmodular_microgrid(self):
         parameters = self.microgrid.parameters
 
         eta = parameters['battery_efficiency'].values[0]
@@ -149,6 +154,39 @@ class ModelPredictiveControl:
             genset_co2 = 0
 
         return eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load, p_genset_min, p_genset_max, cost_co2, genset_co2
+
+    def _parse_modular_microgrid(self):
+        battery = self.microgrid.battery.item()
+
+        eta = battery.efficiency
+        battery_capacity = battery.capacity
+        cost_battery_cycle = battery.cost_cycle
+
+        cost_loss_load = self.microgrid.load.item().loss_load_cost
+
+        if self.has_genset:
+            genset = self.microgrid.genset.item()
+            fuel_cost = genset.fuel_cost_per_unit
+            p_genset_min = genset.p_min
+            p_genset_max = genset.p_max
+            cost_co2 = genset.cost_per_unit_co2
+            genset_co2 = genset.co2_per_unit
+
+        else:
+            fuel_cost, p_genset_min, p_genset_max, cost_co2, genset_co2 = 0, 0, 0, 0, 0
+
+        return (
+            eta,
+            battery_capacity,
+            fuel_cost,
+            cost_battery_cycle,
+            cost_loss_load,
+            p_genset_min,
+            p_genset_max,
+            cost_co2,
+            genset_co2
+        )
+
 
     def _create_problem(self, eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load,
                         p_genset_min, p_genset_max, cost_co2, genset_co2):
