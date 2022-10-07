@@ -72,7 +72,7 @@ class ModularMicrogrid:
 
 
     def reset(self):
-        return {name: [module.reset() for module in module_list] for name, module_list in self.flat_modules.items()}
+        return {name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()}
 
     def run(self, control, normalized=True):
         """
