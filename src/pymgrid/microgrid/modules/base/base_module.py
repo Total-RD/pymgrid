@@ -6,7 +6,7 @@ from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
 
 
-class BaseMicrogridModule:
+class BaseMicrogridModule(ABC):
     """
     Base class for all microgrid _modules.
     All values passed to step(self) that result in non-negative
@@ -271,21 +271,25 @@ class BaseMicrogridModule:
         return self._obs_normalizer
 
     @property
+    @abstractmethod
     def min_obs(self):
         raise NotImplementedError('Must define min_obs (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
+    @abstractmethod
     def max_obs(self):
         raise NotImplementedError('Must define max_obs (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
+    @abstractmethod
     def min_act(self):
         raise NotImplementedError('Must define min_act (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
+    @abstractmethod
     def max_act(self):
         raise NotImplementedError('Must define max_act (along with the other three bounds) '
                                   'before calling super().__init__().')
