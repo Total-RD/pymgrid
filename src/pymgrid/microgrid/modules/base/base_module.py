@@ -144,7 +144,8 @@ class BaseMicrogridModule(ABC):
         # Will be called when action is positive.
 
         assert energy_demand >= 0
-        assert self.is_source, f'step() was called with positive energy (source) for module {self} but module is not a source and' \
+        assert self.is_source, f'step() was called with positive energy (source) for module {self} but ' \
+                               f'module is not a source and ' \
                                f'can only be called with negative energy.'
 
         if energy_demand > self.max_production:
