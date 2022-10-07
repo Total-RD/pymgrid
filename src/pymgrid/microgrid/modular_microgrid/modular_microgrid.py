@@ -270,4 +270,6 @@ class ModularMicrogrid:
         try:
             return getattr(self._modules, item)
         except AttributeError:
-            raise AttributeError(f'ModularMicrogrid has no attribute {item}')
+            names = ", ".join([f'"{x}"' for x in self.modules.names()])
+            raise AttributeError(f'ModularMicrogrid has no attribute "{item}". '
+                                 f'Did you mean one of the modules {names}?')
