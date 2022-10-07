@@ -261,6 +261,20 @@ class ModularMicrogrid:
         from pymgrid.microgrid.convert.convert import to_nonmodular
         return to_nonmodular(self)
 
+    def __len__(self):
+        """
+        Length of available underlying data.
+        :return:
+        """
+        l = []
+        for module in self.modules.iterlist():
+            try:
+                l.append(len(module))
+            except TypeError:
+                pass
+
+        return min(l)
+
     def __repr__(self):
         module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]
         module_str = ', '.join(module_str)
