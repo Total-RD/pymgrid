@@ -17,6 +17,8 @@ class ModularLogger(UserDict):
     def log(self, **log_dict):
         for key, value in log_dict.items():
             try:
+                self[key].append(value.item())
+            except AttributeError:
                 self[key].append(value)
             except KeyError:
                 self[key] = [np.nan]*self._log_length
