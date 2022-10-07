@@ -89,6 +89,9 @@ class ModuleContainer(UserDict):
         for name, modules in self.module_dict().items():
             yield name, modules
 
+    def names(self):
+        return list(self._types_by_name.keys())
+
     def __getitem__(self, item):
         if item == 'data':
             raise KeyError
