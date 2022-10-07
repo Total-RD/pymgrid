@@ -1,4 +1,4 @@
-from collections import UserDict
+from collections import UserDict, UserList
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
@@ -191,7 +191,7 @@ def get_subcontainers(modules):
         try:
             d[source_sink_both][module_name].append(module)
         except KeyError:
-            d[source_sink_both][module_name] = [module]
+            d[source_sink_both][module_name] = ModuleList([module])
         module.name = (module_name, len(d[source_sink_both][module_name]) - 1)
 
     modules_dict = dict(fixed=fixed,
@@ -268,3 +268,8 @@ class _ModuleSubContainer(UserDict):
         return self.__getitem__(item)
 
 
+class ModuleList(UserList):
+    def item(self):
+        if len(self) != 1:
+            raise ValueError("Can only convert a ModuleList of length one to a scalar")
+        return self[0]
