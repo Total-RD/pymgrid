@@ -9,6 +9,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
                  max_import,
                  max_export,
                  time_series_cost_co2,
+                 forecaster=None,
+                 forecast_horizon=24,
+                 forecaster_increase_uncertainty=False,
                  cost_per_unit_co2=0,
                  raise_errors=False):
 
@@ -18,6 +21,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         self.name = ('grid', None)
         super().__init__(time_series_cost_co2,
                          raise_errors,
+                         forecaster=forecaster,
+                         forecast_horizon=forecast_horizon,
+                         forecaster_increase_uncertainty=forecaster_increase_uncertainty,
                          provided_energy_name='grid_import',
                          absorbed_energy_name='grid_export')
 
