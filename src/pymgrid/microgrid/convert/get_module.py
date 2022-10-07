@@ -24,13 +24,18 @@ def get_load_module(nonmodular, raise_errors):
     loss_load_cost = nonmodular.parameters['cost_loss_load'].item()
     return LoadModule(time_series=time_series,
                       loss_load_cost=loss_load_cost,
+                      forecaster='oracle',
+                      forecast_horizon=nonmodular.horizon,
                       raise_errors=raise_errors)
 
 
 def get_pv_module(nonmodular, raise_errors):
     time_series = nonmodular._pv_ts
     return RenewableModule(time_series=time_series,
-                           raise_errors=raise_errors)
+                           raise_errors=raise_errors,
+                           forecaster='oracle',
+                           forecast_horizon=nonmodular.horizon
+                           )
 
 
 def get_battery_module(nonmodular, raise_errors):
@@ -88,6 +93,8 @@ def get_grid_module(nonmodular, raise_errors):
                       max_export=max_export,
                       time_series_cost_co2=time_series_cost_co2,
                       cost_per_unit_co2=cost_per_unit_co2,
+                      forecaster='oracle',
+                      forecast_horizon=nonmodular.horizon,
                       raise_errors=raise_errors)
 
 

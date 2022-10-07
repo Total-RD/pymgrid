@@ -5,9 +5,17 @@ import numpy as np
 class LoadModule(BaseTimeSeriesMicrogridModule):
     module_type = ('load', 'fixed')
 
-    def __init__(self, time_series, loss_load_cost, raise_errors=False):
+    def __init__(self, time_series,
+                 loss_load_cost,
+                 forecaster=None,
+                 forecast_horizon=24,
+                 forecaster_increase_uncertainty=False,
+                 raise_errors=False):
         super().__init__(time_series,
                          raise_errors=raise_errors,
+                         forecaster=forecaster,
+                         forecast_horizon=forecast_horizon,
+                         forecaster_increase_uncertainty=forecaster_increase_uncertainty,
                          provided_energy_name=None,
                          absorbed_energy_name='load_met')
 

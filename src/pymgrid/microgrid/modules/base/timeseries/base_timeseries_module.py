@@ -17,7 +17,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
-        self.forecaster, self.forecast_horizon = get_forecaster(forecaster,
+        self.forecaster, self._forecast_horizon = get_forecaster(forecaster,
                                                                 forecast_horizon,
                                                                 self.time_series,
                                                                 increase_uncertainty=forecaster_increase_uncertainty)
@@ -47,10 +47,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         return _min, _max, _min, _max
 
     def forecast(self):
-        val_c_n = self.time_series[self.current_step:self.current_step+self.forecast_horizon, :]
-        return self.forecaster(val_c=self.time_series[self.current_step, :],
+        val_c_n = self.time_series[1+self.current_step:1+self.current_step+self.forecast_horizon, :]
+        factor = -1 if (self.is_sink and not self.is_source) else 1
+        forecast = self.forecaster(val_c=self.time_series[self.current_step, :],
                                val_c_n=val_c_n,
                                n=self.forecast_horizon)
+        return None if forecast is None else factor * forecast
 
     @property
     def current_obs(self):
@@ -66,11 +68,11 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
 
     @property
     def min_obs(self):
-        return self._min_obs
+        return np.array([self._min_obs]*(1+self._forecast_horizon))
 
     @property
     def max_obs(self):
-        return self._max_obs
+        return np.array([self._max_obs]*(1+self._forecast_horizon))
 
     @property
     def min_act(self):
@@ -81,6 +83,21 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         return self._max_act
 
     @property
+    def forecast_horizon(self):
+        return self._forecast_horizon
+
+    @forecast_horizon.setter
+    def forecast_horizon(self, value):
+        if self.forecaster is not None:
+            self._forecast_horizon = value
+        else:
+            from warnings import warn
+            from pymgrid.microgrid.modules.base.timeseries.forecaster import OracleForecaster
+            warn("Setting forecast_horizon requires a non-null forecaster. Implementing OracleForecaster.")
+            self.forecaster = OracleForecaster()
+            self._forecast_horizon = value
+
+    @property
     @abstractmethod
     def state_components(self):
         pass
@@ -89,7 +106,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
     def state_dict(self):
         forecast = self.forecast()
         state_dict = dict(zip(self.state_components + "_current", self.current_obs))
-        for j in range(1, self.forecast_horizon):
+        for j in range(0, self.forecast_horizon):
             state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[j, :])))
         return state_dict
 

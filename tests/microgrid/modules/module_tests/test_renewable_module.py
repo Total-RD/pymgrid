@@ -59,9 +59,9 @@ class TestRenewableModuleForecasting(TestCase):
         renewable_module = self.new_renewable_module()
         self.assertEqual(renewable_module.current_renewable, self.time_series[0])
         self.assertIsNotNone(renewable_module.forecast())
-        self.assertEqual(renewable_module.forecast(), self.time_series[:self.forecast_horizon].reshape((-1, 1)))
-        self.assertEqual(renewable_module.state, self.time_series[:self.forecast_horizon])
-        self.assertEqual(len(renewable_module.state_dict), self.forecast_horizon)
+        self.assertEqual(renewable_module.forecast(), self.time_series[1:1+self.forecast_horizon].reshape((-1, 1)))
+        self.assertEqual(renewable_module.state, self.time_series[:1+self.forecast_horizon])
+        self.assertEqual(len(renewable_module.state_dict), 1+self.forecast_horizon)
 
     def test_action_space(self):
         renewable_module = self.new_renewable_module()
@@ -76,8 +76,8 @@ class TestRenewableModuleForecasting(TestCase):
         normalized_obs_space = renewable_module.observation_spaces["normalized"]
         unnormalized_obs_space = renewable_module.observation_spaces["unnormalized"]
 
-        self.assertEqual(normalized_obs_space, Box(low=0, high=1, shape=(1,)))
-        self.assertEqual(unnormalized_obs_space, Box(low=0, high=self.time_series.max(), shape=(1,)))
+        self.assertEqual(normalized_obs_space, Box(low=0, high=1, shape=(1+renewable_module.forecast_horizon,)))
+        self.assertEqual(unnormalized_obs_space, Box(low=0, high=self.time_series.max(), shape=(1+renewable_module.forecast_horizon,)))
 
     def test_step(self):
         renewable_module = self.new_renewable_module()
@@ -87,7 +87,7 @@ class TestRenewableModuleForecasting(TestCase):
         action = renewable_module.to_normalized(unnormalized_action, act=True)
         obs, reward, done, info = renewable_module.step(action)
         obs = renewable_module.from_normalized(obs, obs=True)
-        self.assertEqual(obs, self.time_series[1:self.forecast_horizon+1])
+        self.assertEqual(obs, self.time_series[1:self.forecast_horizon+2])
         self.assertEqual(reward, 0)
         self.assertFalse(done)
         self.assertEqual(info["provided_energy"], unnormalized_action)
