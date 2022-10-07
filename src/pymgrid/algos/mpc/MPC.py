@@ -21,7 +21,7 @@ class ModelPredictiveControl:
 
     Attributes:
     --------------
-    microgrid: Microgrid.Microgrid
+    microgrid: Union[Microgrid.Microgrid, modular_microgrid.ModularMicrogrid]
         The underlying microgrid
 
     horizon: int
@@ -52,12 +52,8 @@ class ModelPredictiveControl:
 
     """
     def __init__(self, microgrid):
-        self.microgrid = microgrid
-        self.horizon = microgrid.horizon
-        if self.microgrid.architecture['genset']==1:
-            self.has_genset = True
-        else:
-            self.has_genset = False
+        self.microgrid, self.is_modular = self._verify_microgrid(microgrid)
+        self.horizon = self._get_horizon()
 
         if self.has_genset:
             self.p_vars = cp.Variable((8*self.horizon,), pos=True)
@@ -76,6 +72,36 @@ class ModelPredictiveControl:
         parameters = self._parse_microgrid()
 
         self.problem = self._create_problem(*parameters)
+
+    @property
+    def has_genset(self):
+        if self.is_modular:
+            try:
+                _ = self.microgrid.genset
+                return True
+            except AttributeError:
+                return False
+        else:
+            return self.microgrid.architecture["genset"] == 1
+
+    def _verify_microgrid(self, microgrid):
+        try:
+            microgrid.to_modular()
+            return microgrid, False
+        except AttributeError:
+            try:
+                microgrid.to_nonmodular()
+                return microgrid, True
+            except AttributeError as e:
+                raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
+            except Exception as e_2:
+                raise ValueError(f"Modular microgrid must be convertable to nonmodular. "
+                                 f"Is not due to:\n{type(e_2)}: {e_2}") from e_2
+
+    def _get_horizon(self):
+        if self.is_modular:
+            return self.microgrid.get_forecast_horizon()
+        return self.microgrid.horizon
 
     def _parse_microgrid(self):
         """
@@ -97,7 +123,12 @@ class ModelPredictiveControl:
             p_genset_max: float
                 maximum production of the genset
         """
+        if self.is_modular:
+            return self._parse_modular_microgrid()
+        else:
+            return self._parse_nonmodular_microgrid()
 
+    def _parse_nonmodular_microgrid(self):
         parameters = self.microgrid.parameters
 
         eta = parameters['battery_efficiency'].values[0]
@@ -123,6 +154,39 @@ class ModelPredictiveControl:
             genset_co2 = 0
 
         return eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load, p_genset_min, p_genset_max, cost_co2, genset_co2
+
+    def _parse_modular_microgrid(self):
+        battery = self.microgrid.battery.item()
+
+        eta = battery.efficiency
+        battery_capacity = battery.capacity
+        cost_battery_cycle = battery.cost_cycle
+
+        cost_loss_load = self.microgrid.load.item().loss_load_cost
+
+        if self.has_genset:
+            genset = self.microgrid.genset.item()
+            fuel_cost = genset.fuel_cost_per_unit
+            p_genset_min = genset.p_min
+            p_genset_max = genset.p_max
+            cost_co2 = genset.cost_per_unit_co2
+            genset_co2 = genset.co2_per_unit
+
+        else:
+            fuel_cost, p_genset_min, p_genset_max, cost_co2, genset_co2 = 0, 0, 0, 0, 0
+
+        return (
+            eta,
+            battery_capacity,
+            fuel_cost,
+            cost_battery_cycle,
+            cost_loss_load,
+            p_genset_min,
+            p_genset_max,
+            cost_co2,
+            genset_co2
+        )
+
 
     def _create_problem(self, eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load,
                         p_genset_min, p_genset_max, cost_co2, genset_co2):
