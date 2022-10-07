@@ -8,6 +8,8 @@ from pymgrid.microgrid.modules.module_container import ModuleContainer
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
 
+DEFAULT_HORIZON = 24
+
 
 class ModularMicrogrid:
     def __init__(self,
@@ -209,6 +211,22 @@ class ModularMicrogrid:
         if as_frame:
             return pd.DataFrame(_log_dict)
         return _log_dict
+
+    def get_forecast_horizon(self):
+        horizons = []
+        for module in self.iterlist():
+            try:
+                horizons.append(module.forecast_horizon)
+            except AttributeError:
+                pass
+
+        if len(horizons) == 0:
+            warn(f"No forecast horizon found in microgrid.modules. Using default horizon {DEFAULT_HORIZON}")
+            return DEFAULT_HORIZON
+        elif not np.min(horizons) == np.max(horizons):
+                raise ValueError(f"Mismatched forecast_horizons found: {horizons}")
+
+        return horizons[0]
 
     @property
     def modules(self):
