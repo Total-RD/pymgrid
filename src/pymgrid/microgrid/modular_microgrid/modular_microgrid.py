@@ -196,7 +196,7 @@ class ModularMicrogrid:
                     _log_dict[(name, j, key)] = value
 
         for key, value in self._balance_logger.to_dict().items():
-            _log_dict[('balance', 1, key)] = value
+            _log_dict[('balance', 0, key)] = value
 
         if hasattr(self, 'log_dict'):
             for key, value in self.log_dict.items():
