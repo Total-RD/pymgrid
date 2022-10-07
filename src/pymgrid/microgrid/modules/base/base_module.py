@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from gym.spaces import Box
+
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
-from gym.spaces import Box
 
 
 class BaseMicrogridModule:
