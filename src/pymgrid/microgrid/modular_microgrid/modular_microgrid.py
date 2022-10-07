@@ -81,17 +81,19 @@ class ModularMicrogrid:
         :param control: dict. keys are names of all fixed _modules
         :return:
         """
-        control = control.copy()
+        control_copy = control.copy()
         microgrid_step = MicrogridStep()
 
         for name, modules in self.fixed.iterdict():
             try:
-                try:
-                    _zip = zip(modules, control.pop(name))
-                except TypeError:
-                    _zip = zip(modules, [control.pop(name)])
+                module_controls = control_copy.pop(name)
             except KeyError:
-                raise ValueError(f'Control for module {name} not found.')
+                raise ValueError(f'Control for module "{name}" not found. Available controls:\n\t{control.keys()}')
+            else:
+                try:
+                    _zip = zip(modules, module_controls)
+                except TypeError:
+                    _zip = zip(modules, [module_controls])
 
             for module, _control in _zip:
                 module_step = module.step(_control, normalized=normalized) # obs, reward, done, info.
@@ -102,8 +104,8 @@ class ModularMicrogrid:
                                                         # otherwise, insufficient. Use flex sources to make up
         log_dict = self._get_log_dict(provided, consumed, prefix='fixed')
 
-        if len(control) > 0:
-            warn(f'\nIgnoring the following keys in passed control:\n {list(control.keys())}')
+        if len(control_copy) > 0:
+            warn(f'\nIgnoring the following keys in passed control:\n {list(control_copy.keys())}')
 
         if difference > 0:
             energy_excess = difference
