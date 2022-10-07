@@ -17,7 +17,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
-        self.forecaster, self.forecast_horizon = get_forecaster(forecaster,
+        self.forecaster, self._forecast_horizon = get_forecaster(forecaster,
                                                                 forecast_horizon,
                                                                 self.time_series,
                                                                 increase_uncertainty=forecaster_increase_uncertainty)
@@ -79,6 +79,21 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
     @property
     def max_act(self):
         return self._max_act
+
+    @property
+    def forecast_horizon(self):
+        return self._forecast_horizon
+
+    @forecast_horizon.setter
+    def forecast_horizon(self, value):
+        if self.forecaster is not None:
+            self._forecast_horizon = value
+        else:
+            from warnings import warn
+            from pymgrid.microgrid.modules.base.timeseries.forecaster import OracleForecaster
+            warn("Setting forecast_horizon requires a non-null forecaster. Implementing OracleForecaster.")
+            self.forecaster = OracleForecaster()
+            self._forecast_horizon = value
 
     @property
     @abstractmethod
