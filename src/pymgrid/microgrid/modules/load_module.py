@@ -42,7 +42,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         loss_load = self.current_load - load_met
         loss_load_cost = -1.0 * loss_load * self.loss_load_cost
         assert loss_load >= 0
-        return loss_load, loss_load_cost
+        return loss_load.item(), loss_load_cost.item()
 
     @property
     def state_components(self):
