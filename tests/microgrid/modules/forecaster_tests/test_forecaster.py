@@ -213,7 +213,7 @@ class TestGetForecaster(TestCase):
         self.forecaster_horizon = 24
 
     def test_user_defined_forecaster(self):
-        user_defined_forecaster = OracleForecaster()
+        user_defined_forecaster = lambda val_c, val_c_n, n: val_c_n
         forecaster, forecaster_horizon = get_forecaster(user_defined_forecaster, self.forecaster_horizon, self.simple_time_series)
         self.assertIsInstance(forecaster, UserDefinedForecaster)
         self.assertEqual(forecaster_horizon, self.forecaster_horizon)
