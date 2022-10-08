@@ -28,7 +28,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
         except IndexError:
             done = True
 
-        info = {'provided_energy': external_energy_change, 'curtailment': self.current_renewable-external_energy_change}
+        info = {'provided_energy': external_energy_change, 'curtailment': self.current_renewable.item()-external_energy_change}
 
         return 0.0, done, info
 

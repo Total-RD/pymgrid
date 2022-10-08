@@ -110,3 +110,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
             state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[j, :])))
         return state_dict
 
+    def __len__(self):
+        return self._time_series.shape[0]
+

@@ -8,6 +8,8 @@ from pymgrid.microgrid.modules.module_container import ModuleContainer
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
 
+DEFAULT_HORIZON = 24
+
 
 class ModularMicrogrid:
     def __init__(self,
@@ -72,7 +74,7 @@ class ModularMicrogrid:
 
 
     def reset(self):
-        return {name: [module.reset() for module in module_list] for name, module_list in self.flat_modules.items()}
+        return {name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()}
 
     def run(self, control, normalized=True):
         """
@@ -81,17 +83,19 @@ class ModularMicrogrid:
         :param control: dict. keys are names of all fixed _modules
         :return:
         """
-        control = control.copy()
+        control_copy = control.copy()
         microgrid_step = MicrogridStep()
 
         for name, modules in self.fixed.iterdict():
             try:
-                try:
-                    _zip = zip(modules, control.pop(name))
-                except TypeError:
-                    _zip = zip(modules, [control.pop(name)])
+                module_controls = control_copy.pop(name)
             except KeyError:
-                raise ValueError(f'Control for module {name} not found.')
+                raise ValueError(f'Control for module "{name}" not found. Available controls:\n\t{control.keys()}')
+            else:
+                try:
+                    _zip = zip(modules, module_controls)
+                except TypeError:
+                    _zip = zip(modules, [module_controls])
 
             for module, _control in _zip:
                 module_step = module.step(_control, normalized=normalized) # obs, reward, done, info.
@@ -102,8 +106,8 @@ class ModularMicrogrid:
                                                         # otherwise, insufficient. Use flex sources to make up
         log_dict = self._get_log_dict(provided, consumed, prefix='fixed')
 
-        if len(control) > 0:
-            warn(f'\nIgnoring the following keys in passed control:\n {list(control.keys())}')
+        if len(control_copy) > 0:
+            warn(f'\nIgnoring the following keys in passed control:\n {list(control_copy.keys())}')
 
         if difference > 0:
             energy_excess = difference
@@ -192,7 +196,7 @@ class ModularMicrogrid:
                     _log_dict[(name, j, key)] = value
 
         for key, value in self._balance_logger.to_dict().items():
-            _log_dict[('balance', 1, key)] = value
+            _log_dict[('balance', 0, key)] = value
 
         if hasattr(self, 'log_dict'):
             for key, value in self.log_dict.items():
@@ -207,6 +211,22 @@ class ModularMicrogrid:
         if as_frame:
             return pd.DataFrame(_log_dict)
         return _log_dict
+
+    def get_forecast_horizon(self):
+        horizons = []
+        for module in self.iterlist():
+            try:
+                horizons.append(module.forecast_horizon)
+            except AttributeError:
+                pass
+
+        if len(horizons) == 0:
+            warn(f"No forecast horizon found in microgrid.modules. Using default horizon {DEFAULT_HORIZON}")
+            return DEFAULT_HORIZON
+        elif not np.min(horizons) == np.max(horizons):
+                raise ValueError(f"Mismatched forecast_horizons found: {horizons}")
+
+        return horizons[0]
 
     @property
     def modules(self):
@@ -241,6 +261,20 @@ class ModularMicrogrid:
         from pymgrid.microgrid.convert.convert import to_nonmodular
         return to_nonmodular(self)
 
+    def __len__(self):
+        """
+        Length of available underlying data.
+        :return:
+        """
+        l = []
+        for module in self.modules.iterlist():
+            try:
+                l.append(len(module))
+            except TypeError:
+                pass
+
+        return min(l)
+
     def __repr__(self):
         module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]
         module_str = ', '.join(module_str)
@@ -250,4 +284,6 @@ class ModularMicrogrid:
         try:
             return getattr(self._modules, item)
         except AttributeError:
-            raise AttributeError(f'ModularMicrogrid has no attribute {item}')
+            names = ", ".join([f'"{x}"' for x in self.modules.names()])
+            raise AttributeError(f'ModularMicrogrid has no attribute "{item}". '
+                                 f'Did you mean one of the modules {names}?')

@@ -36,6 +36,8 @@ def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_unce
 
     if forecaster is None:
         return NoForecaster(), 0
+    elif isinstance(forecaster, (UserDefinedForecaster, OracleForecaster, GaussianNoiseForecaster)):
+        return forecaster, forecast_horizon
     elif callable(forecaster):
         return UserDefinedForecaster(forecaster, time_series), forecast_horizon
     elif forecaster == "oracle":

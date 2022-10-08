@@ -240,6 +240,14 @@ class GensetModule(BaseMicrogridModule):
         return self._running*self._min_production
 
     @property
+    def max_production_when_on(self):
+        return self._max_production
+
+    @property
+    def min_production_when_on(self):
+        return self._min_production
+
+    @property
     def min_obs(self):
         return np.array([0, 0, 0, 0])
 

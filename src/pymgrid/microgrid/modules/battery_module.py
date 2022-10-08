@@ -18,8 +18,8 @@ class BatteryModule(BaseMicrogridModule):
                  init_soc=None,
                  raise_errors=False):
         assert 0 < efficiency <= 1
-        self.max_capacity = max_capacity        # Maximum energy that can be contained in the battery. Equiv. to soc=1
         self.min_capacity = min_capacity        # Minimum energy that must be contained in the battery
+        self.max_capacity = max_capacity        # Maximum energy that can be contained in the battery. Equiv. to soc=1
         self.max_charge = max_charge            # Maximum charge in one step
         self.max_discharge = max_discharge      # Maximum discharge in one step.
         self.efficiency = efficiency
