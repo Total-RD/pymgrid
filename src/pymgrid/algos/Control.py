@@ -201,6 +201,20 @@ class ControlOutput(dict):
             self['status'] = status
             self['co2'] = co2
 
+    def to_frame(self):
+        d = dict()
+        max_len = -np.inf
+        for k_1, v_1 in self.items():
+            for k_2, v_2 in v_1.items():
+                if len(v_2) > max_len:
+                    max_len = len(v_2)
+                d[(k_1, k_2)] = v_2
+
+        for _, v in d.items():
+            if len(v) < max_len:
+                v.extend([np.nan]*(max_len-len(v)))
+
+        return pd.DataFrame(d)
 
     def __eq__(self, other):
         if type(self) != type(other):
