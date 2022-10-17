@@ -26,17 +26,9 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         assert as_sink, f'Class {self.__class__.__name__} is a sink.'
 
         loss_load, loss_load_cost = self._get_loss_load(external_energy_change)
-
-        try:
-            done = False
-            next_load = -1.0 * self._time_series[self.current_step + 1]
-        except IndexError:
-            done = True
-            next_load = np.nan
-
         info = {'absorbed_energy': external_energy_change, 'loss_load': loss_load}
 
-        return loss_load_cost, done, info
+        return loss_load_cost, self._done(), info
 
     def _get_loss_load(self, load_met):
         loss_load = self.current_load - load_met

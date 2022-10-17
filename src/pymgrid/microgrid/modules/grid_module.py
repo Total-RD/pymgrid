@@ -51,18 +51,12 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def update(self, external_energy_change, as_source=False, as_sink=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
 
-        try:
-            next_costs = self._time_series[self.current_step+1]
-            done = False
-        except IndexError:
-            next_costs = np.array([np.nan]*3)
-            done = True
-
         reward = self.get_cost(external_energy_change, as_source, as_sink)
         info_key = 'provided_energy' if as_source else 'absorbed_energy'
         info = {info_key: external_energy_change,
                 'co2_production': self.get_co2_production(external_energy_change, as_source, as_sink)}
-        return reward, done, info
+
+        return reward, self._done(), info
 
     def get_cost(self, import_export, as_source, as_sink):
         if as_source:                                               # Import
