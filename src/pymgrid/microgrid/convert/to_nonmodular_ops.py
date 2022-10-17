@@ -170,11 +170,10 @@ def add_overgeneration_params(unbalanced_energy_module, params_dict):
     _add_to_parameters(params_dict, cost_overgeneration=unbalanced_energy_module.overgeneration_cost)
     _add_to_df_actual_generation(params_dict, 'overgeneration')
     _add_to_df_cost(params_dict, 'overgeneration')
-    pass
 
 
 def _add_empty(params_dict, subdict_name, *keys):
-        params_dict[subdict_name].update({k: [] for k in keys})
+    params_dict[subdict_name].update({k: [] for k in keys})
 
 
 def _add_to_architecture(params_dict, component):
