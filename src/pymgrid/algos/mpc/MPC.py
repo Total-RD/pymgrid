@@ -1,10 +1,10 @@
-import sys
 import time
 from copy import deepcopy
-
+from tqdm import tqdm
 import cvxpy as cp
 import numpy as np
 import pandas as pd
+from warnings import warn
 from pymgrid.algos.Control import ControlOutput, HorizonOutput
 from pymgrid.utils.DataGenerator import return_underlying_data
 from scipy.sparse import csr_matrix
@@ -100,7 +100,11 @@ class ModelPredictiveControl:
 
     def _get_horizon(self):
         if self.is_modular:
-            return self.microgrid.get_forecast_horizon()
+            horizon = self.microgrid.get_forecast_horizon() + 1
+            if horizon == 0:
+                raise ValueError("Microgrid has horizon=0. Do your timeseries modules have a forecaster?")
+            return horizon
+
         return self.microgrid.horizon
 
     def _parse_microgrid(self):
@@ -159,16 +163,16 @@ class ModelPredictiveControl:
         battery = self.microgrid.battery.item()
 
         eta = battery.efficiency
-        battery_capacity = battery.capacity
-        cost_battery_cycle = battery.cost_cycle
+        battery_capacity = battery.max_capacity
+        cost_battery_cycle = battery.battery_cost_cycle
 
         cost_loss_load = self.microgrid.load.item().loss_load_cost
 
         if self.has_genset:
             genset = self.microgrid.genset.item()
             fuel_cost = genset.fuel_cost_per_unit
-            p_genset_min = genset.p_min
-            p_genset_max = genset.p_max
+            p_genset_min = genset.min_production_when_on
+            p_genset_max = genset.max_production_when_on
             cost_co2 = genset.cost_per_unit_co2
             genset_co2 = genset.co2_per_unit
 
@@ -436,8 +440,26 @@ class ModelPredictiveControl:
         if np.isnan(self.costs.value).any():
             raise RuntimeError('There are still nan values in self.costs.value, something is wrong')
 
-    def set_and_solve(self, load_vector, pv_vector, grid_vector, import_price, export_price, e_max, e_min, p_max_charge,
-                      p_max_discharge, p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2, iteration=None, total_iterations=None, return_steps=0):
+    def set_and_solve(self,
+                      load_vector,
+                      pv_vector,
+                      grid_vector,
+                      import_price,
+                      export_price,
+                      e_max,
+                      e_min,
+                      p_max_charge,
+                      p_max_discharge,
+                      p_max_import,
+                      p_max_export,
+                      soc_0,
+                      p_genset_max,
+                      cost_co2,
+                      grid_co2,
+                      genset_co2,
+                      iteration=None,
+                      total_iterations=None,
+                      return_steps=0):
         """
         Sets the parameters in the problem and then solves the problem.
             Specifically, sets the right-hand sides b and d from the paper of the
@@ -495,6 +517,12 @@ class ModelPredictiveControl:
             else:
                 print('Optimizer found with GLPK_MI solver')
 
+        if self.is_modular:
+            return self._extract_modular_control(load_vector)
+        else:
+            return self._extract_control_dict(return_steps, pv_vector, load_vector)
+
+    def _extract_control_dict(self, return_steps, pv_vector, load_vector):
         if return_steps == 0:
             if self.has_genset:
                 control_dict = {'battery_charge': self.p_vars.value[3],
@@ -521,7 +549,7 @@ class ModelPredictiveControl:
             return control_dict
 
         else:
-            if return_steps > self.microgrid.horizon:
+            if return_steps > self.horizon:
                 raise ValueError('return_steps cannot be greater than horizon')
 
             control_dicts = []
@@ -560,6 +588,37 @@ class ModelPredictiveControl:
                     control_dicts.append(control_dict)
 
             return control_dicts
+
+    def _extract_modular_control(self, load_vector):
+        control = dict()
+        control_vals = list(self.p_vars.value)
+
+        if self.has_genset:
+            genset = control_vals.pop(0)
+            genset_status = self.u_genset.value[0]
+            control["genset"] = [np.array([genset_status, genset])]
+
+        battery_charge, battery_discharge = control_vals[2:4]
+        battery_diff = battery_discharge - battery_charge
+
+        grid_import, grid_export = control_vals[0:2]
+        grid_diff = grid_import - grid_export
+
+        load = load_vector[0]
+
+        if battery_charge > 0 and battery_discharge > 0:
+            warn(f"battery_charge={battery_charge} and battery_discharge={battery_discharge} are both nonzero. "
+                 f"Flattening to the difference, leading to a {'discharge' if battery_diff > 0 else 'charge'} of {battery_diff}.")
+
+        if grid_import > 0 and grid_export > 0:
+            warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
+                 f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
+
+        control.update({"battery": battery_diff,
+                        "grid": grid_diff,
+                        "load": -1.0 * load})
+
+        return control
 
     def run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
         """
@@ -601,12 +660,7 @@ class ModelPredictiveControl:
         t0 = time.time()
         old_control_dict = None
 
-        for i in range(num_iter):
-
-            if verbose and i % 100 == 0:
-                ratio = i / num_iter
-                sys.stdout.write("\r Progress of current MPC: %d%%\n" % (100 * ratio))
-                sys.stdout.flush()
+        for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
 
             if self.microgrid.architecture['grid'] == 0:
                 temp_grid = np.zeros(horizon)
@@ -725,16 +779,116 @@ class ModelPredictiveControl:
         :param forecast_steps: int, default None
             Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
         :param verbose: bool
+            Whether to display progress bar
+        """
+        if self.is_modular:
+            return self.run_mpc_on_modular(forecast_steps=forecast_steps, verbose=verbose)
+        else:
+            return self.run_mpc_on_nonmodular(forecast_steps=forecast_steps, verbose=verbose)
+
+    def run_mpc_on_nonmodular(self, forecast_steps=None, verbose=False):
+        """
+        Function that allows MPC to be run on self.microgrid by first parsing its data
+
+        :param forecast_steps: int, default None
+            Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
+        :param verbose: bool
             Whether to discuss progress
         :return:
             output, ControlOutput
                 dict-like containing the DataFrames ('action', 'status', 'production', 'cost'),
                 but with an ordering defined via comparing the costs.
         """
-
         sample = return_underlying_data(self.microgrid)
         sample = sample.reset_index(drop=True)
         return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
+
+    def run_mpc_on_modular(self, forecast_steps=None, verbose=False):
+
+        if forecast_steps is None:
+            num_iter = len(self.microgrid) - self.horizon
+        else:
+            assert forecast_steps <= len(self.microgrid) - self.horizon, 'forecast steps can\'t look past horizon'
+            num_iter = forecast_steps
+
+        self.microgrid.reset()
+
+        for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
+            control = self.set_and_solve(*self._get_modular_state_values(),
+                                         iteration=i,
+                                         total_iterations=num_iter)
+
+            self.microgrid.run(control, normalized=False)
+
+        return self.microgrid.get_log()
+
+    def _get_modular_state_values(self):
+
+        load_forecast = -1.0 * self.microgrid.load.item().state # state is negative, want positive values.
+        pv_forecast = self.microgrid.PV.item().state
+
+        try:
+            grid = self.microgrid.grid.item()
+        except AttributeError:
+            grid_status = np.zeros(self.horizon)
+            price_import = np.zeros(self.horizon)
+            price_export = np.zeros(self.horizon)
+            grid_co2_per_kwh = np.zeros(self.horizon)
+            cost_co2 = []
+
+            grid_max_import, grid_max_export = 0, 0
+        else:
+            grid_status = np.ones(self.horizon)
+            grid_costs_forecast = grid.state
+
+            price_import = grid_costs_forecast[:, 0]
+            price_export = grid_costs_forecast[:, 1]
+            grid_co2_per_kwh = grid_costs_forecast[:, 2]
+            cost_co2 = [grid.cost_per_unit_co2]
+
+            grid_max_import, grid_max_export = grid.max_import, grid.max_export
+
+        try:
+            battery = self.microgrid.battery.item()
+        except AttributeError:
+            raise ValueError(f"Microgrid {self.microgrid} has no battery.")
+        else:
+            e_min = battery.min_soc
+            e_max = battery.max_soc
+            battery_max_charge = battery.max_charge
+            battery_max_discharge = battery.max_discharge
+
+            soc_0 = battery.soc
+
+        try:
+            genset = self.microgrid.genset.item()
+        except AttributeError:
+            genset_max_prod, genset_co2_per_kwh = None, None
+        else:
+            genset_max_prod = genset.max_production_when_on
+            genset_co2_per_kwh = genset.co2_per_unit
+            cost_co2.append(genset.cost_per_unit_co2)
+
+        cost_co2 = np.mean(cost_co2)
+
+        return (
+            load_forecast,
+            pv_forecast,
+            grid_status,
+            price_import,
+            price_export,
+            e_max,
+            e_min,
+            battery_max_charge,
+            battery_max_discharge,
+            grid_max_import,
+            grid_max_export,
+            soc_0,
+            genset_max_prod,
+            cost_co2,
+            grid_co2_per_kwh,
+            genset_co2_per_kwh
+        )
 
     def mpc_single_step(self, sample, previous_output, current_step):
 
