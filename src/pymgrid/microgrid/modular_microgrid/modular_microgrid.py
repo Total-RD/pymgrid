@@ -8,7 +8,7 @@ from pymgrid.microgrid.modules.module_container import ModuleContainer
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
 
-DEFAULT_HORIZON = 24
+DEFAULT_HORIZON = 23
 
 
 class ModularMicrogrid:
