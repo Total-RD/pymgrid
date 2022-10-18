@@ -282,6 +282,9 @@ class ModularMicrogrid:
 
     def __getattr__(self, item):
         try:
+            if item == "_modules":
+                raise RuntimeError
+
             return getattr(self._modules, item)
         except AttributeError:
             names = ", ".join([f'"{x}"' for x in self.modules.names()])
