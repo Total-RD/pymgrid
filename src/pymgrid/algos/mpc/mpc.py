@@ -824,8 +824,8 @@ class ModelPredictiveControl:
 
     def _get_modular_state_values(self):
 
-        load_forecast = -1.0 * self.microgrid.load.item().state # state is negative, want positive values.
-        pv_forecast = self.microgrid.PV.item().state
+        load_state = -1.0 * self.microgrid.load.item().state # state is negative, want positive values.
+        pv_state = self.microgrid.renewable.item().state
 
         try:
             grid = self.microgrid.grid.item()
@@ -872,8 +872,8 @@ class ModelPredictiveControl:
         cost_co2 = np.mean(cost_co2)
 
         return (
-            load_forecast,
-            pv_forecast,
+            load_state,
+            pv_state,
             grid_status,
             price_import,
             price_export,
