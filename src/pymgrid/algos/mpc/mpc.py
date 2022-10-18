@@ -5,9 +5,10 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 from warnings import warn
+from scipy.sparse import csr_matrix
+
 from pymgrid.algos.Control import ControlOutput, HorizonOutput
 from pymgrid.utils.DataGenerator import return_underlying_data
-from scipy.sparse import csr_matrix
 
 
 class ModelPredictiveControl:
@@ -52,7 +53,7 @@ class ModelPredictiveControl:
 
     """
     def __init__(self, microgrid):
-        self.microgrid, self.is_modular = self._verify_microgrid(microgrid)
+        self.microgrid, self.is_modular, self.microgrid_module_names = self._verify_microgrid(microgrid)
         self.horizon = self._get_horizon()
 
         if self.has_genset:
@@ -76,27 +77,30 @@ class ModelPredictiveControl:
     @property
     def has_genset(self):
         if self.is_modular:
-            try:
-                _ = self.microgrid.genset
-                return True
-            except AttributeError:
-                return False
+            return "genset" in self.microgrid_module_names.keys()
         else:
             return self.microgrid.architecture["genset"] == 1
 
     def _verify_microgrid(self, microgrid):
         try:
             microgrid.to_modular()
-            return microgrid, False
+            return microgrid, False, {}
         except AttributeError:
             try:
                 microgrid.to_nonmodular()
-                return microgrid, True
+                return microgrid, True, self._get_modules(microgrid)
             except AttributeError as e:
                 raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
             except Exception as e_2:
                 raise ValueError(f"Modular microgrid must be convertable to nonmodular. "
                                  f"Is not due to:\n{type(e_2)}: {e_2}") from e_2
+
+    def _get_modules(self, modular_microgrid):
+        def remove_suffix(s, suf):
+            if suf and s.endswith(suf):
+                return s[:-len(suf)]
+            return s
+        return {remove_suffix(module.item().__class__.__name__, "Module").lower(): name for name, module in modular_microgrid.iterdict()}
 
     def _get_horizon(self):
         if self.is_modular:
@@ -166,10 +170,10 @@ class ModelPredictiveControl:
         battery_capacity = battery.max_capacity
         cost_battery_cycle = battery.battery_cost_cycle
 
-        cost_loss_load = self.microgrid.load.item().loss_load_cost
+        cost_loss_load = self.microgrid.modules[self.microgrid_module_names["load"]].item().loss_load_cost
 
         if self.has_genset:
-            genset = self.microgrid.genset.item()
+            genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
             fuel_cost = genset.fuel_cost_per_unit
             p_genset_min = genset.min_production_when_on
             p_genset_max = genset.max_production_when_on
@@ -824,11 +828,11 @@ class ModelPredictiveControl:
 
     def _get_modular_state_values(self):
 
-        load_state = -1.0 * self.microgrid.load.item().state # state is negative, want positive values.
-        pv_state = self.microgrid.renewable.item().state
+        load_state = -1.0 * self.microgrid.modules[self.microgrid_module_names["load"]].item().state # state is negative, want positive values.
+        pv_state = self.microgrid.modules[self.microgrid_module_names["renewable"]].item().state
 
         try:
-            grid = self.microgrid.grid.item()
+            grid = self.microgrid.modules[self.microgrid_module_names["grid"]].item()
         except AttributeError:
             grid_status = np.zeros(self.horizon)
             price_import = np.zeros(self.horizon)
@@ -861,7 +865,7 @@ class ModelPredictiveControl:
             soc_0 = battery.soc
 
         try:
-            genset = self.microgrid.genset.item()
+            genset = self.microgrid[self.microgrid_module_names["genset"]].item()
         except AttributeError:
             genset_max_prod, genset_co2_per_kwh = None, None
         else:
