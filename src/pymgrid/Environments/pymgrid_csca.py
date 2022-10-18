@@ -5,7 +5,7 @@ from pymgrid.Microgrid import Microgrid
 from pymgrid.MicrogridGenerator import MicrogridGenerator
 from copy import deepcopy
 from pymgrid.algos.saa.saa import SampleAverageApproximation
-from pymgrid.algos.mpc.MPC import ModelPredictiveControl
+from pymgrid.algos import ModelPredictiveControl
 
 logger = logging.getLogger(__name__)
 LOG = False
