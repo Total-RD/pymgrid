@@ -21,7 +21,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 import numpy as np
 import pandas as pd
-from . import Microgrid
+from pymgrid import Microgrid
 from os import listdir
 from os.path import isfile, join
 import os
@@ -596,7 +596,7 @@ class MicrogridGenerator:
             'grid_co2': grid_co2_ts,
         }
 
-        microgrid = Microgrid.Microgrid(microgrid_spec)
+        microgrid = Microgrid(microgrid_spec)
 
         return microgrid
     ########################################################
