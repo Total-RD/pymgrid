@@ -54,6 +54,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
                                n=self.forecast_horizon)
         return None if forecast is None else factor * forecast
 
+    def _done(self):
+        return self._current_step == len(self) - 1
+
     @property
     def current_obs(self):
         factor = -1 if (self.is_sink and not self.is_source) else 1
@@ -107,9 +110,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
         forecast = self.forecast()
         state_dict = dict(zip(self.state_components + "_current", self.current_obs))
         for j in range(0, self.forecast_horizon):
-            state_dict.update(dict(zip(self.state_components + f'_{j}', forecast[j, :])))
+            state_dict.update(dict(zip(self.state_components + f'_forecast_{j}', forecast[j, :])))
         return state_dict
 
     def __len__(self):
         return self._time_series.shape[0]
-

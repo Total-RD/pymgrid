@@ -75,18 +75,23 @@ class BaseMicrogridModule(ABC):
         return Normalize(val_min, val_max)
 
     def _get_action_spaces(self):
-        shape = (1,) if isinstance(self.min_act, (float, int)) or len(self.min_act.shape) == 0 else self.min_act.shape
-        return dict(normalized=Box(low=0, high=1, shape=shape),
-                    unnormalized=Box(low=self.min_act if isinstance(self.min_act, np.ndarray) else np.array([self.min_act]),
-                                     high=self.max_act if isinstance(self.max_act, np.ndarray) else np.array([self.max_act]),
-                                     shape=shape))
+        unnormalized_low = self.min_act if isinstance(self.min_act, np.ndarray) else np.array([self.min_act])
+        unnormalized_high = self.max_act if isinstance(self.max_act, np.ndarray) else np.array([self.max_act])
+        return self._get_spaces(unnormalized_low, unnormalized_high)
 
     def _get_observation_spaces(self):
-        shape = (1,) if isinstance(self.min_obs, (float, int)) else self.min_obs.shape
+        unnormalized_low = self.min_obs if isinstance(self.min_obs, np.ndarray) else np.array([self.min_obs])
+        unnormalized_high = self.max_obs if isinstance(self.max_obs, np.ndarray) else np.array([self.max_obs])
+        return self._get_spaces(unnormalized_low, unnormalized_high)
+
+    def _get_spaces(self, unnormalized_low, unnormalized_high):
+        shape = unnormalized_low.shape
         return dict(normalized=Box(low=0, high=1, shape=shape),
-                    unnormalized=Box(low=self.min_obs if isinstance(self.min_obs, np.ndarray) else np.array([self.min_obs]),
-                                     high=self.max_obs if isinstance(self.max_obs, np.ndarray) else np.array([self.max_obs])
-                                     ))
+                    unnormalized=Box(low=unnormalized_low.astype(np.float64),
+                                     high=unnormalized_high.astype(np.float64),
+                                     shape=shape,
+                                     dtype=np.float64))
+
 
     def reset(self):
         self._current_step = 0
