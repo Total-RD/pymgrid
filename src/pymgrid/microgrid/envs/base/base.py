@@ -11,6 +11,11 @@ class BaseMicrogridEnv(ModularMicrogrid, Env):
                  loss_load_cost=10,
                  overgeneration_cost=2
                  ):
+
+        if isinstance(modules, ModularMicrogrid):
+            modules = modules.modules_list
+            add_unbalanced_module = False
+
         super().__init__(modules,
                                   add_unbalanced_module=add_unbalanced_module,
                                   loss_load_cost=loss_load_cost,
