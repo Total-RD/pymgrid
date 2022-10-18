@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from pymgrid.algos.Control import ControlOutput
 from pymgrid.utils.DataGenerator import SampleGenerator
-from pymgrid.algos.mpc.MPC import ModelPredictiveControl
+from pymgrid.algos import ModelPredictiveControl
 
 
 class SampleAverageApproximation(SampleGenerator):

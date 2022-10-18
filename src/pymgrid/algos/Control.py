@@ -275,7 +275,7 @@ class Benchmarks:
         :return:
             None
         """
-        from pymgrid.algos.mpc.MPC import ModelPredictiveControl
+        from pymgrid.algos import ModelPredictiveControl
         MPC = ModelPredictiveControl(self.microgrid)
         self.mpc_output = MPC.run_mpc_on_microgrid(verbose=verbose, **kwargs)
         self.has_mpc_benchmark = True
