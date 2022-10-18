@@ -83,8 +83,10 @@ class ModuleContainer(UserDict):
 
     def module_tuples(self):
         l = []
-        for k, raw_container in self._raw_containers.items():
-            l.append()
+        for name, modules in self.iterdict():
+            tups = list(zip([name]*len(modules), modules))
+            l.extend(tups)
+        return l
 
     def iterlist(self):
         for module in self.module_list():
