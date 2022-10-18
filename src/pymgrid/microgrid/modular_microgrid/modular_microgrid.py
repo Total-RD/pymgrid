@@ -246,7 +246,7 @@ class ModularMicrogrid:
 
     @property
     def modules_list(self):
-        return self._modules.list_modules()
+        return self._modules.module_list()
 
     @property
     def n_modules(self):
