@@ -13,7 +13,7 @@ class BaseMicrogridEnv(ModularMicrogrid, Env):
                  ):
 
         if isinstance(modules, ModularMicrogrid):
-            modules = modules.modules_list
+            modules = modules.module_list
             add_unbalanced_module = False
 
         super().__init__(modules,
@@ -40,7 +40,7 @@ class BaseMicrogridEnv(ModularMicrogrid, Env):
 
     @classmethod
     def from_microgrid(cls, microgrid):
-        return cls(microgrid.modules_list, add_unbalanced_module=False)
+        return cls(microgrid.module_list, add_unbalanced_module=False)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
