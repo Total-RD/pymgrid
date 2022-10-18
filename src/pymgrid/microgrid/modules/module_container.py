@@ -81,6 +81,11 @@ class ModuleContainer(UserDict):
             d.update(raw_container)
         return d
 
+    def module_tuples(self):
+        l = []
+        for k, raw_container in self._raw_containers.items():
+            l.append()
+
     def iterlist(self):
         for module in self.module_list():
             yield module
@@ -247,14 +252,14 @@ class _ModuleSubContainer(UserDict):
 
         return fixed_or_flex, source_or_sink
 
-    def list_modules(self):
+    def module_list(self):
         l = []
         for _, values in self.data.items():
             l.extend(values)
         return l
 
     def iterlist(self):
-        for module in self.list_modules():
+        for module in self.module_list():
             yield module
 
     def iterdict(self):
