@@ -245,7 +245,7 @@ class ModularMicrogrid:
         raise AttributeError('Getting attribute flat_modules has been deprecated. Call .modules_dict() instead.')
 
     @property
-    def modules_list(self):
+    def module_list(self):
         return self._modules.module_list()
 
     @property
