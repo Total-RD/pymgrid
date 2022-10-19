@@ -274,8 +274,11 @@ class _ModuleSubContainer(UserDict):
 
     def __getattr__(self, item):
         if item == 'data':
-            raise AttributeError
-        return self.__getitem__(item)
+            raise AttributeError(item)
+        try:
+            return self.__getitem__(item)
+        except KeyError:
+            raise AttributeError(item)
 
 
 class ModuleList(UserList):
