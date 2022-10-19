@@ -600,7 +600,7 @@ class ModelPredictiveControl:
         if self.has_genset:
             genset = control_vals.pop(0)
             genset_status = self.u_genset.value[0]
-            control["genset"] = [np.array([genset_status, genset])]
+            control[self.microgrid_module_names["genset"]] = [np.array([genset_status, genset])]
 
         battery_charge, battery_discharge = control_vals[2:4]
         battery_diff = battery_discharge - battery_charge
@@ -618,9 +618,11 @@ class ModelPredictiveControl:
             warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
                  f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
 
-        control.update({"battery": battery_diff,
-                        "grid": grid_diff,
-                        "load": -1.0 * load})
+        if "grid" in self.microgrid_module_names.keys():
+            control.update({self.microgrid_module_names["grid"]: grid_diff})
+
+        control.update({self.microgrid_module_names["battery"]: battery_diff,
+                        self.microgrid_module_names["load"]: -1.0 * load})
 
         return control
 
