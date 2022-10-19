@@ -833,7 +833,7 @@ class ModelPredictiveControl:
 
         try:
             grid = self.microgrid.modules[self.microgrid_module_names["grid"]].item()
-        except AttributeError:
+        except KeyError:
             grid_status = np.zeros(self.horizon)
             price_import = np.zeros(self.horizon)
             price_export = np.zeros(self.horizon)
@@ -843,11 +843,10 @@ class ModelPredictiveControl:
             grid_max_import, grid_max_export = 0, 0
         else:
             grid_status = np.ones(self.horizon)
-            grid_costs_forecast = grid.state
 
-            price_import = grid_costs_forecast[:, 0]
-            price_export = grid_costs_forecast[:, 1]
-            grid_co2_per_kwh = grid_costs_forecast[:, 2]
+            price_import = grid.import_price()
+            price_export = grid.export_price()
+            grid_co2_per_kwh = grid.co2_per_kwh()
             cost_co2 = [grid.cost_per_unit_co2]
 
             grid_max_import, grid_max_export = grid.max_import, grid.max_export
@@ -865,8 +864,8 @@ class ModelPredictiveControl:
             soc_0 = battery.soc
 
         try:
-            genset = self.microgrid[self.microgrid_module_names["genset"]].item()
-        except AttributeError:
+            genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
+        except KeyError:
             genset_max_prod, genset_co2_per_kwh = None, None
         else:
             genset_max_prod = genset.max_production_when_on
