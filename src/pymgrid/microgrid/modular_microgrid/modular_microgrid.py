@@ -166,11 +166,6 @@ class ModularMicrogrid:
             _log_dict.update(log_dict)
         return _log_dict
 
-    # def _log_balance(self, provided_energy, absorbed_energy, logger_prefix=None):
-    #     _log_dict = dict(provided_to_microgrid=provided_energy, absorbed_by_microgrid=absorbed_energy)
-    #     _log_dict = {(logger_prefix + '_' + k if logger_prefix is not None else k): v for k, v in _log_dict.items()}
-    #     self._balance_logger.log(**_log_dict)
-
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
         return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list] for module_name, module_list in module_iterator.items()}
