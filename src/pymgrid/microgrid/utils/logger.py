@@ -12,6 +12,7 @@ class ModularLogger(UserDict):
     def flush(self):
         d = self.data.copy()
         self.clear()
+        self._log_length = 0
         return d
 
     def log(self, **log_dict):
