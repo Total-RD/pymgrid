@@ -92,10 +92,9 @@ class BaseMicrogridModule(ABC):
                                      shape=shape,
                                      dtype=np.float64))
 
-
     def reset(self):
         self._current_step = 0
-        self._logger = ModularLogger()
+        return self._logger.flush()
 
     def _raise_error(self, ask_value, available_value, as_source=False, as_sink=False, lower_bound=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
