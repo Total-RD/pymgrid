@@ -33,7 +33,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         if max_export < 0:
             raise ValueError('parameter max_export must be non-negative.')
         if time_series.shape[1] != 3:
-            raise ValueError('Time series must be two dimensional with three columns: import costs, export costs, '
+            raise ValueError('Time series must be two dimensional with three columns: import prices, export prices, '
                              'and co2 production per kWh.')
 
         if (time_series < 0).any().any():
@@ -87,9 +87,18 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def as_fixed(self):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
+    def import_price(self):
+        return self.state[::3]
+
+    def export_price(self):
+        return self.state[1::3]
+
+    def co2_per_kwh(self):
+        return self.state[2::3]
+
     @property
     def state_components(self):
-        return np.array(['import_cost', 'export_cost', 'co2_per_kwh'], dtype=object)
+        return np.array(['import_price', 'export_price', 'co2_per_kwh'], dtype=object)
 
     @property
     def max_production(self):
@@ -108,4 +117,4 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return True
 
     def __repr__(self):
-        return f'GridModule(max_import={self.max_import}, max_export={self.max_export}'
+        return f'GridModule(max_import={self.max_import}, max_export={self.max_export})'

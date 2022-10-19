@@ -5,9 +5,10 @@ import cvxpy as cp
 import numpy as np
 import pandas as pd
 from warnings import warn
+from scipy.sparse import csr_matrix
+
 from pymgrid.algos.Control import ControlOutput, HorizonOutput
 from pymgrid.utils.DataGenerator import return_underlying_data
-from scipy.sparse import csr_matrix
 
 
 class ModelPredictiveControl:
@@ -52,7 +53,7 @@ class ModelPredictiveControl:
 
     """
     def __init__(self, microgrid):
-        self.microgrid, self.is_modular = self._verify_microgrid(microgrid)
+        self.microgrid, self.is_modular, self.microgrid_module_names = self._verify_microgrid(microgrid)
         self.horizon = self._get_horizon()
 
         if self.has_genset:
@@ -76,27 +77,30 @@ class ModelPredictiveControl:
     @property
     def has_genset(self):
         if self.is_modular:
-            try:
-                _ = self.microgrid.genset
-                return True
-            except AttributeError:
-                return False
+            return "genset" in self.microgrid_module_names.keys()
         else:
             return self.microgrid.architecture["genset"] == 1
 
     def _verify_microgrid(self, microgrid):
         try:
             microgrid.to_modular()
-            return microgrid, False
+            return microgrid, False, {}
         except AttributeError:
             try:
                 microgrid.to_nonmodular()
-                return microgrid, True
+                return microgrid, True, self._get_modules(microgrid)
             except AttributeError as e:
                 raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
             except Exception as e_2:
                 raise ValueError(f"Modular microgrid must be convertable to nonmodular. "
                                  f"Is not due to:\n{type(e_2)}: {e_2}") from e_2
+
+    def _get_modules(self, modular_microgrid):
+        def remove_suffix(s, suf):
+            if suf and s.endswith(suf):
+                return s[:-len(suf)]
+            return s
+        return {remove_suffix(module.item().__class__.__name__, "Module").lower(): name for name, module in modular_microgrid.iterdict()}
 
     def _get_horizon(self):
         if self.is_modular:
@@ -166,10 +170,10 @@ class ModelPredictiveControl:
         battery_capacity = battery.max_capacity
         cost_battery_cycle = battery.battery_cost_cycle
 
-        cost_loss_load = self.microgrid.load.item().loss_load_cost
+        cost_loss_load = self.microgrid.modules[self.microgrid_module_names["load"]].item().loss_load_cost
 
         if self.has_genset:
-            genset = self.microgrid.genset.item()
+            genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
             fuel_cost = genset.fuel_cost_per_unit
             p_genset_min = genset.min_production_when_on
             p_genset_max = genset.max_production_when_on
@@ -596,7 +600,7 @@ class ModelPredictiveControl:
         if self.has_genset:
             genset = control_vals.pop(0)
             genset_status = self.u_genset.value[0]
-            control["genset"] = [np.array([genset_status, genset])]
+            control[self.microgrid_module_names["genset"]] = [np.array([genset_status, genset])]
 
         battery_charge, battery_discharge = control_vals[2:4]
         battery_diff = battery_discharge - battery_charge
@@ -614,9 +618,11 @@ class ModelPredictiveControl:
             warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
                  f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
 
-        control.update({"battery": battery_diff,
-                        "grid": grid_diff,
-                        "load": -1.0 * load})
+        if "grid" in self.microgrid_module_names.keys():
+            control.update({self.microgrid_module_names["grid"]: grid_diff})
+
+        control.update({self.microgrid_module_names["battery"]: battery_diff,
+                        self.microgrid_module_names["load"]: -1.0 * load})
 
         return control
 
@@ -824,12 +830,12 @@ class ModelPredictiveControl:
 
     def _get_modular_state_values(self):
 
-        load_forecast = -1.0 * self.microgrid.load.item().state # state is negative, want positive values.
-        pv_forecast = self.microgrid.PV.item().state
+        load_state = -1.0 * self.microgrid.modules[self.microgrid_module_names["load"]].item().state # state is negative, want positive values.
+        pv_state = self.microgrid.modules[self.microgrid_module_names["renewable"]].item().state
 
         try:
-            grid = self.microgrid.grid.item()
-        except AttributeError:
+            grid = self.microgrid.modules[self.microgrid_module_names["grid"]].item()
+        except KeyError:
             grid_status = np.zeros(self.horizon)
             price_import = np.zeros(self.horizon)
             price_export = np.zeros(self.horizon)
@@ -839,11 +845,10 @@ class ModelPredictiveControl:
             grid_max_import, grid_max_export = 0, 0
         else:
             grid_status = np.ones(self.horizon)
-            grid_costs_forecast = grid.state
 
-            price_import = grid_costs_forecast[:, 0]
-            price_export = grid_costs_forecast[:, 1]
-            grid_co2_per_kwh = grid_costs_forecast[:, 2]
+            price_import = grid.import_price()
+            price_export = grid.export_price()
+            grid_co2_per_kwh = grid.co2_per_kwh()
             cost_co2 = [grid.cost_per_unit_co2]
 
             grid_max_import, grid_max_export = grid.max_import, grid.max_export
@@ -861,8 +866,8 @@ class ModelPredictiveControl:
             soc_0 = battery.soc
 
         try:
-            genset = self.microgrid.genset.item()
-        except AttributeError:
+            genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
+        except KeyError:
             genset_max_prod, genset_co2_per_kwh = None, None
         else:
             genset_max_prod = genset.max_production_when_on
@@ -872,8 +877,8 @@ class ModelPredictiveControl:
         cost_co2 = np.mean(cost_co2)
 
         return (
-            load_forecast,
-            pv_forecast,
+            load_state,
+            pv_state,
             grid_status,
             price_import,
             price_export,

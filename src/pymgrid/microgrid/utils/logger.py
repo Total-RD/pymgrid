@@ -12,6 +12,7 @@ class ModularLogger(UserDict):
     def flush(self):
         d = self.data.copy()
         self.clear()
+        self._log_length = 0
         return d
 
     def log(self, **log_dict):
@@ -31,15 +32,6 @@ class ModularLogger(UserDict):
 
     def to_frame(self):
         return pd.DataFrame(self.data)
-    #
-    # def __getitem__(self, item):
-    #     return getattr(self,item)
-    #
-    # def __setitem__(self, key, value):
-    #     setattr(self, key, value)
-    #
-    # def __repr__(self):
-    #     return str(self.to_dict())
 
     def __len__(self):
         return self._log_length

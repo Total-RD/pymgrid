@@ -69,10 +69,10 @@ class ModuleContainer(UserDict):
         midlevels = {k: _ModulePointer(**v) for k, v in midlevels.items()}
         return midlevels
 
-    def list_modules(self):
+    def module_list(self):
         l = []
         for _, raw_container in self._raw_containers.items():
-            l.extend(raw_container.list_modules())
+            l.extend(raw_container.module_list())
         return l
 
     def module_dict(self):
@@ -81,8 +81,15 @@ class ModuleContainer(UserDict):
             d.update(raw_container)
         return d
 
+    def module_tuples(self):
+        l = []
+        for name, modules in self.iterdict():
+            tups = list(zip([name]*len(modules), modules))
+            l.extend(tups)
+        return l
+
     def iterlist(self):
-        for module in self.list_modules():
+        for module in self.module_list():
             yield module
 
     def iterdict(self):
@@ -127,7 +134,7 @@ class _ModulePointer(UserDict):
     def list_modules(self):
         l = []
         for _, raw_container in self.data.items():
-            l.extend(raw_container.list_modules())
+            l.extend(raw_container.module_list())
         return l
 
     def module_dict(self):
@@ -247,14 +254,14 @@ class _ModuleSubContainer(UserDict):
 
         return fixed_or_flex, source_or_sink
 
-    def list_modules(self):
+    def module_list(self):
         l = []
         for _, values in self.data.items():
             l.extend(values)
         return l
 
     def iterlist(self):
-        for module in self.list_modules():
+        for module in self.module_list():
             yield module
 
     def iterdict(self):

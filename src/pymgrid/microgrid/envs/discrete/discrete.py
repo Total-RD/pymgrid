@@ -162,3 +162,6 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         return self.action_space.sample()
 
+    def __repr__(self):
+        return f"DiscreteMicrogridEnv({super().__repr__()}"
+

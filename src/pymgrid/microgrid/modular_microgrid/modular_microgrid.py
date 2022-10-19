@@ -72,9 +72,12 @@ class ModularMicrogrid:
 
         return ModuleContainer(modules)
 
-
     def reset(self):
-        return {name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()}
+        return {
+            **{name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()},
+            **{"balance": self._balance_logger.flush()}
+        }
+
 
     def run(self, control, normalized=True):
         """
@@ -163,11 +166,6 @@ class ModularMicrogrid:
             _log_dict.update(log_dict)
         return _log_dict
 
-    # def _log_balance(self, provided_energy, absorbed_energy, logger_prefix=None):
-    #     _log_dict = dict(provided_to_microgrid=provided_energy, absorbed_by_microgrid=absorbed_energy)
-    #     _log_dict = {(logger_prefix + '_' + k if logger_prefix is not None else k): v for k, v in _log_dict.items()}
-    #     self._balance_logger.log(**_log_dict)
-
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
         return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list] for module_name, module_list in module_iterator.items()}
@@ -245,8 +243,8 @@ class ModularMicrogrid:
         raise AttributeError('Getting attribute flat_modules has been deprecated. Call .modules_dict() instead.')
 
     @property
-    def modules_list(self):
-        return self._modules.list_modules()
+    def module_list(self):
+        return self._modules.module_list()
 
     @property
     def n_modules(self):
@@ -282,6 +280,9 @@ class ModularMicrogrid:
 
     def __getattr__(self, item):
         try:
+            if item == "_modules":
+                raise RuntimeError
+
             return getattr(self._modules, item)
         except AttributeError:
             names = ", ".join([f'"{x}"' for x in self.modules.names()])
