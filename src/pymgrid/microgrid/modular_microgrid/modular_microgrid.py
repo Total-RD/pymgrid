@@ -72,9 +72,12 @@ class ModularMicrogrid:
 
         return ModuleContainer(modules)
 
-
     def reset(self):
-        return {name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()}
+        return {
+            **{name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()},
+            **{"balance": self._balance_logger.flush()}
+        }
+
 
     def run(self, control, normalized=True):
         """
