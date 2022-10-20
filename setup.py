@@ -1,5 +1,10 @@
 from setuptools import setup, find_packages
 
+EXTRAS = dict()
+EXTRAS["genset_mpc"] = ["Mosek", "cvxopt"]
+EXTRAS["dev"] = ["pytest", "flake8", *EXTRAS["genset_mpc"]]
+EXTRAS["all"] = list(set(sum(EXTRAS.values(), [])))
+
 setup(
     name="pymgrid",
     package_dir={"": "src"},
@@ -20,7 +25,5 @@ setup(
         "tqdm",
         "pyyaml"
     ],
-    extras_require={"dev": ["pytest", "flake8"],
-                    "genset_mpc": ["Mosek", "cvxopt"]
-                    }
+    extras_require=EXTRAS
 )
