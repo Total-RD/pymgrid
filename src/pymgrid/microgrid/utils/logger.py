@@ -7,7 +7,7 @@ import pandas as pd
 class ModularLogger(UserDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._log_length = 0
+        self._log_length = max(len(v) for _, v in self.items()) if super().__init__() else 0
 
     def flush(self):
         d = self.data.copy()
@@ -30,8 +30,15 @@ class ModularLogger(UserDict):
     def to_dict(self):
         return self.data.copy()
 
+    def raw(self):
+        return {k: list(map(float, v)) for k, v in self.data.items()}
+
     def to_frame(self):
         return pd.DataFrame(self.data)
 
     def __len__(self):
         return self._log_length
+
+    @classmethod
+    def from_raw(cls, raw):
+        return cls(raw)
