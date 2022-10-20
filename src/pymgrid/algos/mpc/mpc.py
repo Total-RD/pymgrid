@@ -19,6 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class ModelPredictiveControl:
 
     """
@@ -60,7 +61,7 @@ class ModelPredictiveControl:
 
 
     """
-    def __init__(self, microgrid):
+    def __init__(self, microgrid, solver=None):
         self.microgrid, self.is_modular, self.microgrid_module_names = self._verify_microgrid(microgrid)
         self.horizon = self._get_horizon()
 
@@ -81,6 +82,7 @@ class ModelPredictiveControl:
         parameters = self._parse_microgrid()
 
         self.problem = self._create_problem(*parameters)
+        self._passed_solver = solver
         self._solver = self._get_solver()
 
     @property
@@ -351,7 +353,10 @@ class ModelPredictiveControl:
         return cp.Problem(objective, constraints)
 
     def _get_solver(self, mosek_failure=None):
-        if "MOSEK" in cp.installed_solvers() and mosek_failure is None:
+        if self._passed_solver is not None:
+            return self._passed_solver
+
+        elif "MOSEK" in cp.installed_solvers() and mosek_failure is None:
             solver = cp.MOSEK
         elif "GLPK_MI" in cp.installed_solvers():
             solver = cp.GLPK_MI
