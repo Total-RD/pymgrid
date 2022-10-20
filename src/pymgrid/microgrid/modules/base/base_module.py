@@ -335,4 +335,79 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def is_sink(self):
         return False
 
+    def dump(self):
+        return yaml.safe_dump(self)
 
+    def load(self, stream):
+        return yaml.safe_load(stream)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        mapping = loader.construct_mapping(node, deep=True)
+
+        instance = cls.deserialize_instance(mapping["cls_params"])
+        instance.logger = instance.logger.from_raw(mapping["log"])
+        return instance.deserialize(mapping["state"])
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        return dumper.represent_mapping(cls.yaml_tag, data.serialize(), flow_style=cls.yaml_flow_style)
+
+    def serialize(self):
+        data = {"log": self._logger.raw(),
+                "cls_params": self._serialize_cls_params(),
+                "state": self._serialize_state_attributes()
+                }
+
+        return data
+
+    @abstractmethod
+    def serializable_state_attributes(self):
+        pass
+
+    def _serialize_state_attributes(self):
+        return {attr_name: getattr(self, attr_name) for attr_name in self.serializable_state_attributes()}
+
+    def _serialize_cls_params(self):
+        serialized_args = {}
+        cls_params = inspect.signature(self.__init__).parameters
+
+        for p_name in cls_params.keys():
+            try:
+                serialized_args[p_name] = (getattr(self, p_name))
+            except AttributeError:
+                raise AttributeError(f"Module {self} must have attribute/property {p_name} corresponding to "
+                                     f"class parameter of the same name.")
+
+        return serialized_args
+
+    @classmethod
+    def deserialize_instance(cls, param_dict):
+        param_dict = param_dict.copy()
+        cls_params = inspect.signature(cls).parameters
+
+        cls_kwargs = {}
+        missing_params = []
+        for p_name in cls_params.keys():
+            try:
+                cls_kwargs[p_name] = param_dict.pop(p_name)
+            except KeyError:
+                missing_params.append(p_name)
+
+        if len(missing_params):
+            raise KeyError(f"Missing parameter values {missing_params} for {cls}")
+        return cls(**cls_kwargs)
+
+    def deserialize(self, serialized_dict):
+        serialized_dict = serialized_dict.copy()
+        for attr_name in self.serializable_state_attributes():
+            if not hasattr(self, attr_name):
+                raise ValueError(f"Key {attr_name} is not an attribute of module {self} and cannot be set.")
+            try:
+                setattr(self, attr_name, serialized_dict.pop(attr_name))
+            except KeyError:
+                raise KeyError(f"Missing key {attr_name} in deserialized dict.")
+
+        if len(serialized_dict):
+            warn("Unused keys in serialized_dict: {")
+        return self
