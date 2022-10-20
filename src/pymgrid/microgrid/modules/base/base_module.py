@@ -36,7 +36,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         self._observation_spaces = self._get_observation_spaces()
         self._provided_energy_name, self._absorbed_energy_name = provided_energy_name, absorbed_energy_name
         self._logger = ModularLogger()
-        self.name = (None, None)
+        self.name = (None, None) # set by ModularMicrogrid
 
     def _get_normalizer(self, normalize_pos, obs=False, act=False):
         assert obs+act == 1, 'Must be initiating normalizer for obs or act but not both or neither.'
