@@ -31,6 +31,7 @@ class BatteryModule(BaseMicrogridModule):
         self.battery_cost_cycle = battery_cost_cycle
 
         self.min_soc, self.max_soc = min_capacity/max_capacity, 1
+        self.init_charge, self.init_soc = init_charge, init_soc
         self._current_charge, self._soc = self._init_battery(init_charge, init_soc)
         self.name = ('battery', None)
         super().__init__(raise_errors,
