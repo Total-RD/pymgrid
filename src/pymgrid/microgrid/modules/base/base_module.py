@@ -258,6 +258,10 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def logger_last(self):
         return {k: v[-1] for k, v in self._logger}
 
+    @logger.setter
+    def logger(self, logger):
+        return ModularLogger(logger)
+
     @property
     @abstractmethod
     def state_dict(self):
