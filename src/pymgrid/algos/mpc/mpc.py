@@ -9,7 +9,9 @@ from scipy.sparse import csr_matrix
 
 from pymgrid.algos.Control import ControlOutput, HorizonOutput
 from pymgrid.utils.DataGenerator import return_underlying_data
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ModelPredictiveControl:
 
@@ -73,6 +75,7 @@ class ModelPredictiveControl:
         parameters = self._parse_microgrid()
 
         self.problem = self._create_problem(*parameters)
+        self._solver = self._get_solver()
 
     @property
     def has_genset(self):
@@ -341,6 +344,26 @@ class ModelPredictiveControl:
 
         return cp.Problem(objective, constraints)
 
+    def _get_solver(self):
+        solver = None
+        if "MOSEK" in cp.installed_solvers():
+            solver = cp.MOSEK
+        elif "CVXOPT" in cp.installed_solvers():
+            solver = cp.CVXOPT
+        elif self.problem.is_mixed_integer():
+            assert self.has_genset
+            raise RuntimeError("If microgrid has a genset, the cvxpy problem becomes mixed integer. Either MOSEK or "
+                               "CVXOPT must be installed.\n"
+                               "You can install both by calling pip install -e .'[genset_mpc]' in the root folder of "
+                               "pymgrid. Note that MOSEK requires a license; see https://www.mosek.com/ for details.\n"
+                               "Academic and trial licenses are available.")
+        else:
+            solver = None
+
+        logger.info("Using default solver." if solver is None else f"Using {solver} solver.")
+
+        return solver
+
     def _set_parameters(self, load_vector, pv_vector, grid_vector, import_price, export_price,
                         e_max, e_min, p_max_charge, p_max_discharge,
                         p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,):
@@ -510,16 +533,10 @@ class ModelPredictiveControl:
                         e_max, e_min, p_max_charge, p_max_discharge,
                         p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
 
-        self.problem.solve(warm_start=True)
+        self.problem.solve(warm_start=True, solver=self._solver)
 
         if self.problem.status == 'infeasible':
-            print(self.problem.status)
-            print('Infeasible problem on step {} of {}, retrying with GLPK_MI solver'.format(iteration,total_iterations))
-            self.problem.solve(solver = cp.CVXOPT)
-            if self.problem.status == 'infeasible':
-                print('Failed again')
-            else:
-                print('Optimizer found with GLPK_MI solver')
+            warn("Infeasible problem")
 
         if self.is_modular:
             return self._extract_modular_control(load_vector)
