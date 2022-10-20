@@ -7,9 +7,15 @@ import pandas as pd
 from warnings import warn
 from scipy.sparse import csr_matrix
 
+try:
+    import mosek
+except ImportError:
+    mosek = None
+
 from pymgrid.algos.Control import ControlOutput, HorizonOutput
 from pymgrid.utils.DataGenerator import return_underlying_data
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -344,9 +350,8 @@ class ModelPredictiveControl:
 
         return cp.Problem(objective, constraints)
 
-    def _get_solver(self):
-        solver = None
-        if "MOSEK" in cp.installed_solvers():
+    def _get_solver(self, mosek_failure=None):
+        if "MOSEK" in cp.installed_solvers() and mosek_failure is None:
             solver = cp.MOSEK
         elif "CVXOPT" in cp.installed_solvers():
             solver = cp.CVXOPT
@@ -360,7 +365,10 @@ class ModelPredictiveControl:
         else:
             solver = None
 
-        logger.info("Using default solver." if solver is None else f"Using {solver} solver.")
+        if mosek_failure is not None:
+            logger.info(f"MOSEK Solver failed due to {mosek_failure}. Retrying with solver={solver}")
+        else:
+            logger.info("Using default solver." if solver is None else f"Using {solver} solver.")
 
         return solver
 
@@ -533,7 +541,14 @@ class ModelPredictiveControl:
                         e_max, e_min, p_max_charge, p_max_discharge,
                         p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
 
-        self.problem.solve(warm_start=True, solver=self._solver)
+        if mosek is not None:
+            try:
+                self.problem.solve(warm_start=True, solver=self._solver)
+            except mosek.Error as e:
+                self._solver = self._get_solver(mosek_failure=e)
+                self.problem.solve(warm_start=True, solver=self._solver)
+        else:
+            self.problem.solve(warm_start=True, solver=self._solver)
 
         if self.problem.status == 'infeasible':
             warn("Infeasible problem")
