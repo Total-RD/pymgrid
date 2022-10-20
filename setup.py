@@ -20,4 +20,7 @@ setup(
         "tqdm",
         "pyyaml"
     ],
+    extras_require={"dev": ["pytest", "flake8"],
+                    "genset_mpc": ["Mosek", "cvxopt"]
+                    }
 )
