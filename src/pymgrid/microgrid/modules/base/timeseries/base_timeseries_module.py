@@ -5,7 +5,7 @@ from pymgrid.microgrid.modules.base import BaseMicrogridModule
 from pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
 
 
-class BaseTimeSeriesMicrogridModule(BaseMicrogridModule, ABC):
+class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     def __init__(self,
                  time_series,
                  raise_errors,

@@ -51,7 +51,6 @@ class TestMPC(TestCase):
         self.assertEqual(mpc_output.shape[0], forecast_steps)
 
         self.assertEqual(mpc_output[("load", 0, "load_met")].values, [60.]*mpc_output.shape[0])
-
         self.assertEqual(mpc_output[("genset", 0, "genset_production")].values +
                             mpc_output[("battery", 0, "discharge_amount")].values,
                          [10.] * mpc_output.shape[0])
