@@ -1,5 +1,10 @@
 from setuptools import setup, find_packages
 
+EXTRAS = dict()
+EXTRAS["genset_mpc"] = ["Mosek", "cvxopt"]
+EXTRAS["dev"] = ["pytest", "flake8", *EXTRAS["genset_mpc"]]
+EXTRAS["all"] = list(set(sum(EXTRAS.values(), [])))
+
 setup(
     name="pymgrid",
     package_dir={"": "src"},
@@ -17,5 +22,8 @@ setup(
         "plotly",
         "cufflinks",
         "gym",
+        "tqdm",
+        "pyyaml"
     ],
+    extras_require=EXTRAS
 )
