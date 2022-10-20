@@ -353,8 +353,8 @@ class ModelPredictiveControl:
     def _get_solver(self, mosek_failure=None):
         if "MOSEK" in cp.installed_solvers() and mosek_failure is None:
             solver = cp.MOSEK
-        elif "CVXOPT" in cp.installed_solvers():
-            solver = cp.CVXOPT
+        elif "GLPK_MI" in cp.installed_solvers():
+            solver = cp.GLPK_MI
         elif self.problem.is_mixed_integer():
             assert self.has_genset
             raise RuntimeError("If microgrid has a genset, the cvxpy problem becomes mixed integer. Either MOSEK or "
@@ -538,8 +538,8 @@ class ModelPredictiveControl:
         """
 
         self._set_parameters(load_vector, pv_vector, grid_vector, import_price, export_price,
-                        e_max, e_min, p_max_charge, p_max_discharge,
-                        p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
+                             e_max, e_min, p_max_charge, p_max_discharge,
+                             p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
 
         if mosek is not None:
             try:
