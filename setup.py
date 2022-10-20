@@ -17,5 +17,7 @@ setup(
         "plotly",
         "cufflinks",
         "gym",
+        "tqdm",
+        "pyyaml"
     ],
 )
