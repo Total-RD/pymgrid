@@ -1,10 +1,14 @@
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 import numpy as np
+import yaml
 from warnings import warn
 
 
 class BatteryModule(BaseMicrogridModule):
     module_type = ('battery', 'fixed')
+    yaml_tag = f"!Battery"
+    yaml_dumper = yaml.SafeDumper
+    yaml_loader = yaml.SafeLoader
 
     def __init__(self,
                  min_capacity,
