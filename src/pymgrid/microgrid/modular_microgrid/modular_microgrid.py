@@ -67,6 +67,9 @@ class ModularMicrogrid:
         """
         modules = deepcopy(modules)
 
+        if not pd.api.types.is_list_like(modules):
+            raise TypeError("modules must be list-like of modules.")
+
         if add_unbalanced_module:
             modules.append(self._get_unbalanced_energy_module(loss_load_cost, overgeneration_cost))
 
