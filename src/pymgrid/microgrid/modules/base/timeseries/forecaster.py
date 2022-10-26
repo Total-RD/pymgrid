@@ -54,6 +54,8 @@ class Forecaster:
         pass
 
     def _correct_current_val(self, val_c_n, forecast):
+        if forecast.shape[0] == 0:
+            return forecast
         forecast[0, :] = val_c_n[0, :]
         return forecast
 
