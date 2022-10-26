@@ -126,6 +126,8 @@ class _ModulePointer(UserDict):
     Do not initialize this directly
     """
     def __getattr__(self, item):
+        if item.startswith("__"):
+            raise AttributeError(item)
         try:
             return self.__getitem__(item)
         except KeyError:

@@ -67,6 +67,9 @@ class ModularMicrogrid:
         """
         modules = deepcopy(modules)
 
+        if not pd.api.types.is_list_like(modules):
+            raise TypeError("modules must be list-like of modules.")
+
         if add_unbalanced_module:
             modules.append(self._get_unbalanced_energy_module(loss_load_cost, overgeneration_cost))
 
@@ -77,7 +80,6 @@ class ModularMicrogrid:
             **{name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()},
             **{"balance": self._balance_logger.flush()}
         }
-
 
     def run(self, control, normalized=True):
         """
@@ -117,17 +119,14 @@ class ModularMicrogrid:
             for name, modules in self.flex.iterdict():
                 for module in modules:
                     if not module.is_sink:
-                        module.step(0.0, normalized=False)
-                        continue
+                        sink_amt = 0.0
+                    elif module.max_consumption < energy_excess: # module cannot dissapate all excess energy
+                        sink_amt = -1.0*module.max_consumption
                     else:
-                        if module.max_consumption < energy_excess: # module cannot dissapate all excess energy
-                            sink_amt = -1.0*module.max_consumption
-                        else:
-                            sink_amt = -1.0 * energy_excess
+                        sink_amt = -1.0 * energy_excess
 
-                        module_step = module.step(sink_amt, normalized=False)
-                        microgrid_step.append(name, *module_step)
-
+                    module_step = module.step(sink_amt, normalized=False)
+                    microgrid_step.append(name, *module_step)
                     energy_excess += sink_amt
 
         else:
@@ -135,18 +134,15 @@ class ModularMicrogrid:
             for name, modules in self.flex.iterdict():
                 for module in modules:
                     if not module.is_source:
-                        module.step(0.0, normalized=False)
-                        continue
+                        source_amt = 0.0
+                    elif module.max_production < energy_needed: # module cannot provide sufficient energy
+                        source_amt = module.max_production
                     else:
-                        if module.max_production < energy_needed: # module cannot provide sufficient energy
-                            source_amt = module.max_production
-                        else:
-                            source_amt = energy_needed
+                        source_amt = energy_needed
 
-                        module_step = module.step(source_amt, normalized=False)
-                        microgrid_step.append(name, *module_step)
-
-                        energy_needed -= source_amt
+                    module_step = module.step(source_amt, normalized=False)
+                    microgrid_step.append(name, *module_step)
+                    energy_needed -= source_amt
 
         provided, consumed, reward = microgrid_step.balance()
         log_dict = self._get_log_dict(provided, consumed, log_dict=log_dict, prefix='overall')
@@ -259,6 +255,18 @@ class ModularMicrogrid:
         from pymgrid.microgrid.convert.convert import to_nonmodular
         return to_nonmodular(self)
 
+    @classmethod
+    def from_scenario(cls, microgrid_number=0, scenario="pymgrid25"):
+        # TODO use better serialization
+        import pickle
+        from pymgrid import PROJECT_PATH
+        with open(PROJECT_PATH / f"data/scenario/{scenario}.pkl", "rb") as f:
+            mgen = pickle.load(f)
+        return cls.from_nonmodular(mgen.microgrids[microgrid_number])
+
+    def __getnewargs__(self):
+        return (self.module_tuples(), )
+
     def __len__(self):
         """
         Length of available underlying data.
@@ -279,10 +287,12 @@ class ModularMicrogrid:
         return f'ModularMicrogrid([{module_str}])'
 
     def __getattr__(self, item):
-        try:
-            if item == "_modules":
-                raise RuntimeError
+        if item.startswith("__"):
+            raise AttributeError
+        elif item == "_modules":
+            raise RuntimeError
 
+        try:
             return getattr(self._modules, item)
         except AttributeError:
             names = ", ".join([f'"{x}"' for x in self.modules.names()])
