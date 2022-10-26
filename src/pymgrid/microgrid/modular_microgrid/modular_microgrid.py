@@ -81,7 +81,6 @@ class ModularMicrogrid:
             **{"balance": self._balance_logger.flush()}
         }
 
-
     def run(self, control, normalized=True):
         """
         control must contain controls for all fixed _modules in the microgrid.
