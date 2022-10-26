@@ -121,8 +121,8 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
 
             else:                   # Need to consume. These are sources and sources_and_sinks, so need to only use sources_and_sinks.
                 if module_to_deploy.is_sink:
-                    if -1.0 * remaining_load < module_to_deploy.max_consumption: # Can't consume it all
-                        module_consumption = module_to_deploy.max_consumption
+                    if remaining_load < -1.0 * module_to_deploy.max_consumption: # Can't consume it all
+                        module_consumption = -1.0 * module_to_deploy.max_consumption
                     else:                                           # Can consume
                         module_consumption = remaining_load
                     assert module_consumption <= 0
