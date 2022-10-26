@@ -98,7 +98,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     def reset(self):
         self._current_step = 0
-        return self._logger.flush()
+        self._logger.flush()
+        return self.to_normalized(self.state, obs=True)
 
     def _raise_error(self, ask_value, available_value, as_source=False, as_sink=False, lower_bound=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
