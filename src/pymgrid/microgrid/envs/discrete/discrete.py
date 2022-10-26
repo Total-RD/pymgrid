@@ -145,7 +145,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
     def step(self, action):
         self.log_dict.log(action=action)
         microgrid_action = self._get_action(action)
-        return self.run(microgrid_action, normalized=False)
+        return super().step(microgrid_action, normalized=False)
 
     def _get_load(self):
         loads = dict()
