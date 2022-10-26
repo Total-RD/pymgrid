@@ -59,13 +59,23 @@ class Forecaster:
         forecast[0, :] = val_c_n[0, :]
         return forecast
 
+    def _pad(self, forecast, n):
+        if forecast.shape[0] == n:
+            return forecast
+        else:
+            pad_amount = n-forecast.shape[0]
+            return np.pad(forecast, ((0, pad_amount), (0, 0)), constant_values=0)
+
     def __call__(self, val_c, val_c_n, n):
         if len(val_c_n.shape) == 1:
             val_c_n = val_c_n.reshape((-1, 1))
         forecast = self._forecast(val_c, val_c_n, n)
+
         if forecast is None:
             return None
-        return self._correct_current_val(val_c_n, forecast)
+        else:
+            forecast = self._correct_current_val(val_c_n, forecast)
+            return self._pad(forecast, n)
 
 
 class UserDefinedForecaster(Forecaster):
