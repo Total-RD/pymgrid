@@ -120,17 +120,14 @@ class ModularMicrogrid:
             for name, modules in self.flex.iterdict():
                 for module in modules:
                     if not module.is_sink:
-                        module.step(0.0, normalized=False)
-                        continue
+                        sink_amt = 0.0
+                    elif module.max_consumption < energy_excess: # module cannot dissapate all excess energy
+                        sink_amt = -1.0*module.max_consumption
                     else:
-                        if module.max_consumption < energy_excess: # module cannot dissapate all excess energy
-                            sink_amt = -1.0*module.max_consumption
-                        else:
-                            sink_amt = -1.0 * energy_excess
+                        sink_amt = -1.0 * energy_excess
 
-                        module_step = module.step(sink_amt, normalized=False)
-                        microgrid_step.append(name, *module_step)
-
+                    module_step = module.step(sink_amt, normalized=False)
+                    microgrid_step.append(name, *module_step)
                     energy_excess += sink_amt
 
         else:
@@ -138,18 +135,15 @@ class ModularMicrogrid:
             for name, modules in self.flex.iterdict():
                 for module in modules:
                     if not module.is_source:
-                        module.step(0.0, normalized=False)
-                        continue
+                        source_amt = 0.0
+                    elif module.max_production < energy_needed: # module cannot provide sufficient energy
+                        source_amt = module.max_production
                     else:
-                        if module.max_production < energy_needed: # module cannot provide sufficient energy
-                            source_amt = module.max_production
-                        else:
-                            source_amt = energy_needed
+                        source_amt = energy_needed
 
-                        module_step = module.step(source_amt, normalized=False)
-                        microgrid_step.append(name, *module_step)
-
-                        energy_needed -= source_amt
+                    module_step = module.step(source_amt, normalized=False)
+                    microgrid_step.append(name, *module_step)
+                    energy_needed -= source_amt
 
         provided, consumed, reward = microgrid_step.balance()
         log_dict = self._get_log_dict(provided, consumed, log_dict=log_dict, prefix='overall')
