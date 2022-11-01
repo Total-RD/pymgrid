@@ -261,7 +261,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @logger.setter
     def logger(self, logger):
-        return ModularLogger(logger)
+        assert isinstance(logger, ModularLogger)
+        self._logger = logger
 
     @property
     @abstractmethod
