@@ -8,7 +8,7 @@ from warnings import warn
 
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
-from pymgrid.microgrid.utils.serialize import add_numpy_representer
+from pymgrid.microgrid.utils.serialize import add_numpy_representers
 
 
 class BaseMicrogridModule(yaml.YAMLObject):
@@ -351,7 +351,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @classmethod
     def to_yaml(cls, dumper, data):
-        add_numpy_representer()
+        add_numpy_representers()
         return dumper.represent_mapping(cls.yaml_tag, data.serialize(), flow_style=cls.yaml_flow_style)
 
     def serialize(self):
