@@ -1,14 +1,19 @@
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+import yaml
 import numpy as np
 from warnings import warn
+
+from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
 class GensetModule(BaseMicrogridModule):
     module_type = 'genset', 'fixed'
+    yaml_tag = f"!Genset"
+    yaml_dumper = yaml.SafeDumper
+    yaml_loader = yaml.SafeLoader
 
     def __init__(self,
-                 min_production,
-                 max_production,
+                 running_min_production,
+                 running_max_production,
                  genset_cost,
                  co2_per_unit=0,
                  cost_per_unit_co2=0,
@@ -19,18 +24,23 @@ class GensetModule(BaseMicrogridModule):
                  raise_errors=False,
                  provided_energy_name='genset_production'):
 
-        if min_production > max_production:
+        if running_min_production > running_max_production:
             raise ValueError('parameter min_production must not be greater than parameter max_production.')
 
         if not allow_abortion:
             warn('Gensets that do not allow abortions are not fully tested, setting allow_abortion=False '
                  'may lead to unexpected behavior.')
 
-        self._min_production, self._max_production = min_production, max_production
+        self.running_min_production, self.running_max_production = running_min_production, running_max_production
         self.co2_per_unit, self.cost_per_unit_co2 = co2_per_unit, cost_per_unit_co2
-        self.fuel_cost_per_unit = genset_cost
-        self.start_up_time, self.wind_down_time, self.allow_abortion = start_up_time, wind_down_time, allow_abortion
-        self._running, self._status_goal = init_start_up, init_start_up
+
+        self.genset_cost = genset_cost
+        self.start_up_time = start_up_time
+        self.wind_down_time = wind_down_time
+        self.allow_abortion = allow_abortion
+        self.init_start_up = init_start_up
+
+        self._current_status, self._goal_status = init_start_up, init_start_up
         self._steps_until_up, self._steps_until_down = self._reset_up_down_times()
         self.name = ('genset', None)
 
@@ -52,9 +62,9 @@ class GensetModule(BaseMicrogridModule):
         return self.cost_per_unit_co2 * self.get_co2(production)
 
     def _get_fuel_cost(self, production):
-        if callable(self.fuel_cost_per_unit):
-            return self.fuel_cost_per_unit(production)
-        return self.fuel_cost_per_unit*production
+        if callable(self.genset_cost):
+            return self.genset_cost(production)
+        return self.genset_cost*production
 
     def get_cost(self, production):
         return self._get_fuel_cost(production) + self.get_co2_cost(production)
@@ -69,10 +79,10 @@ class GensetModule(BaseMicrogridModule):
         return reward, False, info
 
     def _reset_up_down_times(self):
-        if self._status_goal != self._running:
+        if self._goal_status != self._current_status:
             raise RuntimeError('Attempting to reset up and down times with status change in progress.')
 
-        if self._running:
+        if self._current_status:
             self._steps_until_up = 0
             self._steps_until_down = self.wind_down_time
         else:
@@ -82,7 +92,7 @@ class GensetModule(BaseMicrogridModule):
         return self._steps_until_up, self._steps_until_down
 
     def _update_up_down_times(self):
-        if self._status_goal == 0: # Turning it off
+        if self._goal_status == 0: # Turning it off
             self._steps_until_down -= 1
         else:
             self._steps_until_up -= 1
@@ -93,17 +103,17 @@ class GensetModule(BaseMicrogridModule):
         If steps_until_up/steps_until_down is zero:
             Change status. Then continue with the below.
 
-        Things stay the same when goal_status equals self._running equals self._current_status_goal.
+        Things stay the same when _goal_status equals self._current_status equals self._goal_status.
             (I.e. goal status is same as current status and same as goal status. In this case, one of steps_until_up/steps_until_down
             should be zero (the current status one) and the other should be self.start_up_time/self.wind_down_time, respectively).
-        If goal_status equals self._running but does not equal self._current_status_goal:
+        If _goal_status equals self._current_status but does not equal self._goal_status:
             We are trying to abort a status change.
             If self.allow_abortion:
-                Change self._current_status_goal, and reset steps_until_up/steps_until_down (one to zero, one to max).
+                Change self._goal_status, and reset steps_until_up/steps_until_down (one to zero, one to max).
             Otherwise:
             Increment steps_until_up/steps_until_down (whichever is being undergone).
 
-        If goal_status equals self._current_status_goal but not self._running.
+        If _goal_status equals self._goal_status but not self._current_status.
             We are continuing a previously requested status change. Increment steps_until_up/steps_until_down (whichever is being undergone).
 
         :param goal_status:
@@ -114,64 +124,64 @@ class GensetModule(BaseMicrogridModule):
         goal_status = round(goal_status)
         next_prediction = self.next_status(goal_status)
 
-        if goal_status == self._running == self._status_goal:
+        if goal_status == self._current_status == self._goal_status:
             # Everything is hunky-dory
             assert self._steps_until_down == 0 or self._steps_until_up == 0
             return
 
         instant_up = self.start_up_time == 0 and goal_status == 1
         instant_down = self.wind_down_time == 0 and goal_status == 0
-        if goal_status != self._status_goal and (self.allow_abortion or instant_up or instant_down):
-            self._status_goal = goal_status
+        if goal_status != self._goal_status and (self.allow_abortion or instant_up or instant_down):
+            self._goal_status = goal_status
 
         finished_change = self._finish_in_progress_change()
 
         if not finished_change:
             self._non_instantaneous_update(goal_status)
 
-        if not self._running == next_prediction:
+        if not self._current_status == next_prediction:
             raise ValueError('This is to check is self.next_status works. If raised, it doesn\'t.')
 
     def _finish_in_progress_change(self):
-        if self._steps_until_up == 0 and self._status_goal == 1:
-            self._running = True
+        if self._steps_until_up == 0 and self._goal_status == 1:
+            self._current_status = True
             self._reset_up_down_times()
             return True
-        elif self._steps_until_down == 0 and self._status_goal == 0:
-            self._running = False
+        elif self._steps_until_down == 0 and self._goal_status == 0:
+            self._current_status = False
             self._reset_up_down_times()
             return True
         return False
 
     def _instant_up(self):
-        self._status_goal = 1
+        self._goal_status = 1
 
-        if not self._running:
-            self._running = True
+        if not self._current_status:
+            self._current_status = True
             self._reset_up_down_times()
 
     def _instant_down(self):
-        self._status_goal = 0
+        self._goal_status = 0
 
-        if self._running:
-            self._running = False
+        if self._current_status:
+            self._current_status = False
             self._reset_up_down_times()
 
     def _non_instantaneous_update(self, goal_status):
-        if (goal_status == self._running != self._status_goal) and self.allow_abortion:
+        if (goal_status == self._current_status != self._goal_status) and self.allow_abortion:
             # First case: aborting an in-progress status change
-            self._status_goal = goal_status
+            self._goal_status = goal_status
             self._reset_up_down_times()
-        elif self._running == self._status_goal != goal_status:
+        elif self._current_status == self._goal_status != goal_status:
             # Second case: new status change request
             self._reset_up_down_times()
-            self._status_goal = goal_status
+            self._goal_status = goal_status
 
-        if self._status_goal != self._running:
+        if self._goal_status != self._current_status:
             """
             Current status is not equal to status goal; thus a status change is in progress and the relevant
             incrementer should be positive"""
-            if self._status_goal:
+            if self._goal_status:
                 assert self._steps_until_up > 0
             else:
                 assert self._steps_until_down > 0
@@ -184,21 +194,21 @@ class GensetModule(BaseMicrogridModule):
         try:
             super()._raise_error(ask_value, available_value, as_source=as_source, as_sink=as_sink, lower_bound=lower_bound)
         except ValueError as e:
-            if not self._running:
+            if not self._current_status:
                 raise ValueError(f'{e}\n This may be because this genset module is not currently running.') from e
             else:
                 raise ValueError(f'{e}\n This is despite the fact this genset module is currently running.') from e
 
     def next_status(self, goal_status):
         if goal_status:
-            if self._running:
+            if self._current_status:
                 return 1
             elif self._steps_until_up == 0:
                 return 1
             else:
                 return 0
         else:
-            if not self._running:
+            if not self._current_status:
                 return 0
             elif self._steps_until_down == 0:
                 return 0
@@ -206,46 +216,41 @@ class GensetModule(BaseMicrogridModule):
                 return 1
 
     def next_max_production(self, goal_status):
-        return self.next_status(goal_status) * self._max_production
+        return self.next_status(goal_status) * self.running_max_production
 
     def next_min_production(self, goal_status):
-        return self.next_status(goal_status) * self._min_production
+        return self.next_status(goal_status) * self.running_min_production
+
+    def serializable_state_attributes(self):
+        return ["_current_step"] + [f"_{key}" for key in self.state_dict.keys()]
 
     @property
     def state_dict(self):
-        return dict(zip(('status','goal_status','steps_until_up', 'steps_until_down'), self.current_obs))
+        return dict(zip(('current_status', 'goal_status', 'steps_until_up', 'steps_until_down'), self.current_obs))
 
     @property
     def current_obs(self):
-        return np.array([self._running, self._status_goal, self._steps_until_up, self._steps_until_down])
+        return np.array([self._current_status, self._goal_status, self._steps_until_up, self._steps_until_down])
 
     @property
-    def is_running(self):
-        return self._running
+    def current_status(self):
+        return self._current_status
 
     @property
-    def status_goal(self):
-        return self._status_goal
+    def goal_status(self):
+        return self._goal_status
 
     @property
     def max_production(self):
         # Note: these values know if the genset is currently running, but they don't know if you're planning on turning
         #    it off at this step. Only applies if start_up_time or wind_down_time is 0.
-        return self._running*self._max_production
+        return self._current_status * self.running_max_production
 
     @property
     def min_production(self):
         # Note: these values know if the genset is currently running, but they don't know if you're planning on turning
         #    it off at this step. Only applies if start_up_time or wind_down_time is 0.
-        return self._running*self._min_production
-
-    @property
-    def max_production_when_on(self):
-        return self._max_production
-
-    @property
-    def min_production_when_on(self):
-        return self._min_production
+        return self._current_status * self.running_min_production
 
     @property
     def min_obs(self):
@@ -261,7 +266,7 @@ class GensetModule(BaseMicrogridModule):
 
     @property
     def max_act(self):
-        return np.array([1, self._max_production])
+        return np.array([1, self.running_max_production])
 
     @property
     def is_source(self):

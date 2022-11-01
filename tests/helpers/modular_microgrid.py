@@ -6,9 +6,7 @@ import numpy as np
 def get_modular_microgrid(remove_modules=(), additional_modules=None,):
 
     modules = dict(
-        genset=GensetModule(min_production=10,
-                            max_production=50,
-                            genset_cost=0.5),
+        genset=GensetModule(running_min_production=10, running_max_production=50, genset_cost=0.5),
 
         battery=BatteryModule(min_capacity=0,
                               max_capacity=100,

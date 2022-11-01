@@ -1,8 +1,8 @@
 from pymgrid.microgrid.modules import GensetModule
 
 
-default_params = dict(min_production=10,
-                              max_production=100,
+default_params = dict(running_min_production=10,
+                              running_max_production=100,
                               genset_cost=1,
                               start_up_time=0,
                               wind_down_time=0,
@@ -18,5 +18,5 @@ def get_genset(default_parameters=None, **new_params):
 
 
 def normalize_production(production, max_production=None):
-    max_production = max_production if max_production else default_params['max_production']
+    max_production = max_production if max_production else default_params['running_max_production']
     return production/max_production

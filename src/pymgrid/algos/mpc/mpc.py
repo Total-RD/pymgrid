@@ -100,11 +100,12 @@ class ModelPredictiveControl:
             try:
                 microgrid.to_nonmodular()
                 return microgrid, True, self._get_modules(microgrid)
-            except AttributeError as e:
-                raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
-            except Exception as e_2:
+            except Exception as e:
+                if isinstance(e, AttributeError) and "to_nonmodular" in e.args[0]:
+                    raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
+
                 raise ValueError(f"Modular microgrid must be convertable to nonmodular. "
-                                 f"Is not due to:\n{type(e_2)}: {e_2}") from e_2
+                                 f"Is not due to:\n{type(e)}: {e}") from e
 
     def _get_modules(self, modular_microgrid):
         def remove_suffix(s, suf):
@@ -185,9 +186,9 @@ class ModelPredictiveControl:
 
         if self.has_genset:
             genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
-            fuel_cost = genset.fuel_cost_per_unit
-            p_genset_min = genset.min_production_when_on
-            p_genset_max = genset.max_production_when_on
+            fuel_cost = genset.genset_cost
+            p_genset_min = genset.running_min_production
+            p_genset_max = genset.running_max_production
             cost_co2 = genset.cost_per_unit_co2
             genset_co2 = genset.co2_per_unit
 
@@ -907,7 +908,7 @@ class ModelPredictiveControl:
         except KeyError:
             genset_max_prod, genset_co2_per_kwh = None, None
         else:
-            genset_max_prod = genset.max_production_when_on
+            genset_max_prod = genset.running_max_production
             genset_co2_per_kwh = genset.co2_per_unit
             cost_co2.append(genset.cost_per_unit_co2)
 

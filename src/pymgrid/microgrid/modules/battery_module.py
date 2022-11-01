@@ -38,16 +38,17 @@ class BatteryModule(BaseMicrogridModule):
                          provided_energy_name='discharge_amount',
                          absorbed_energy_name='charge_amount')
 
-    def _init_battery(self, init_capacity, init_soc):
-        if init_capacity is not None and init_soc is not None:
-            warn('Passed both init_capacity and init_soc. Using init_capacity and ignoring init_soc')
+    def _init_battery(self, init_charge, init_soc):
+        if init_charge is not None:
+            if init_soc is not None:
+                warn('Passed both init_capacity and init_soc. Using init_capacity and ignoring init_soc')
+            init_soc = init_charge / self.max_capacity
         elif init_soc is not None:
-            init_capacity = init_soc*self.max_capacity
+            init_charge = init_soc * self.max_capacity
         else:
-            init_capacity = (self.max_capacity+self.min_capacity)/2
-            init_soc = init_capacity/self.max_capacity
+            raise ValueError("Must set one of init_charge and init_soc.")
 
-        return init_capacity, init_soc
+        return init_charge, init_soc
 
     def update(self, external_energy_change, as_source=False, as_sink=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
@@ -164,9 +165,3 @@ class BatteryModule(BaseMicrogridModule):
     @current_charge.setter
     def current_charge(self, value):
         self._current_charge, self._soc = self._init_battery(value, None)
-
-    def serializable_state_attributes(self):
-        return (
-            "current_charge",
-            "soc",
-        )

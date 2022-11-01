@@ -14,15 +14,15 @@ class TestGensetModule(TestCase):
 
     def test_init_start_up(self):
         genset, _ = self.get_genset()
-        self.assertTrue(genset.is_running)
+        self.assertTrue(genset.current_status)
         genset, _ = self.get_genset(init_start_up=False)
-        self.assertFalse(genset.is_running)
+        self.assertFalse(genset.current_status)
 
     def test_get_cost_linear(self):
         genset_cost = np.random.rand()
         genset, params = self.get_genset(genset_cost=genset_cost)
 
-        production = params['min_production'] + (params['max_production']-params['min_production'])*np.random.rand()
+        production = params['running_min_production'] + (params['running_max_production']-params['running_min_production'])*np.random.rand()
         production_cost = production*genset_cost
 
         self.assertEqual(genset.get_cost(production), production_cost)
@@ -31,7 +31,7 @@ class TestGensetModule(TestCase):
         genset_cost = lambda x: x**2
         genset, params = self.get_genset(genset_cost=genset_cost)
 
-        production = params['min_production'] + (params['max_production']-params['min_production'])*np.random.rand()
+        production = params['running_min_production'] + (params['running_max_production']-params['running_min_production'])*np.random.rand()
         production_cost = genset_cost(production)
 
         self.assertEqual(genset.get_cost(production), production_cost)
@@ -69,8 +69,8 @@ class TestGensetModule(TestCase):
         obs, reward, done, info = genset.step(action, normalized=False)
 
         self.assertEqual(reward, -1.0 * default_params['genset_cost']*action[1])
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(obs, np.array([1, 1, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], action[1])
@@ -84,8 +84,8 @@ class TestGensetModule(TestCase):
         obs, reward, done, info = genset.step(action, normalized=True)
 
         self.assertEqual(reward, -1.0 * params['genset_cost']*unnormalized_production)
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(obs, np.array([1, 1, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
@@ -96,13 +96,13 @@ class TestGensetModule(TestCase):
         unnormalized_production = 0
         action = np.array([0.0, normalize_production(unnormalized_production)])
 
-        self.assertTrue(genset.is_running)
+        self.assertTrue(genset.current_status)
 
         obs, reward, done, info = genset.step(action, normalized=True)
 
         self.assertEqual(reward, 0)
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 0)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 0)
         self.assertEqual(obs, np.array([0, 0, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
@@ -114,8 +114,8 @@ class TestGensetModule(TestCase):
         action = np.array([0.0, normalize_production(unnormalized_production)])
 
         # Genset starts on
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
 
         # Turn genset off (wind_down_time=0), and then ask for production. (no-no).
         with self.assertRaises(ValueError):
@@ -129,8 +129,8 @@ class TestGensetModule(TestCase):
 
         obs, reward, done, info = genset.step(action)
         self.assertEqual(reward, 0)
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 0)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 0)
         self.assertEqual(obs, np.array([0, 0, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
@@ -138,8 +138,8 @@ class TestGensetModule(TestCase):
     def test_step_genset_production_request_out_of_range_no_error_raise(self):
         genset, params = self.get_genset(raise_errors=False)
 
-        requested_possible_warn =  [(params['min_production']*np.random.rand(), params['min_production'], False),
-                               (params['max_production'] * (1+np.random.rand()), params['max_production'], True)]
+        requested_possible_warn =  [(params['running_min_production']*np.random.rand(), params['running_min_production'], False),
+                               (params['running_max_production'] * (1+np.random.rand()), params['running_max_production'], True)]
 
 
         # First requested value is below min_production, second is above max_production.
@@ -156,8 +156,8 @@ class TestGensetModule(TestCase):
                     obs, reward, done, info = genset.step(action)
 
                 self.assertEqual(reward, -1.0 * params['genset_cost']*possible)
-                self.assertTrue(genset.is_running)
-                self.assertEqual(genset.status_goal, 1)
+                self.assertTrue(genset.current_status)
+                self.assertEqual(genset.goal_status, 1)
                 self.assertEqual(obs, np.array([1, 1, 0, 0]))
                 self.assertFalse(done)
                 self.assertEqual(info['provided_energy'], possible)

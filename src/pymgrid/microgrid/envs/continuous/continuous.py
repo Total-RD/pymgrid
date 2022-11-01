@@ -40,7 +40,5 @@ class ContinuousMicrogridEnv(BaseMicrogridEnv):
         return super().run(action)
 
     def run(self, action, normalized=True):
-        warn('run() should be called directly in environments.')
+        warn('run() should not be called directly in environments.')
         return super().run(action, normalized=normalized)
-
-

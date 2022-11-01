@@ -8,6 +8,7 @@ from warnings import warn
 
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
+from pymgrid.microgrid.utils.serialize import add_numpy_representers
 
 
 class BaseMicrogridModule(yaml.YAMLObject):
@@ -34,7 +35,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         self._act_normalizer = self._get_normalizer(normalize_pos, act=True)
         self._action_spaces = self._get_action_spaces()
         self._observation_spaces = self._get_observation_spaces()
-        self._provided_energy_name, self._absorbed_energy_name = provided_energy_name, absorbed_energy_name
+        self.provided_energy_name, self.absorbed_energy_name = provided_energy_name, absorbed_energy_name
         self._logger = ModularLogger()
         self.name = (None, None) # set by ModularMicrogrid
 
@@ -191,13 +192,13 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def _log(self, state_dict_pre_step, provided_energy=None, absorbed_energy=None, **info):
         _info = info.copy()
 
-        if self._provided_energy_name is not None:
-            _info[self._provided_energy_name] = provided_energy if provided_energy is not None else 0.0
+        if self.provided_energy_name is not None:
+            _info[self.provided_energy_name] = provided_energy if provided_energy is not None else 0.0
         else:
             assert provided_energy is None, 'Cannot log provided_energy with NoneType provided_energy_name.'
 
-        if self._absorbed_energy_name is not None:
-            _info[self._absorbed_energy_name] = absorbed_energy if absorbed_energy is not None else 0.0
+        if self.absorbed_energy_name is not None:
+            _info[self.absorbed_energy_name] = absorbed_energy if absorbed_energy is not None else 0.0
         else:
             assert absorbed_energy is None, 'Cannot log absorbed_energy with NoneType absorbed_energy_name.'
 
@@ -261,7 +262,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @logger.setter
     def logger(self, logger):
-        return ModularLogger(logger)
+        assert isinstance(logger, ModularLogger)
+        self._logger = logger
 
     @property
     @abstractmethod
@@ -345,26 +347,28 @@ class BaseMicrogridModule(yaml.YAMLObject):
     @classmethod
     def from_yaml(cls, loader, node):
         mapping = loader.construct_mapping(node, deep=True)
-
         instance = cls.deserialize_instance(mapping["cls_params"])
         instance.logger = instance.logger.from_raw(mapping["log"])
+        instance.name = tuple(mapping["name"])
         return instance.deserialize(mapping["state"])
 
     @classmethod
     def to_yaml(cls, dumper, data):
+        add_numpy_representers()
         return dumper.represent_mapping(cls.yaml_tag, data.serialize(), flow_style=cls.yaml_flow_style)
 
     def serialize(self):
-        data = {"log": self._logger.raw(),
-                "cls_params": self._serialize_cls_params(),
-                "state": self._serialize_state_attributes()
-                }
+        data = {
+            "name": self.name,
+            "log": self._logger.raw(),
+            "cls_params": self._serialize_cls_params(),
+            "state": self._serialize_state_attributes()
+        }
 
         return data
 
-    @abstractmethod
     def serializable_state_attributes(self):
-        pass
+        return ["_current_step", *self.state_dict.keys()]
 
     def _serialize_state_attributes(self):
         return {attr_name: getattr(self, attr_name) for attr_name in self.serializable_state_attributes()}
@@ -377,7 +381,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             try:
                 serialized_args[p_name] = (getattr(self, p_name))
             except AttributeError:
-                raise AttributeError(f"Module {self} must have attribute/property {p_name} corresponding to "
+                raise AttributeError(f"Module {self.__class__.__name__} must have attribute/property '{p_name}' corresponding to "
                                      f"class parameter of the same name.")
 
         return serialized_args
@@ -410,5 +414,16 @@ class BaseMicrogridModule(yaml.YAMLObject):
                 raise KeyError(f"Missing key {attr_name} in deserialized dict.")
 
         if len(serialized_dict):
-            warn("Unused keys in serialized_dict: {")
+            warn(f"Unused keys in serialized_dict: {list(serialized_dict.keys())}")
         return self
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        diff = [(k1, v1, v2) for (k1, v1), (k2, v2) in zip(self.__dict__.items(), other.__dict__.items()) if v1 != v2]
+        if len(diff):
+            for l in diff:
+                print(l)
+
+        return self.__dict__ == other.__dict__

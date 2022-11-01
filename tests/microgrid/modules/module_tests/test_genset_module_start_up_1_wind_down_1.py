@@ -28,8 +28,8 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
 
     def test_off_at_start_up(self):
         genset, _ = self.get_genset(new=True)
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 0)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 0)
         self.assertEqual(genset.current_obs, np.array([0, 0, 1, 0]))
 
     def test_warm_up(self):
@@ -37,8 +37,8 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         genset,_ = self.get_genset(new=True)
         obs, reward, done, info = self.warm_up(genset)
         self.assertEqual(reward, 0)
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(obs, np.array([0, 1, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
@@ -47,8 +47,8 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         # Assert that exception is thrown when production is requested while genset is off
         genset, _ = self.get_genset(new=True)
 
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 0)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 0)
 
         unnormalized_production = 50
         action = np.array([1.0, normalize_production(unnormalized_production)])
@@ -67,8 +67,8 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         action = np.array([1.0, normalize_production(unnormalized_production)])
         obs, reward, done, info = genset.step(action)
         self.assertEqual(reward, -1.0*params['genset_cost']*unnormalized_production)
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(obs, np.array([1, 1, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
@@ -77,7 +77,7 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         genset, params = self.get_genset()
 
         # Genset is on now. Requesting below min production.
-        unnormalized_production = params['min_production']*np.random.rand()
+        unnormalized_production = params['running_min_production']*np.random.rand()
         action = np.array([1.0, normalize_production(unnormalized_production)])
         with self.assertRaises(ValueError):
             genset.step(action)
@@ -87,15 +87,15 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         genset, params = self.get_genset(raise_errors=False)
 
         # Genset is on now. Requesting below min production.
-        unnormalized_production = params['min_production']*np.random.rand()
+        unnormalized_production = params['running_min_production']*np.random.rand()
         action = np.array([1.0, normalize_production(unnormalized_production)])
         obs, reward, done, info = genset.step(action)
-        self.assertEqual(reward, -1.0*params['genset_cost']*params['min_production'])
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertEqual(reward, -1.0*params['genset_cost']*params['running_min_production'])
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(obs, np.array([1, 1, 0, 0]))
         self.assertFalse(done)
-        self.assertEqual(info['provided_energy'], params['min_production'])
+        self.assertEqual(info['provided_energy'], params['running_min_production'])
 
     def test_start_up_1_then_shut_down_exception_raise(self):
         # Genset is on, requesting production less than the min should return min production.
@@ -106,12 +106,6 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         action = np.array([0.1, normalize_production(unnormalized_production)])
         with self.assertRaises(ValueError):
             genset.step(action)
-        # self.assertEqual(reward, -1.0*params['genset_cost']*params['min_production'])
-        # self.assert(genset.is_running)
-        # self.assertEqual(genset.status_goal, 1)
-        # self.assertEqual(obs, np.array([1, 1, 0, 0]))
-        # self.assertFalse(done)
-        # self.assertEqual(info['provided_energy'], params['min_production'])
 
     def test_start_up_1_then_shut_down_no_exception(self):
         # Genset is on, requesting production less than the min should return min production.
@@ -122,8 +116,8 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         action = np.array([0.1, normalize_production(unnormalized_production)])
         obs, reward, done, info = genset.step(action)
         self.assertEqual(reward, 0.0)
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 0)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 0)
         self.assertEqual(obs, np.array([0, 0, params['start_up_time'], 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0.0)
@@ -145,27 +139,27 @@ class TestGensetStartUp1WindDown0OnAtStartUp(TestCase):
 
     def warm_up(self, genset):
         # Take a step, ask genset to turn on. Genset begins on so should be on at this point.
-        unnormalized_production = self.default_params['min_production']
+        unnormalized_production = self.default_params['running_min_production']
         action = np.array([1.0, normalize_production(unnormalized_production)])
         obs, reward, done, info = genset.step(action)
         return obs, reward, done, info
 
     def test_on_at_start_up(self):
         genset, _ = self.get_genset(new=True)
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(genset.current_obs, np.array([1, 1, 0, 0]))
 
     def test_warm_up(self):
         # Take a step, ask genset to turn on.  Genset begins on so should be on at this point.
         genset, params = self.get_genset(new=True)
         obs, reward, done, info = self.warm_up(genset)
-        self.assertEqual(reward, -1.0*params['genset_cost']*params['min_production'])
-        self.assertTrue(genset.is_running)
-        self.assertEqual(genset.status_goal, 1)
+        self.assertEqual(reward, -1.0*params['genset_cost']*params['running_min_production'])
+        self.assertTrue(genset.current_status)
+        self.assertEqual(genset.goal_status, 1)
         self.assertEqual(obs, np.array([1, 1, 0, 0]))
         self.assertFalse(done)
-        self.assertEqual(info['provided_energy'], params['min_production'])
+        self.assertEqual(info['provided_energy'], params['running_min_production'])
 
     def test_shut_down(self):
         genset, _ = self.get_genset()
@@ -173,8 +167,8 @@ class TestGensetStartUp1WindDown0OnAtStartUp(TestCase):
         action = np.array([0.0, normalize_production(unnormalized_production)])
         obs, reward, done, info = genset.step(action)
         self.assertEqual(reward, 0)
-        self.assertFalse(genset.is_running)
-        self.assertEqual(genset.status_goal, 0)
+        self.assertFalse(genset.current_status)
+        self.assertEqual(genset.goal_status, 0)
         self.assertEqual(obs, np.array([0, 0, 1, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)

@@ -25,12 +25,17 @@ class Normalize:
         except AssertionError:
             warn(f'Value {value} resides out of expected bounds of value to be normalized: [{_min}, {_max}].')
 
-
         normalized = (value - self._min_val) / self._spread
         try:
             return normalized.item()
         except (AttributeError, ValueError):
             return normalized
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return np.isclose(self._min_val, other._min_val).all() and np.isclose(self._max_val, other._max_val).all()
 
     def from_normalized(self, value):
         try:
