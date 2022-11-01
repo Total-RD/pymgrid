@@ -348,6 +348,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls.deserialize_instance(mapping["cls_params"])
         instance.logger = instance.logger.from_raw(mapping["log"])
+        instance.name = tuple(mapping["name"])
         return instance.deserialize(mapping["state"])
 
     @classmethod
@@ -356,10 +357,12 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return dumper.represent_mapping(cls.yaml_tag, data.serialize(), flow_style=cls.yaml_flow_style)
 
     def serialize(self):
-        data = {"log": self._logger.raw(),
-                "cls_params": self._serialize_cls_params(),
-                "state": self._serialize_state_attributes()
-                }
+        data = {
+            "name": self.name,
+            "log": self._logger.raw(),
+            "cls_params": self._serialize_cls_params(),
+            "state": self._serialize_state_attributes()
+        }
 
         return data
 
