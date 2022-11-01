@@ -1,10 +1,15 @@
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+import yaml
 import numpy as np
 from warnings import warn
+
+from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
 class GensetModule(BaseMicrogridModule):
     module_type = 'genset', 'fixed'
+    yaml_tag = f"!Genset"
+    yaml_dumper = yaml.SafeDumper
+    yaml_loader = yaml.SafeLoader
 
     def __init__(self,
                  running_min_production,
