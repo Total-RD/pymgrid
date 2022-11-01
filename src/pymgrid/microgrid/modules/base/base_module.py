@@ -415,3 +415,14 @@ class BaseMicrogridModule(yaml.YAMLObject):
         if len(serialized_dict):
             warn(f"Unused keys in serialized_dict: {list(serialized_dict.keys())}")
         return self
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        diff = [(k1, v1, v2) for (k1, v1), (k2, v2) in zip(self.__dict__.items(), other.__dict__.items()) if v1 != v2]
+        if len(diff):
+            for l in diff:
+                print(l)
+
+        return self.__dict__ == other.__dict__
