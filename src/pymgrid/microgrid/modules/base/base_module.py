@@ -366,9 +366,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         return data
 
-    @abstractmethod
     def serializable_state_attributes(self):
-        pass
+        return ["_current_step", *self.state_dict.keys()]
 
     def _serialize_state_attributes(self):
         return {attr_name: getattr(self, attr_name) for attr_name in self.serializable_state_attributes()}

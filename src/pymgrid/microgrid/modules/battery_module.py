@@ -164,9 +164,3 @@ class BatteryModule(BaseMicrogridModule):
     @current_charge.setter
     def current_charge(self, value):
         self._current_charge, self._soc = self._init_battery(value, None)
-
-    def serializable_state_attributes(self):
-        return (
-            "current_charge",
-            "soc",
-        )
