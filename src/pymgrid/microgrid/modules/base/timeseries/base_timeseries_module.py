@@ -49,7 +49,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     def forecast(self):
         val_c_n = self.time_series[1+self.current_step:1+self.current_step+self.forecast_horizon, :]
         factor = -1 if (self.is_sink and not self.is_source) else 1
-        forecast = self.forecaster(val_c=self.time_series[self.current_step, :],
+        try:
+            val_c = self.time_series[self.current_step, :]
+        except IndexError:
+            return np.nan * np.ones((self._forecast_horizon, len(self.state_components)))
+
+        forecast = self.forecaster(val_c=val_c,
                                val_c_n=val_c_n,
                                n=self.forecast_horizon)
         return None if forecast is None else factor * forecast
