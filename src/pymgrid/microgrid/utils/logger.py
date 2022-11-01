@@ -7,7 +7,7 @@ import pandas as pd
 class ModularLogger(UserDict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._log_length = max(len(v) for _, v in self.items()) if super().__init__() else 0
+        self._log_length = max(len(v) for _, v in self.items()) if len(self.data) else 0
 
     def flush(self):
         d = self.data.copy()
