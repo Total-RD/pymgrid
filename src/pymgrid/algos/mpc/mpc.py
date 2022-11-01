@@ -100,11 +100,12 @@ class ModelPredictiveControl:
             try:
                 microgrid.to_nonmodular()
                 return microgrid, True, self._get_modules(microgrid)
-            except AttributeError as e:
-                raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
-            except Exception as e_2:
+            except Exception as e:
+                if isinstance(e, AttributeError) and "to_nonmodular" in e.args[0]:
+                    raise TypeError(f"Unable to verify microgrid as modular or nonmodular.") from e
+
                 raise ValueError(f"Modular microgrid must be convertable to nonmodular. "
-                                 f"Is not due to:\n{type(e_2)}: {e_2}") from e_2
+                                 f"Is not due to:\n{type(e)}: {e}") from e
 
     def _get_modules(self, modular_microgrid):
         def remove_suffix(s, suf):
