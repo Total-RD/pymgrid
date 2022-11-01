@@ -153,6 +153,10 @@ def add_genset_params(genset_module, params_dict):
     genset_rated_power = genset_module.max_production/genset_pmax
     _add_to_architecture(params_dict, 'genset')
     _add_genset_polynom(params_dict)
+
+    if genset_rated_power == 0:
+        raise RuntimeError
+
     _add_to_parameters(params_dict,
                        genset_rated_power=genset_rated_power,
                        genset_pmin=genset_module.min_production/genset_rated_power,
