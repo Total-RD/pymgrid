@@ -35,7 +35,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         self._act_normalizer = self._get_normalizer(normalize_pos, act=True)
         self._action_spaces = self._get_action_spaces()
         self._observation_spaces = self._get_observation_spaces()
-        self._provided_energy_name, self._absorbed_energy_name = provided_energy_name, absorbed_energy_name
+        self.provided_energy_name, self.absorbed_energy_name = provided_energy_name, absorbed_energy_name
         self._logger = ModularLogger()
         self.name = (None, None) # set by ModularMicrogrid
 
@@ -191,13 +191,13 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def _log(self, state_dict_pre_step, provided_energy=None, absorbed_energy=None, **info):
         _info = info.copy()
 
-        if self._provided_energy_name is not None:
-            _info[self._provided_energy_name] = provided_energy if provided_energy is not None else 0.0
+        if self.provided_energy_name is not None:
+            _info[self.provided_energy_name] = provided_energy if provided_energy is not None else 0.0
         else:
             assert provided_energy is None, 'Cannot log provided_energy with NoneType provided_energy_name.'
 
-        if self._absorbed_energy_name is not None:
-            _info[self._absorbed_energy_name] = absorbed_energy if absorbed_energy is not None else 0.0
+        if self.absorbed_energy_name is not None:
+            _info[self.absorbed_energy_name] = absorbed_energy if absorbed_energy is not None else 0.0
         else:
             assert absorbed_energy is None, 'Cannot log absorbed_energy with NoneType absorbed_energy_name.'
 
