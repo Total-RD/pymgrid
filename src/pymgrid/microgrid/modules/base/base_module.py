@@ -410,5 +410,5 @@ class BaseMicrogridModule(yaml.YAMLObject):
                 raise KeyError(f"Missing key {attr_name} in deserialized dict.")
 
         if len(serialized_dict):
-            warn("Unused keys in serialized_dict: {")
+            warn(f"Unused keys in serialized_dict: {list(serialized_dict.keys())}")
         return self
