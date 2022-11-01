@@ -35,7 +35,7 @@ class TestToModular(TestCase):
             self.assertTrue(len(modular.genset) == 1)
 
             genset_module = modular.genset[0]
-            self.assertEqual(microgrid.genset.fuel_cost, genset_module.fuel_cost_per_unit)
+            self.assertEqual(microgrid.genset.fuel_cost, genset_module.genset_cost)
             self.assertEqual(microgrid.genset.co2, genset_module.co2_per_unit)
             self.assertEqual(microgrid.genset.rated_power*microgrid.genset.p_max, genset_module.max_production)
 

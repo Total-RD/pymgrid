@@ -186,9 +186,9 @@ class ModelPredictiveControl:
 
         if self.has_genset:
             genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
-            fuel_cost = genset.fuel_cost_per_unit
-            p_genset_min = genset.min_production_when_on
-            p_genset_max = genset.max_production_when_on
+            fuel_cost = genset.genset_cost
+            p_genset_min = genset.running_min_production
+            p_genset_max = genset.running_max_production
             cost_co2 = genset.cost_per_unit_co2
             genset_co2 = genset.co2_per_unit
 
@@ -908,7 +908,7 @@ class ModelPredictiveControl:
         except KeyError:
             genset_max_prod, genset_co2_per_kwh = None, None
         else:
-            genset_max_prod = genset.max_production_when_on
+            genset_max_prod = genset.running_max_production
             genset_co2_per_kwh = genset.co2_per_unit
             cost_co2.append(genset.cost_per_unit_co2)
 

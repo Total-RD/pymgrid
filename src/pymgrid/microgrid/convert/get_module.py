@@ -64,8 +64,8 @@ def get_genset_module(nonmodular, raise_errors):
     genset_cost = genset.fuel_cost
     co2_per_unit = nonmodular.parameters.genset_co2.item()
     cost_per_unit_co2 = nonmodular.parameters.cost_co2.item()
-    return GensetModule(min_production=min_production,
-                        max_production=max_production,
+    return GensetModule(running_min_production=min_production,
+                        running_max_production=max_production,
                         genset_cost=genset_cost,
                         co2_per_unit=co2_per_unit,
                         cost_per_unit_co2=cost_per_unit_co2,

@@ -161,7 +161,7 @@ def add_genset_params(genset_module, params_dict):
                        genset_rated_power=genset_rated_power,
                        genset_pmin=genset_module.min_production/genset_rated_power,
                        genset_pmax=genset_pmax,
-                       fuel_cost=genset_module.fuel_cost_per_unit,
+                       fuel_cost=genset_module.genset_cost,
                        genset_co2=genset_module.co2_per_unit)
     _add_to_df_actions(params_dict, 'genset')
     _add_to_df_actual_generation(params_dict, 'genset')
