@@ -380,7 +380,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             try:
                 serialized_args[p_name] = (getattr(self, p_name))
             except AttributeError:
-                raise AttributeError(f"Module {self} must have attribute/property {p_name} corresponding to "
+                raise AttributeError(f"Module {self.__class__.__name__} must have attribute/property '{p_name}' corresponding to "
                                      f"class parameter of the same name.")
 
         return serialized_args
