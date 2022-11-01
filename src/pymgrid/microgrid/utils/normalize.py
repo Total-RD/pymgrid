@@ -1,6 +1,7 @@
 from _warnings import warn
 import numpy as np
 
+
 class Normalize:
 
     def __init__(self, min_val, max_val):
