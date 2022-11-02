@@ -1,10 +1,14 @@
 import numpy as np
+import yaml
 
 from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class LoadModule(BaseTimeSeriesMicrogridModule):
     module_type = ('load', 'fixed')
+    yaml_tag = u"!LoadModule"
+    yaml_dumper = yaml.SafeDumper
+    yaml_loader = yaml.SafeLoader
 
     def __init__(self, time_series,
                  loss_load_cost,
