@@ -1,10 +1,14 @@
 import numpy as np
+import yaml
 
 from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class GridModule(BaseTimeSeriesMicrogridModule):
     module_type = ('grid', 'fixed')
+    yaml_tag = u"!GridModule"
+    yaml_loader = yaml.SafeLoader
+    yaml_dumper = yaml.SafeDumper
 
     def __init__(self,
                  max_import,
