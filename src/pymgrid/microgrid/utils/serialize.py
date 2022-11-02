@@ -3,7 +3,7 @@ import yaml
 
 
 def _numpy_representer_seq(dumper, data):
-    return dumper.represent_sequence('!ndarray:', str(data.tolist()))
+    return dumper.represent_sequence('!ndarray:', data.tolist())
 
 
 def _numpy_represent_floating(dumper, data):
