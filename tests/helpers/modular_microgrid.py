@@ -3,7 +3,7 @@ from pymgrid.microgrid.modules import *
 import numpy as np
 
 
-def get_modular_microgrid(remove_modules=(), additional_modules=None,):
+def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbalanced_module=True):
 
     modules = dict(
         genset=GensetModule(running_min_production=10, running_max_production=50, genset_cost=0.5),
@@ -35,4 +35,4 @@ def get_modular_microgrid(remove_modules=(), additional_modules=None,):
     modules = list(modules.values())
     modules.extend(additional_modules if additional_modules else [])
 
-    return ModularMicrogrid(modules)
+    return ModularMicrogrid(modules, add_unbalanced_module=add_unbalanced_module)
