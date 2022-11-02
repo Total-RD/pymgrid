@@ -17,6 +17,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
+        self._forecast_param = forecaster
         self.forecaster, self._forecast_horizon = get_forecaster(forecaster,
                                                                 forecast_horizon,
                                                                 self.time_series,
@@ -74,6 +75,11 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     def time_series(self):
         return self._time_series
 
+    @time_series.setter
+    def time_series(self, value):
+        self._time_series = self._set_time_series(value)
+        self.get_bounds()
+
     @property
     def min_obs(self):
         return np.repeat([self._min_obs], 1+self._forecast_horizon)
@@ -106,6 +112,13 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             self._forecast_horizon = value
 
     @property
+    def forecaster_increase_uncertainty(self):
+        try:
+            return self.forecaster.increase_uncertainty
+        except AttributeError:
+            return False
+
+    @property
     @abstractmethod
     def state_components(self):
         pass
@@ -117,6 +130,14 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         for j in range(0, self.forecast_horizon):
             state_dict.update(dict(zip(self.state_components + f'_forecast_{j}', forecast[j, :])))
         return state_dict
+
+    def serialize(self):
+        data = super().serialize()
+        data["cls_params"]["forecaster"] = self._forecast_param
+        return data
+
+    def serializable_state_attributes(self):
+        return ["_current_step"]
 
     def __len__(self):
         return self._time_series.shape[0]
