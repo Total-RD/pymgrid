@@ -313,6 +313,12 @@ class ModularMicrogrid(yaml.YAMLObject):
 
         return min(l)
 
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.modules == other.modules and self._balance_logger == other._balance_logger
+
     def __repr__(self):
         module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]
         module_str = ', '.join(module_str)
