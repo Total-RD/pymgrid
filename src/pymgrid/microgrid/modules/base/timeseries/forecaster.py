@@ -66,6 +66,12 @@ class Forecaster:
             pad_amount = n-forecast.shape[0]
             return np.pad(forecast, ((0, pad_amount), (0, 0)), constant_values=0)
 
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.__dict__ == other.__dict__
+
     def __call__(self, val_c, val_c_n, n):
         if len(val_c_n.shape) == 1:
             val_c_n = val_c_n.reshape((-1, 1))
