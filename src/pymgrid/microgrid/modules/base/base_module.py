@@ -341,7 +341,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def dump(self):
         return yaml.safe_dump(self)
 
-    def load(self, stream):
+    @classmethod
+    def load(cls, stream):
         return yaml.safe_load(stream)
 
     @classmethod
