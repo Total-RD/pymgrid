@@ -52,7 +52,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         try:
             val_c = self.time_series[self.current_step, :]
         except IndexError:
-            return np.nan * np.ones((self._forecast_horizon, len(self.state_components)))
+            return np.zeros((self._forecast_horizon, len(self.state_components)))
 
         forecast = self.forecaster(val_c=val_c,
                                val_c_n=val_c_n,
@@ -68,7 +68,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         try:
             return factor * self.time_series[self.current_step, :]
         except IndexError:
-            return np.nan*np.ones(self.time_series.shape[1])
+            return np.zeros(self.time_series.shape[1])
 
     @property
     def time_series(self):
