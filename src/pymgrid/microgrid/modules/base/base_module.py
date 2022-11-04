@@ -8,7 +8,7 @@ from warnings import warn
 
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
-from pymgrid.microgrid.utils.serialize import add_numpy_representers, add_numpy_constructors
+from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_csvs
 
 
 class BaseMicrogridModule(yaml.YAMLObject):
@@ -347,7 +347,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @classmethod
     def from_yaml(cls, loader, node):
-        add_numpy_constructors()
+        add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls.deserialize_instance(mapping["cls_params"])
         instance.logger = instance.logger.from_raw(mapping["log"])
@@ -356,18 +356,18 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @classmethod
     def to_yaml(cls, dumper, data):
-        add_numpy_representers()
-        return dumper.represent_mapping(cls.yaml_tag, data.serialize(), flow_style=cls.yaml_flow_style)
+        add_numpy_pandas_representers()
+        return dumper.represent_mapping(cls.yaml_tag, data.serialize(dumper.stream), flow_style=cls.yaml_flow_style)
 
-    def serialize(self):
+    def serialize(self, dumper_stream):
         data = {
             "name": self.name,
-            "log": self._logger.raw(),
+            "log": self._logger.serialize(),
             "cls_params": self._serialize_cls_params(),
             "state": self._serialize_state_attributes()
         }
 
-        return data
+        return dump_csvs(data, dumper_stream, self.yaml_tag)
 
     def serializable_state_attributes(self):
         return ["_current_step", *self.state_dict.keys()]
