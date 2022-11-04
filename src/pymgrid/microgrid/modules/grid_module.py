@@ -13,18 +13,18 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def __init__(self,
                  max_import,
                  max_export,
-                 time_series_cost_co2,
+                 time_series,
                  forecaster=None,
                  forecast_horizon=24,
                  forecaster_increase_uncertainty=False,
                  cost_per_unit_co2=0,
                  raise_errors=False):
 
-        self._check_params(max_import, max_export, time_series_cost_co2)
+        self._check_params(max_import, max_export, time_series)
         self.max_import, self.max_export = max_import, max_export
         self.cost_per_unit_co2 = cost_per_unit_co2
         self.name = ('grid', None)
-        super().__init__(time_series_cost_co2,
+        super().__init__(time_series,
                          raise_errors,
                          forecaster=forecaster,
                          forecast_horizon=forecast_horizon,

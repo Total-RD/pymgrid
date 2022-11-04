@@ -91,10 +91,10 @@ def get_grid_module(nonmodular, raise_errors):
 
     return GridModule(max_import=max_import,
                       max_export=max_export,
-                      time_series_cost_co2=time_series_cost_co2,
-                      cost_per_unit_co2=cost_per_unit_co2,
+                      time_series=time_series_cost_co2,
                       forecaster='oracle',
-                      forecast_horizon=nonmodular.horizon-1,
+                      forecast_horizon=nonmodular.horizon - 1,
+                      cost_per_unit_co2=cost_per_unit_co2,
                       raise_errors=raise_errors)
 
 

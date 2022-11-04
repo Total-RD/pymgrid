@@ -20,10 +20,7 @@ def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbala
         load=LoadModule(time_series=60*np.ones(100),
                         loss_load_cost=10),
 
-        grid=GridModule(max_import=100,
-                        max_export=0,
-                        time_series_cost_co2=np.ones((100, 3)),
-                        raise_errors=True)
+        grid=GridModule(max_import=100, max_export=0, time_series=np.ones((100, 3)), raise_errors=True)
         )
 
     for module in remove_modules:
