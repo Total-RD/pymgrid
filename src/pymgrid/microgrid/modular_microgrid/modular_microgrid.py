@@ -9,7 +9,7 @@ from pymgrid.microgrid.modules import *
 from pymgrid.microgrid.modules.module_container import ModuleContainer
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
-from pymgrid.microgrid.utils.serialize import add_numpy_representers, add_numpy_constructors
+from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_csvs
 
 DEFAULT_HORIZON = 23
 
@@ -262,21 +262,21 @@ class ModularMicrogrid(yaml.YAMLObject):
 
     @classmethod
     def to_yaml(cls, dumper, data):
-        add_numpy_representers()
-        return dumper.represent_mapping(cls.yaml_tag, data.serialize(), flow_style=cls.yaml_flow_style)
+        add_numpy_pandas_representers()
+        return dumper.represent_mapping(cls.yaml_tag, data.serialize(dumper.stream), flow_style=cls.yaml_flow_style)
 
     @classmethod
     def from_yaml(cls, loader, node):
-        add_numpy_constructors()
+        add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls(mapping["modules"], add_unbalanced_module=False)
         instance._balance_logger = instance._balance_logger.from_raw(mapping["balance_log"])
         return instance
 
-    def serialize(self):
+    def serialize(self, dumper_stream):
         data = {"modules": self._modules.module_tuples(),
-                "balance_log": self._balance_logger.raw()}
-        return data
+                "balance_log": self._balance_logger.serialize()}
+        return dump_csvs(data, dumper_stream, self.yaml_tag)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
