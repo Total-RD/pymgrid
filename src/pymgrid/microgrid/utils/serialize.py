@@ -33,7 +33,7 @@ def dump_csvs(data_dict, stream, yaml_tag):
 
 
 def _numpy_representer_seq(dumper, data):
-    return dumper.represent_sequence('!ndarray:', data.tolist())
+    return dumper.represent_sequence('!ndarray', data.tolist())
 
 
 def _numpy_represent_floating(dumper, data):
