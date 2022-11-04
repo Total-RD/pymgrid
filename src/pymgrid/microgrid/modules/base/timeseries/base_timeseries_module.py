@@ -131,8 +131,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             state_dict.update(dict(zip(self.state_components + f'_forecast_{j}', forecast[j, :])))
         return state_dict
 
-    def serialize(self):
-        data = super().serialize()
+    def serialize(self, dumper_stream):
+        data = super().serialize(dumper_stream)
         data["cls_params"]["forecaster"] = self._forecast_param
         return data
 
