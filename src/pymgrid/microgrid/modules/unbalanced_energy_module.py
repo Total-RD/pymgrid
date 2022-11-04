@@ -1,10 +1,14 @@
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
 import numpy as np
+import yaml
+
+from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
 
 class UnbalancedEnergyModule(BaseMicrogridModule):
-
     module_type = ('balancing', 'flex')
+    yaml_tag = u"!UnbalancedEnergyModule"
+    yaml_dumper = yaml.SafeDumper
+    yaml_loader = yaml.SafeLoader
 
     def __init__(self,
                  raise_errors,
