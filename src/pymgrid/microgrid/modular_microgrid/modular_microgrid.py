@@ -253,8 +253,8 @@ class ModularMicrogrid(yaml.YAMLObject):
     def n_modules(self):
         return len(self._modules)
 
-    def dump(self):
-        return yaml.safe_dump(self)
+    def dump(self, stream=None):
+        return yaml.safe_dump(self, stream=stream)
 
     @classmethod
     def load(cls, stream):
