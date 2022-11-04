@@ -36,6 +36,9 @@ class ModularLogger(UserDict):
     def to_frame(self):
         return pd.DataFrame(self.data)
 
+    def serialize(self):
+        return self.to_frame() if len(self) > 0 else None
+
     def __len__(self):
         return self._log_length
 
