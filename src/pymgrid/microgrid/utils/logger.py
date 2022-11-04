@@ -44,4 +44,8 @@ class ModularLogger(UserDict):
 
     @classmethod
     def from_raw(cls, raw):
+        if raw is None:
+            return cls()
+        elif isinstance(raw, str):
+            raw = pd.read_csv(raw).to_dict()
         return cls(raw)
