@@ -1,6 +1,7 @@
 from _warnings import warn
 import numpy as np
 
+
 class Normalize:
 
     def __init__(self, min_val, max_val):
@@ -19,8 +20,8 @@ class Normalize:
                 assert _min <= value <= _max, f'Value {value} is outside of range [{_min}, {_max}]'
             except (ValueError, AssertionError):
                 try:
-                    assert all((_min[~np.isnan(value)] <= value[~np.isnan(value)]) &
-                               (value[~np.isnan(value)] <= _max[~np.isnan(value)]))
+                    assert ((_min[~np.isnan(value)] <= value[~np.isnan(value)]) &
+                               (value[~np.isnan(value)] <= _max[~np.isnan(value)])).all()
                 except TypeError:
                     assert np.isnan(value).all()
         except AssertionError:

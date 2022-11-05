@@ -36,9 +36,16 @@ class ModularLogger(UserDict):
     def to_frame(self):
         return pd.DataFrame(self.data)
 
+    def serialize(self):
+        return self.to_frame() if len(self) > 0 else None
+
     def __len__(self):
         return self._log_length
 
     @classmethod
     def from_raw(cls, raw):
+        if raw is None:
+            return cls()
+        elif isinstance(raw, str):
+            raw = pd.read_csv(raw).to_dict()
         return cls(raw)

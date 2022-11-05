@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import yaml
+
 from copy import deepcopy
 from warnings import warn
 
@@ -7,11 +9,16 @@ from pymgrid.microgrid.modules import *
 from pymgrid.microgrid.modules.module_container import ModuleContainer
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
+from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_csvs
 
 DEFAULT_HORIZON = 23
 
 
-class ModularMicrogrid:
+class ModularMicrogrid(yaml.YAMLObject):
+    yaml_tag = u"!ModularMicrogrid"
+    yaml_dumper = yaml.SafeDumper
+    yaml_loader = yaml.SafeLoader
+
     def __init__(self,
                  modules,
                  add_unbalanced_module=True,
@@ -246,6 +253,31 @@ class ModularMicrogrid:
     def n_modules(self):
         return len(self._modules)
 
+    def dump(self, stream=None):
+        return yaml.safe_dump(self, stream=stream)
+
+    @classmethod
+    def load(cls, stream):
+        return yaml.safe_load(stream)
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        add_numpy_pandas_representers()
+        return dumper.represent_mapping(cls.yaml_tag, data.serialize(dumper.stream), flow_style=cls.yaml_flow_style)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        add_numpy_pandas_constructors()
+        mapping = loader.construct_mapping(node, deep=True)
+        instance = cls(mapping["modules"], add_unbalanced_module=False)
+        instance._balance_logger = instance._balance_logger.from_raw(mapping["balance_log"])
+        return instance
+
+    def serialize(self, dumper_stream):
+        data = {"modules": self._modules.module_tuples(),
+                "balance_log": self._balance_logger.serialize()}
+        return dump_csvs(data, dumper_stream, self.yaml_tag)
+
     @classmethod
     def from_nonmodular(cls, nonmodular):
         from pymgrid.microgrid.convert.convert import to_modular
@@ -280,6 +312,12 @@ class ModularMicrogrid:
                 pass
 
         return min(l)
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.modules == other.modules and self._balance_logger == other._balance_logger
 
     def __repr__(self):
         module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]

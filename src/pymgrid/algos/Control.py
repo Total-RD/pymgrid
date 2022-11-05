@@ -409,17 +409,3 @@ class Benchmarks:
 
                 print('Test set cost using SAA: {}'.format(cost_test))
                 print('Train set cost using SAA: {}'.format(cost_train))
-
-
-if __name__ == '__main__':
-
-    from src.pymgrid import MicrogridGenerator
-
-    m_gen = MicrogridGenerator.MicrogridGenerator(nb_microgrid=25)
-    m_gen.generate_microgrid(verbose=False)
-    microgrid = m_gen.microgrids[4]
-
-    benchmark = Benchmarks(microgrid)
-    benchmark.run_saa_benchmark(preset_to_use=70)
-    benchmark.describe_benchmarks(test_split=True, test_ratio=0.33)
-

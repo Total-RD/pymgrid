@@ -1,9 +1,14 @@
 import numpy as np
+import yaml
+
 from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class RenewableModule(BaseTimeSeriesMicrogridModule):
     module_type = ('renewable', 'flex')
+    yaml_tag = u"!RenewableModule"
+    yaml_loader = yaml.SafeLoader
+    yaml_dumper = yaml.SafeDumper
 
     def __init__(self, time_series,
                  raise_errors=False,

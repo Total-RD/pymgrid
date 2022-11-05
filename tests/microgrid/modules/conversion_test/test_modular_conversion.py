@@ -5,7 +5,7 @@ from tests.helpers.test_case import TestCase
 
 class TestToModular(TestCase):
     def setUp(self) -> None:
-        from src.pymgrid.MicrogridGenerator import MicrogridGenerator
+        from pymgrid.MicrogridGenerator import MicrogridGenerator
         mgen = MicrogridGenerator()
         mgen.generate_microgrid()
         self.weak_grids = [microgrid for microgrid in mgen.microgrids if self.is_weak_grid(microgrid)]
