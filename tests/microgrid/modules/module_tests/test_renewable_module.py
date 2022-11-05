@@ -1,7 +1,7 @@
 import numpy as np
 from gym.spaces import Box
 
-from src.pymgrid.microgrid.modules.renewable_module import RenewableModule
+from pymgrid.microgrid.modules.renewable_module import RenewableModule
 from tests.helpers.test_case import TestCase
 
 

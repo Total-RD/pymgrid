@@ -16,7 +16,7 @@ from numpy.testing import assert_allclose
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-from src.pymgrid.MicrogridGenerator import MicrogridGenerator
+from pymgrid.MicrogridGenerator import MicrogridGenerator
 
 import unittest
 
