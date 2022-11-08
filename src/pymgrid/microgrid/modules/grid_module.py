@@ -178,5 +178,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def is_sink(self):
         return True
 
+    @property
+    def weak_grid(self):
+        return self._time_series[:, -1].min() < 1
+
     def __repr__(self):
         return f'GridModule(max_import={self.max_import}, max_export={self.max_export})'
