@@ -24,10 +24,10 @@ class TestToModular(TestCase):
     def is_strong_grid(microgrid):
         return microgrid.architecture["grid"] and microgrid._grid_status_ts.min().item() == 1
 
-    def test_weak_grid_conversion_failure(self):
+    def test_weak_grid_conversion_success(self):
         for microgrid in self.weak_grids:
-                with self.assertRaisesRegex(ValueError, "Weak grids are currently not supported by ModularMicrogrid."):
-                    microgrid.to_modular()
+            modular_microgrid = microgrid.to_modular()
+            self.assertTrue(modular_microgrid.grid.item().weak_grid)
 
     def test_genset_only(self):
         for microgrid in self.genset_only:
