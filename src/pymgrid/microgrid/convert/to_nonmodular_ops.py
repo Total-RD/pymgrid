@@ -123,26 +123,26 @@ def add_battery_params(battery_module, params_dict):
 
 def add_grid_params(grid_module, params_dict):
     time_series_df = pd.DataFrame(grid_module.time_series,
-                                  columns=['grid_price_import', 'grid_price_export', 'grid_co2'])
+                                  columns=['grid_price_import', 'grid_price_export', 'grid_co2', 'grid_status'])
     params_dict['grid_price_import'] = time_series_df['grid_price_import'].to_frame()
     params_dict['grid_price_export'] = time_series_df['grid_price_export'].to_frame()
     params_dict['grid_co2'] = time_series_df['grid_co2'].to_frame()
-    params_dict['grid_ts'] = pd.DataFrame(1.0, index=params_dict['grid_price_import'].index, columns=['grid_status'])
+    params_dict['grid_ts'] = time_series_df['grid_status'].to_frame()
     _add_to_architecture(params_dict, 'grid')
     _add_to_parameters(params_dict,
-                       grid_weak=0,
+                       grid_weak=(time_series_df['grid_status'].min() < 1).item(),
                        grid_power_import=grid_module.max_import,
                        grid_power_export=grid_module.max_export)
     _add_to_df_actions(params_dict, 'grid_import','grid_export')
     _add_to_df_status(params_dict,
-                      grid_status=1.0,
+                      grid_status=time_series_df['grid_status'].iloc[0],
                       grid_co2=time_series_df['grid_co2'].iloc[0],
                       grid_price_import=time_series_df['grid_price_import'].iloc[0],
                       grid_price_export=time_series_df['grid_price_export'].iloc[0]
                       )
-    _add_to_df_actual_generation(params_dict, 'grid_import','grid_export')
-    _add_to_df_cost(params_dict, 'grid_import','grid_export')
-    _add_to_control_dict(params_dict, 'grid_import','grid_export')
+    _add_to_df_actual_generation(params_dict, 'grid_import', 'grid_export')
+    _add_to_df_cost(params_dict, 'grid_import', 'grid_export')
+    _add_to_control_dict(params_dict, 'grid_import', 'grid_export')
     _add_cost_co2(params_dict, grid_module.cost_per_unit_co2)
 
 

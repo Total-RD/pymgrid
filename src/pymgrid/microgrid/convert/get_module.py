@@ -75,8 +75,6 @@ def get_genset_module(nonmodular, raise_errors):
 
 
 def get_grid_module(nonmodular, raise_errors):
-    if (nonmodular._grid_status_ts.min() < 1).item():
-        raise ValueError('Weak grids are currently not supported by ModularMicrogrid.')
     max_import = nonmodular.grid.power_import
     max_export = nonmodular.grid.power_export
     cost_per_unit_co2 = nonmodular.parameters.cost_co2.item()
@@ -87,11 +85,13 @@ def get_grid_module(nonmodular, raise_errors):
     cost_export.name = 'cost_export'
     co2_per_unit = nonmodular._grid_co2.squeeze()
     co2_per_unit.name = 'co2_per_unit_production'
-    time_series_cost_co2 = pd.concat([cost_import, cost_export, co2_per_unit], axis=1)
+    grid_status = nonmodular._grid_status_ts.squeeze()
+    grid_status.name = 'grid_status'
+    time_series = pd.concat([cost_import, cost_export, co2_per_unit, grid_status], axis=1)
 
     return GridModule(max_import=max_import,
                       max_export=max_export,
-                      time_series=time_series_cost_co2,
+                      time_series=time_series,
                       forecaster='oracle',
                       forecast_horizon=nonmodular.horizon - 1,
                       cost_per_unit_co2=cost_per_unit_co2,
