@@ -60,7 +60,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
                  cost_per_unit_co2=0.0,
                  raise_errors=False):
 
-        self._check_params(max_import, max_export, time_series)
+        time_series = self._check_params(max_import, max_export, time_series)
         self.max_import, self.max_export = max_import, max_export
         self.cost_per_unit_co2 = cost_per_unit_co2
         self.name = ('grid', None)
@@ -77,17 +77,27 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             raise ValueError('parameter max_import must be non-negative.')
         if max_export < 0:
             raise ValueError('parameter max_export must be non-negative.')
-        if time_series.shape[1] != 3:
-            raise ValueError('Time series must be two dimensional with three columns: import prices, export prices, '
-                             'and co2 production per kWh.')
+        if time_series.shape[1] not in [3, 4]:
+            raise ValueError('Time series must be two dimensional with three or four columns.'
+                             'See docstring for details.')
+
+        if time_series.shape[1] == 4:
+            if not ((np.array(time_series)[:, -1] == 0) | (np.array(time_series)[:, -1] == 1)).all():
+                raise ValueError("Last column (grid status) must contain binary values.")
+        else:
+            new_ts = np.ones((time_series.shape[0], 4))
+            new_ts[:, :3] = time_series
+            time_series = new_ts
 
         if (time_series < 0).any().any():
             raise ValueError('Time series must be non-negative.')
 
+        return time_series
+
     def get_bounds(self):
         min_obs = self._time_series.min(axis=0)
         max_obs = self._time_series.max(axis=0)
-        assert len(min_obs) == 3
+        assert len(min_obs) in (3, 4)
 
         min_act, max_act = -1 * self.max_export, self.max_import
 
@@ -133,25 +143,32 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
     def import_price(self):
-        return self.state[::3]
+        return self.state[::4]
 
     def export_price(self):
-        return self.state[1::3]
+        return self.state[1::4]
 
     def co2_per_kwh(self):
-        return self.state[2::3]
+        return self.state[2::4]
+
+    def grid_status(self):
+        return self.state[3::4]
+
+    @property
+    def current_status(self):
+        return self.grid_status()[0]
 
     @property
     def state_components(self):
-        return np.array(['import_price', 'export_price', 'co2_per_kwh'], dtype=object)
+        return np.array(['import_price', 'export_price', 'co2_per_kwh', 'grid_status'], dtype=object)
 
     @property
     def max_production(self):
-        return self.max_import
+        return self.max_import * self.current_status
 
     @property
     def max_consumption(self):
-        return self.max_export
+        return self.max_export * self.current_status
 
     @property
     def is_source(self):
