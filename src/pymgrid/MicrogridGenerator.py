@@ -115,8 +115,6 @@ class MicrogridGenerator:
                  path=str(Path(__file__).parent)):
         
         np.random.seed(random_seed)
-        #todo manage simulation duration and different timesteps
-        #todo create an architecture argument to fix an architetcture (pymgrid10)
         self.microgrids= [] # generate a list of microgrid object
         #self.annual_load
         self.nb_microgrids=nb_microgrid
