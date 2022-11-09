@@ -1,0 +1,90 @@
+!ModularMicrogrid
+balance_log: null
+modules:
+- - genset
+  - !Genset
+    cls_params:
+      allow_abortion: true
+      co2_per_unit: 2
+      cost_per_unit_co2: 0.1
+      genset_cost: 0.4
+      init_start_up: true
+      provided_energy_name: genset_production
+      raise_errors: false
+      running_max_production: 17296.2
+      running_min_production: 960.9000000000001
+      start_up_time: 0
+      wind_down_time: 0
+    log: null
+    name:
+    - genset
+    - 0
+    state:
+      _current_status: true
+      _current_step: 0
+      _goal_status: true
+      _steps_until_down: 0
+      _steps_until_up: 0
+- - load
+  - !LoadModule
+    cls_params:
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      loss_load_cost: 10
+      raise_errors: false
+      time_series: !ndarray 'data/cls_params/LoadModule/time_series.csv'
+    log: null
+    name:
+    - load
+    - 0
+    state:
+      _current_step: 0
+- - battery
+  - !BatteryModule
+    cls_params:
+      battery_cost_cycle: 0.02
+      battery_transition_model: null
+      efficiency: 0.9
+      init_charge: null
+      init_soc: &id001 1
+      max_capacity: 26153
+      max_charge: 6539
+      max_discharge: 6539
+      min_capacity: 5230.6
+      raise_errors: false
+    log: null
+    name:
+    - battery
+    - 0
+    state:
+      _current_step: 0
+      current_charge: 26153
+      soc: *id001
+- - PV
+  - !RenewableModule
+    cls_params:
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      provided_energy_name: renewable_used
+      raise_errors: false
+      time_series: !ndarray 'data/cls_params/RenewableModule/time_series.csv'
+    log: null
+    name:
+    - PV
+    - 0
+    state:
+      _current_step: 0
+- - unbalanced_energy
+  - !UnbalancedEnergyModule
+    cls_params:
+      loss_load_cost: 10
+      overgeneration_cost: 1
+      raise_errors: false
+    log: null
+    name:
+    - unbalanced_energy
+    - 0
+    state:
+      _current_step: 0
