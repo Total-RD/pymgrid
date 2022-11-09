@@ -9,7 +9,7 @@ modules:
       forecaster_increase_uncertainty: false
       loss_load_cost: 10
       raise_errors: false
-      time_series: !ndarray 'data/cls_params/LoadModule/time_series.csv'
+      time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv'
     log: null
     name:
     - load
@@ -47,7 +47,7 @@ modules:
       max_export: 97244
       max_import: 97244
       raise_errors: false
-      time_series: !ndarray 'data/cls_params/GridModule/time_series.csv'
+      time_series: !NDArray 'data/cls_params/GridModule/time_series.csv'
     log: null
     name:
     - grid
@@ -62,7 +62,7 @@ modules:
       forecaster_increase_uncertainty: false
       provided_energy_name: renewable_used
       raise_errors: false
-      time_series: !ndarray 'data/cls_params/RenewableModule/time_series.csv'
+      time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv'
     log: null
     name:
     - PV
