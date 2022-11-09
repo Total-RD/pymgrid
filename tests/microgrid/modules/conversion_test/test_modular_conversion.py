@@ -7,7 +7,7 @@ class TestToModular(TestCase):
     def setUp(self) -> None:
         from pymgrid.MicrogridGenerator import MicrogridGenerator
         mgen = MicrogridGenerator()
-        mgen.generate_microgrid()
+        mgen.generate_microgrid(modular=False)
         self.weak_grids = [microgrid for microgrid in mgen.microgrids if self.is_weak_grid(microgrid)]
         self.genset_only = [microgrid for microgrid in mgen.microgrids if not microgrid.architecture["grid"]]
         self.strong_grid_only = [microgrid for microgrid in mgen.microgrids if
