@@ -409,7 +409,7 @@ class MicrogridGenerator:
         instance = cls()
         instance.microgrids = [
             Microgrid.load(
-                (PROJECT_PATH/ f'data/{scenario}/pymgrid25/microgrid_{j}/microgrid_{j}.yaml').open('r')
+                (PROJECT_PATH/ f'data/scenario/{scenario}/microgrid_{j}/microgrid_{j}.yaml').open('r')
             ) for j in range(25)]
 
         return instance
