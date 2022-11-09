@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
+from pymgrid.microgrid.modular_microgrid.modular_microgrid import Microgrid
 from pymgrid.microgrid.modules import *
 import numpy as np
 
@@ -32,4 +32,4 @@ def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbala
     modules = list(modules.values())
     modules.extend(additional_modules if additional_modules else [])
 
-    return ModularMicrogrid(modules, add_unbalanced_module=add_unbalanced_module)
+    return Microgrid(modules, add_unbalanced_module=add_unbalanced_module)

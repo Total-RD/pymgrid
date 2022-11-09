@@ -1,5 +1,5 @@
 from pymgrid.non_modular_microgrid import NonModularMicrogrid
-from pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
+from pymgrid.microgrid.modular_microgrid.modular_microgrid import Microgrid
 from pymgrid.microgrid.convert.get_module import get_module
 from pymgrid.microgrid.convert.to_nonmodular_ops import check_viability, add_params_from_module, get_empty_params, finalize_params
 
@@ -11,7 +11,7 @@ def to_modular(nonmodular, raise_errors=False):
         if exists:
             module = get_module(component, nonmodular, raise_errors)
             modules.append((component, module))
-    return ModularMicrogrid(modules, add_unbalanced_module=False)
+    return Microgrid(modules, add_unbalanced_module=False)
 
 
 def to_nonmodular(modular):

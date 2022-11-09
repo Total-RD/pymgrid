@@ -1,1 +1,1 @@
-from .modular_microgrid.modular_microgrid import ModularMicrogrid
+from .modular_microgrid.modular_microgrid import Microgrid

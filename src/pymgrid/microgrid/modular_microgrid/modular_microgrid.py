@@ -14,8 +14,8 @@ from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add
 DEFAULT_HORIZON = 23
 
 
-class ModularMicrogrid(yaml.YAMLObject):
-    yaml_tag = u"!ModularMicrogrid"
+class Microgrid(yaml.YAMLObject):
+    yaml_tag = u"!Microgrid"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 

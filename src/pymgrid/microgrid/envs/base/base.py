@@ -2,13 +2,13 @@ from gym import Env
 from gym.spaces import Dict, Tuple, flatten_space, flatten
 from abc import abstractmethod
 
-from pymgrid import NonModularMicrogrid, ModularMicrogrid
+from pymgrid import NonModularMicrogrid, Microgrid
 from pymgrid.microgrid.envs.base.skip_init import skip_init
 
 
-class BaseMicrogridEnv(ModularMicrogrid, Env):
+class BaseMicrogridEnv(Microgrid, Env):
     def __new__(cls, modules, *args, **kwargs):
-        if isinstance(modules, (NonModularMicrogrid, ModularMicrogrid)):
+        if isinstance(modules, (NonModularMicrogrid, Microgrid)):
             instance = cls.from_microgrid(modules)
             cls.__init__ = skip_init(cls, cls.__init__)
             return instance
