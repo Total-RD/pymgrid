@@ -221,7 +221,7 @@ class Grid:
         self.co2 = co2
 
 
-class NonModularMicrogrid:
+class Microgrid:
 
     """
     The class microgrid implement a microgrid. It is also used to run the simulation and different benchmarks.
@@ -1269,3 +1269,4 @@ class NonModularMicrogrid:
     def to_modular(self):
         from pymgrid.microgrid.convert.convert import to_modular
         return to_modular(self)
+

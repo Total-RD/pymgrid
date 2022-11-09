@@ -1,4 +1,4 @@
-from pymgrid.Microgrid import Microgrid
+from pymgrid.NonModularMicrogrid import NonModularMicrogrid
 from pymgrid.microgrid.modular_microgrid.modular_microgrid import ModularMicrogrid
 from pymgrid.microgrid.convert.get_module import get_module
 from pymgrid.microgrid.convert.to_nonmodular_ops import check_viability, add_params_from_module, get_empty_params, finalize_params
@@ -40,4 +40,4 @@ def to_nonmodular(modular):
     for _, module_list in modular.modules.iterdict():
         add_params_from_module(module_list[0], microgrid_params)
     finalize_params(microgrid_params)
-    return Microgrid(parameters=microgrid_params, horizon=modular.get_forecast_horizon()+1)
+    return NonModularMicrogrid(parameters=microgrid_params, horizon=modular.get_forecast_horizon() + 1)
