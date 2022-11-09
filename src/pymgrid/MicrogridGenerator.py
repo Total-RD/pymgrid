@@ -390,14 +390,14 @@ class MicrogridGenerator:
     #generate the microgrid
     ###########################################
 
-    def generate_microgrid(self, verbose=True):
+    def generate_microgrid(self, verbose=False):
         """ Function used to generate the nb_microgrids to append them to the microgrids list. """
 
         for i in range(self.nb_microgrids):
             #size=self._size_mg()
             self.microgrids.append(self._create_microgrid().to_modular())
         
-        if verbose == True:
+        if verbose:
             self.print_mg_parameters()
 
         return self
