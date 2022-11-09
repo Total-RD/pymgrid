@@ -1,4 +1,4 @@
-!ModularMicrogrid
+!Microgrid
 balance_log: null
 modules:
 - - genset
