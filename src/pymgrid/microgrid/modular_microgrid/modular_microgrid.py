@@ -9,7 +9,7 @@ from pymgrid.microgrid.modules import *
 from pymgrid.microgrid.modules.module_container import ModuleContainer
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
-from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_csvs
+from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
 
 DEFAULT_HORIZON = 23
 
@@ -276,7 +276,7 @@ class ModularMicrogrid(yaml.YAMLObject):
     def serialize(self, dumper_stream):
         data = {"modules": self._modules.module_tuples(),
                 "balance_log": self._balance_logger.serialize()}
-        return dump_csvs(data, dumper_stream, self.yaml_tag)
+        return dump_data(data, dumper_stream, self.yaml_tag)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):

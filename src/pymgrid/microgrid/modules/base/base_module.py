@@ -8,7 +8,7 @@ from warnings import warn
 
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
-from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_csvs
+from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
 
 
 class BaseMicrogridModule(yaml.YAMLObject):
@@ -367,7 +367,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             "state": self._serialize_state_attributes()
         }
 
-        return dump_csvs(data, dumper_stream, self.yaml_tag)
+        return dump_data(data, dumper_stream, self.yaml_tag)
 
     def serializable_state_attributes(self):
         return ["_current_step", *self.state_dict.keys()]
