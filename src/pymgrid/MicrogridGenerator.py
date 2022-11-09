@@ -620,7 +620,7 @@ class MicrogridGenerator:
                 display(parameters)
 
         elif isinstance(id, int) and id < self.nb_microgrids:
-            display(self.microgrids[id].parameters)
+            display(self.microgrids[id].paramete src/pymgrid/non_modular_microgrid.pyrs)
 
     def print_all_costs(self):
 

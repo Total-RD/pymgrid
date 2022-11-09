@@ -221,7 +221,7 @@ class Grid:
         self.co2 = co2
 
 
-class Microgrid:
+class NonModularMicrogrid:
 
     """
     The class microgrid implement a microgrid. It is also used to run the simulation and different benchmarks.
