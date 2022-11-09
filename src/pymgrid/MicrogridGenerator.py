@@ -21,7 +21,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 import numpy as np
 import pandas as pd
-from pymgrid import Microgrid
+from pymgrid import Microgrid, ModularMicrogrid, PROJECT_PATH
 from os import listdir
 from os.path import isfile, join
 import os
@@ -404,13 +404,15 @@ class MicrogridGenerator:
 
         return self
 
+    @classmethod
+    def load(cls, scenario):
+        instance = cls()
+        instance.microgrids = [
+            ModularMicrogrid.load(
+                (PROJECT_PATH/ f'data/{scenario}/pymgrid25/microgrid_{j}/microgrid_{j}.yaml').open('r')
+            ) for j in range(25)]
 
-    def load(self, scenario):
-
-        with open(self.path+'/data/scenario/'+scenario+'.pkl', 'rb') as input:
-            temp_mgen = pickle.load(input)
-        temp_mgen.path = str(Path(__file__).parent.parent)
-        return temp_mgen
+        return instance
 
     def _bin_genset_grid(self):
         rand = np.random.rand()
