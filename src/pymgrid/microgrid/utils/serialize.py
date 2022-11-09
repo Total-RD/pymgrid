@@ -84,7 +84,7 @@ def _pandas_df_constructor(loader, node):
         try:
             stream_name = loader.stream.name
         except AttributeError:
-            raise ValueError(f"Path must be absolute if yaml stream has no 'name'.")
+            raise ValueError(f"Path {data_path} must be absolute if yaml stream has no 'name'.")
 
         data_path = Path(stream_name).parent / data_path
 
