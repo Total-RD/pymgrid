@@ -83,6 +83,9 @@ class Forecaster:
             forecast = self._correct_current_val(val_c_n, forecast)
             return self._pad(forecast, n)
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class UserDefinedForecaster(Forecaster):
     def __init__(self, forecaster_function, time_series):
