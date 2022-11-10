@@ -27,93 +27,131 @@ And in Google Colab:
 
 ## Getting Started
 
-You can easily import the library from pip, and then import MicrogridGenerator from pymgrid.
-
+Microgrids are straightforward to generate from scratch; simply define some modules and pass them
+to a microgrid:
 ```python
-from pymgrid import MicrogridGenerator as mg
+import numpy as np
+from pymgrid import Microgrid
+from pymgrid.microgrid.modules import (
+    GensetModule,
+    BatteryModule,
+    LoadModule,
+    RenewableModule
+)
 
-m_gen=mg.MicrogridGenerator()
-m_gen.generate_microgrid()
+genset = GensetModule(running_min_production=10,
+                      running_max_production=50,
+                      genset_cost=0.5)
+
+battery = BatteryModule(min_capacity=0,
+                        max_capacity=100,
+                        max_charge=50,
+                        max_discharge=50,
+                        efficiency=1.0,
+                        init_soc=0.5)
+
+# Using random data
+renewable = RenewableModule(time_series=50*np.random.rand(100))
+
+load = LoadModule(time_series=60*np.random.rand(100),
+                  loss_load_cost=10)
+
+microgrid = Microgrid([genset, battery, ("pv", renewable), load])
 ```
 
-By default, this command will let you generate 10 microgrids. The object m_gen will have a list of microgrids that you can use.
+This creates a microgrid with the modules defined above, as well as an unbalanced energy module -- 
+which reconciles situations when energy demand cannot be matched to supply.
 
-First, you can get the control information with this command:
+Printing the microgrid gives us its architecture:
+
 ```python
-m_gen.microgrids[0].print_control_info()
+>> microgrid
+
+Microgrid([genset x 1, load x 1, battery x 1, pv x 1, balancing x 1])
+```
+
+A microgrid is contained of fixed modules and flex modules. Some modules can be both -- `GridModule`, for example
+-- but not at the same time.
+
+
+A *fixed* module has requires a request of a certain amount of energy ahead of time, and then attempts to 
+produce or consume said amount. `LoadModule` is an example of this; you must tell it to consume a certain amount of energy
+and it will then do so.
+
+ A *flex* module, on the other hand, is able to adapt to meet demand. `RenewableModule` is an example of this as
+ it allows for curtailment of any excess renewable produced.
+ 
+ A microgrid will tell you which modules are which:
+ 
+ ```python
+>> microgrid.fixed_modules
+
+{
+  "genset": "[GensetModule(running_min_production=10, running_max_production=50, genset_cost=0.5, co2_per_unit=0, cost_per_unit_co2=0, start_up_time=0, wind_down_time=0, allow_abortion=True, init_start_up=True, raise_errors=False, provided_energy_name=genset_production)]",
+  "load": "[LoadModule(time_series=<class 'numpy.ndarray'>, loss_load_cost=10, forecaster=NoForecaster, forecast_horizon=0, forecaster_increase_uncertainty=False, raise_errors=False)]",
+  "battery": "[BatteryModule(min_capacity=0, max_capacity=100, max_charge=50, max_discharge=50, efficiency=1.0, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)]"
+}
+
+>>microgrid.flex_modules
+
+{
+  "pv": "[RenewableModule(time_series=<class 'numpy.ndarray'>, raise_errors=False, forecaster=NoForecaster, forecast_horizon=0, forecaster_increase_uncertainty=False, provided_energy_name=renewable_used)]",
+  "balancing": "[UnbalancedEnergyModule(raise_errors=False, loss_load_cost=10, overgeneration_cost=2)]"
+}
 
 ```
 
-pymgrid contains OpenAI Gym environments, you can use the following command to generate one:
+
+Running the microgrid is straightforward. Simply pass an action for each fixed module to `microgrid.run`. The microgrid
+can also provide you a random action by calling `microgrid.sample_action.` Once the microgrid has been run for a
+certain number of steps, results can be viewed by calling microgrid.get_log.
+
 ```python
-from pymgrid.Environments.pymgrid_cspla import MicroGridEnv
-from pymgrid import MicrogridGenerator as m_gen
+>> for j in range(10):
+>>    action = microgrid.sample_action(strict_bound=True)
+>>    microgrid.run(action)
 
-#these line will create a list of microgrid
-env = m_gen.MicrogridGenerator(nb_microgrid=25)
-pymgrid25 = env.load('pymgrid25')
-mg = pymgrid25.microgrids
+>> microgrid.get_log(drop_singleton_key=True)
 
-#you can pass any of the microgrid to environment class:
-env = MicroGridEnv({'microgrid':mg[0]})
-
-#example of codes to to interact with the environment:
-episode_reward = 0
-done = False
-obs = env.reset()
-while not done:
-    action = #your algorithm to select the next action
-    obs, reward, done, info = env.step(action)
-    episode_reward += reward
+      genset  ...                     balance
+      reward  ... fixed_absorbed_by_microgrid
+0  -5.000000  ...                   10.672095
+1 -14.344353  ...                   50.626726
+2  -5.000000  ...                   17.538018
+3  -0.000000  ...                   15.492778
+4  -0.000000  ...                   35.748724
+5  -0.000000  ...                   30.302300
+6  -5.000000  ...                   36.451662
+7  -0.000000  ...                   66.533872
+8  -0.000000  ...                   20.645077
+9  -0.000000  ...                   10.632957
 ```
 
-The control_dict dictionnary it the main way you will interact with the microgrid class. It will allow you to pass control commands to the microgrids. Using get_control_info() will let you know what fields you need to fill based on the microgrids architecture.
+## Benchmarking
 
-Now you know what fields in control_dict, you can fill it up and pass it to your microgrid:
-```python
-ctrl = # your own control actions
-m_gen.microgrids[0].run(ctrl)
-```
-All the management of the timesteps, and verifiying that the control actions respect the microgrid constraints.
+`pymgrid` also comes pre-packaged with a set of 25 microgrids for benchmarking.
+The config files for these microgrids are available in `data/scenario/pymgrid25`.
+Simply deserialize one of the yaml files to load one of the saved microgrids; for example,
+to load the zeroth microgrid:
 
-If you are interested in using pymgrid for machine learning or reinforcement learning, you will find this command useful.
-You can split your dataset in two with:
 ```python
-m_gen.microgrids[0].train_test_split() # you will automatically be using the training set with this command
-```
-If you want to run your training algorithm through multiple epochs you can reset the microgrid once the simulation reaches the last timestep:
-```python
-if m_gen.microgrids[0].done == True: #the done argument becomes true once you reache the last timestep of your simulation
-    m_gen.microgrids[0].reset() 
+import yaml
+from pymgrid import PROJECT_PATH
+
+yaml_file = PROJECT_PATH / 'data/scenario/pymgrid25/microgrid_0/microgrid_0.yaml'
+microgrid = yaml.safe_load(yaml_file.open('r'))
 ```
 
-You can swith to the testing set with:
-```python
-m_gen.microgrids[0].reset(testing=True)
-```
+Alternatively, `Microgrid.load(yaml_file.open('r'))` will perform the same deserialization.
 
-## Benchmarks datasets
 
-We pre-computed two microgrids datasets for researchers to compare their algorithms on:
-1. pymgrid10 (deprecated at the moment): ten microgrids with the same architecture (PV + battery + genset), the main goal of this dataset if for user to beging running simulations on pymgrid
-2. pymgrid25: 25 microgrids with diverse architecture, we propose this dataset as the main way to compare algorithms.
-
-If you have ideas for new benchmark dataset, feel free to contact us!
-
-You can load these datasets with:
-```python
-from pymgrid import MicrogridGenerator as mg
-
-m_gen=mg.MicrogridGenerator()
-m_gen.load('pymgrid25') 
-```
 ## Citation
 
 If you use this package for your research, please cite the following paper:
 
 @misc{henri2020pymgrid,
       title={pymgrid: An Open-Source Python Microgrid Simulator for Applied Artificial Intelligence Research}, 
-      author={Gonzague Henri and Tanguy Levent and Avishai Halev and Reda Alami and Philippe Cordier},
+      author={Gonzague Henri, Tanguy Levent, Avishai Halev, Reda Alami and Philippe Cordier},
       year={2020},
       eprint={2011.08004},
       archivePrefix={arXiv},
@@ -139,4 +177,4 @@ This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/mast
 
 ## Contact
 
-For any question you can contact me at tanguy.levent [@] external.total.com
+For any question you can contact me at avishai.halev [@] external.totalenergies.com
