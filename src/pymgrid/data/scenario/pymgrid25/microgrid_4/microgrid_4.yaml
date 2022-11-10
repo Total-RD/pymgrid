@@ -1,0 +1,83 @@
+!Microgrid
+balance_log: null
+modules:
+- - load
+  - !LoadModule
+    cls_params:
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      loss_load_cost: 10
+      raise_errors: false
+      time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv.gz'
+    log: null
+    name:
+    - load
+    - 0
+    state:
+      _current_step: 0
+- - battery
+  - !BatteryModule
+    cls_params:
+      battery_cost_cycle: 0.02
+      battery_transition_model: null
+      efficiency: 0.9
+      init_charge: null
+      init_soc: 0.2
+      max_capacity: 65305
+      max_charge: 16327
+      max_discharge: 16327
+      min_capacity: 13061.0
+      raise_errors: false
+    log: null
+    name:
+    - battery
+    - 0
+    state:
+      _current_step: 0
+      current_charge: 13061.0
+      soc: 0.2
+- - grid
+  - !GridModule
+    cls_params:
+      cost_per_unit_co2: 0.1
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      max_export: 99625
+      max_import: 99625
+      raise_errors: false
+      time_series: !NDArray 'data/cls_params/GridModule/time_series.csv.gz'
+    log: null
+    name:
+    - grid
+    - 0
+    state:
+      _current_step: 0
+- - PV
+  - !RenewableModule
+    cls_params:
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      provided_energy_name: renewable_used
+      raise_errors: false
+      time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv.gz'
+    log: null
+    name:
+    - PV
+    - 0
+    state:
+      _current_step: 0
+- - unbalanced_energy
+  - !UnbalancedEnergyModule
+    cls_params:
+      loss_load_cost: 10
+      overgeneration_cost: 1
+      raise_errors: false
+    log: null
+    name:
+    - unbalanced_energy
+    - 0
+    state:
+      _current_step: 0

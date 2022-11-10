@@ -413,28 +413,18 @@ class ModelPredictiveControl:
         :return:
             None
         """
+        vector_dict = dict(load_vector=load_vector,
+                           pv_vector=pv_vector,
+                           grid_vector=grid_vector,
+                           import_price=import_price,
+                           export_price=export_price)
 
-        if not isinstance(load_vector,np.ndarray):
-            raise TypeError('load_vector must be np.ndarray')
-        if not isinstance(pv_vector,np.ndarray):
-            raise TypeError('pv_vector must be np.ndarray')
-        if not isinstance(grid_vector,np.ndarray):
-            raise TypeError('grid_vector must be np.ndarray')
-        if not isinstance(import_price,np.ndarray):
-            raise TypeError('import_price must be np.ndarray')
-        if not isinstance(export_price,np.ndarray):
-            raise TypeError('export_price must be np.ndarray')
+        for name, vector in vector_dict.items():
+            if not isinstance(vector, np.ndarray):
+                raise TypeError(f'Vector {name} must be ndarray, is {type(vector)}.')
 
-        if len(load_vector.shape) != 1 and load_vector.shape[0]!=self.horizon:
-            raise ValueError('Invalid load_vector, must be of shape ({},)'.format(self.horizon))
-        if len(pv_vector.shape) != 1 and pv_vector.shape[0]!=self.horizon:
-            raise ValueError('Invalid pv_vector, must be of shape ({},)'.format(self.horizon))
-        if len(grid_vector.shape) != 1 and grid_vector.shape[0]!=self.horizon:
-            raise ValueError('Invalid grid_vector, must be of shape ({},)'.format(self.horizon))
-        if len(import_price.shape) != 1 and import_price.shape[0]!=self.horizon:
-            raise ValueError('Invalid import_price, must be of shape ({},)'.format(self.horizon))
-        if len(export_price.shape) != 1 and export_price.shape[0]!=self.horizon:
-            raise ValueError('Invalid export_price, must be of shape ({},)'.format(self.horizon))
+            if len(vector.shape) != 1 and load_vector.shape[0] != self.horizon:
+                raise ValueError(f'Invalid {name} shape {vector.shape}, must have shape ({self.horizon}, ).')
 
         # Set equality rhs
         equality_rhs_vals = np.zeros(self.equality_rhs.shape)

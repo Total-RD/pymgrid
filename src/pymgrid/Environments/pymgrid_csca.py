@@ -1,7 +1,7 @@
 from abc import ABC
 import gym, logging, numpy as np, pandas as pd
 from gym import Env
-from pymgrid.Microgrid import Microgrid
+from pymgrid.non_modular_microgrid import NonModularMicrogrid
 from pymgrid.MicrogridGenerator import MicrogridGenerator
 from copy import deepcopy
 from pymgrid.algos.saa.saa import SampleAverageApproximation
@@ -70,7 +70,7 @@ class MicrogridEnv(Env, ABC):
             m_gen.generate_microgrid(verbose=False)
             self.microgrid = deepcopy(m_gen.microgrids[microgrid])
 
-        elif isinstance(microgrid, Microgrid):
+        elif isinstance(microgrid, NonModularMicrogrid):
             self.microgrid = deepcopy(microgrid)
 
         else:

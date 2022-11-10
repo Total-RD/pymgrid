@@ -21,7 +21,7 @@ You should have received a copy of the GNU Lesser General Public License along w
 
 import numpy as np
 import pandas as pd
-from pymgrid import Microgrid
+from pymgrid import NonModularMicrogrid, Microgrid, PROJECT_PATH
 from os import listdir
 from os.path import isfile, join
 import os
@@ -115,8 +115,6 @@ class MicrogridGenerator:
                  path=str(Path(__file__).parent)):
         
         np.random.seed(random_seed)
-        #todo manage simulation duration and different timesteps
-        #todo create an architecture argument to fix an architetcture (pymgrid10)
         self.microgrids= [] # generate a list of microgrid object
         #self.annual_load
         self.nb_microgrids=nb_microgrid
@@ -392,25 +390,29 @@ class MicrogridGenerator:
     #generate the microgrid
     ###########################################
 
-    def generate_microgrid(self, verbose=True):
+    def generate_microgrid(self, modular=True, verbose=False):
         """ Function used to generate the nb_microgrids to append them to the microgrids list. """
+
+        convert = lambda x: x.to_modular() if modular else x
 
         for i in range(self.nb_microgrids):
             #size=self._size_mg()
-            self.microgrids.append(self._create_microgrid())
+            self.microgrids.append(convert(self._create_microgrid()))
         
-        if verbose == True:
+        if verbose:
             self.print_mg_parameters()
 
         return self
 
+    @classmethod
+    def load(cls, scenario):
+        instance = cls()
+        instance.microgrids = [
+            Microgrid.load(
+                (PROJECT_PATH/ f'data/scenario/{scenario}/microgrid_{j}/microgrid_{j}.yaml').open('r')
+            ) for j in range(25)]
 
-    def load(self, scenario):
-
-        with open(self.path+'/data/scenario/'+scenario+'.pkl', 'rb') as input:
-            temp_mgen = pickle.load(input)
-        temp_mgen.path = str(Path(__file__).parent.parent)
-        return temp_mgen
+        return instance
 
     def _bin_genset_grid(self):
         rand = np.random.rand()
@@ -596,7 +598,7 @@ class MicrogridGenerator:
             'grid_co2': grid_co2_ts,
         }
 
-        microgrid = Microgrid(microgrid_spec)
+        microgrid = NonModularMicrogrid(microgrid_spec)
 
         return microgrid
     ########################################################

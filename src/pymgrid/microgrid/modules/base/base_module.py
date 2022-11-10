@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import inspect
+import logging
 import yaml
 import numpy as np
 
@@ -8,7 +9,10 @@ from warnings import warn
 
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
-from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_csvs
+from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
+
+
+script_logger = logging.getLogger(__name__)
 
 
 class BaseMicrogridModule(yaml.YAMLObject):
@@ -49,7 +53,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
                 val_min, val_max = self.min_act, self.max_act
 
         except AttributeError:
-            print(f'min_{_str} and max_{_str} attributes not found for module {self.__class__.__name__}. '
+            script_logger.debug(f'min_{_str} and max_{_str} attributes not found for module {self.__class__.__name__}. '
                   f'Returning identity normalizer')
 
             return IdentityNormalize()
@@ -61,12 +65,12 @@ class BaseMicrogridModule(yaml.YAMLObject):
             pass
 
         if val_min is None or np.isnan(val_min).any() or val_max is None or np.isnan(val_max).any():
-            print(f'One of min_{_str} or max_{_str} attributes is None or NaN for module {self.__class__.__name__}. Returni'
+            script_logger.debug(f'One of min_{_str} or max_{_str} attributes is None or NaN for module {self.__class__.__name__}. Returni'
                           f'ng identity normalizer')
             return IdentityNormalize()
 
         elif np.isinf(np.array(val_min)).any() or np.isinf(np.array(val_max)).any():
-            print(f'One of min_{_str} or max_{_str} attributes is Infinity for module {self.__class__.__name__}. Returni'
+            script_logger.debug(f'One of min_{_str} or max_{_str} attributes is Infinity for module {self.__class__.__name__}. Returni'
                   f'ng identity normalizer')
             return IdentityNormalize()
         elif isinstance(val_min, np.ndarray) and isinstance(val_max, np.ndarray) and len(val_min) == 0 and len(val_max) == 0:
@@ -367,7 +371,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             "state": self._serialize_state_attributes()
         }
 
-        return dump_csvs(data, dumper_stream, self.yaml_tag)
+        return dump_data(data, dumper_stream, self.yaml_tag)
 
     def serializable_state_attributes(self):
         return ["_current_step", *self.state_dict.keys()]
@@ -424,6 +428,13 @@ class BaseMicrogridModule(yaml.YAMLObject):
             return NotImplemented
 
         diff = [(k1, v1, v2) for (k1, v1), (k2, v2) in zip(self.__dict__.items(), other.__dict__.items()) if
-                ((hasattr(v1, "any") and (v1 != v2).any()) or (not hasattr(v1, "any") and v1 != v2))]
+                ((hasattr(v1, "any") and not np.allclose(v1, v2)) or (not hasattr(v1, "any") and v1 != v2))]
 
         return len(diff) == 0
+
+    def __repr__(self):
+        param_repr = {p: getattr(self, p) for p in inspect.signature(self.__init__).parameters}
+        param_repr = [f'{p}={type(v) if hasattr(v, "__len__") and not isinstance(v, str) else v}' for p, v in param_repr.items()]
+        param_repr = ', '.join(param_repr)
+        return f'{self.__class__.__name__}(' \
+               f'{param_repr})'

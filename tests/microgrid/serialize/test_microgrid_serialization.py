@@ -1,6 +1,6 @@
 import numpy as np
 
-from pymgrid import ModularMicrogrid
+from pymgrid import Microgrid
 
 from tests.helpers.modular_microgrid import get_modular_microgrid
 from tests.helpers.test_case import TestCase
@@ -8,9 +8,9 @@ from tests.helpers.test_case import TestCase
 
 class TestMicrogridSerialization(TestCase):
     def test_serialize_no_modules(self):
-        microgrid = ModularMicrogrid([], add_unbalanced_module=False)
+        microgrid = Microgrid([], add_unbalanced_module=False)
         dump = microgrid.dump()
-        loaded = ModularMicrogrid.load(dump)
+        loaded = Microgrid.load(dump)
 
         self.assertEqual(microgrid, loaded)
 
@@ -19,4 +19,4 @@ class TestMicrogridSerialization(TestCase):
                                           add_unbalanced_module=False)
 
         self.assertEqual(len(microgrid.modules), 1)
-        self.assertEqual(microgrid, ModularMicrogrid.load(microgrid.dump()))
+        self.assertEqual(microgrid, Microgrid.load(microgrid.dump()))

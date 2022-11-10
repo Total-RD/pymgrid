@@ -83,6 +83,9 @@ class Forecaster:
             forecast = self._correct_current_val(val_c_n, forecast)
             return self._pad(forecast, n)
 
+    def __repr__(self):
+        return self.__class__.__name__
+
 
 class UserDefinedForecaster(Forecaster):
     def __init__(self, forecaster_function, time_series):
@@ -130,6 +133,10 @@ class GaussianNoiseForecaster(Forecaster):
         forecast = val_c_n + self._get_noise(len(val_c_n))
         forecast[(forecast*val_c_n) < 0] = 0
         return forecast
+
+    def __repr__(self):
+        return f'GaussianNoiseForecaster(noise_std={self.input_noise_std}, ' \
+               f'increase_uncertainty={self.increase_uncertainty}'
 
 
 class NoForecaster(Forecaster):
