@@ -1,3 +1,4 @@
+import json
 from collections import UserDict, UserList
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 
@@ -155,6 +156,9 @@ class _ModulePointer(UserDict):
 
     def __len__(self):
         return sum(len(v) for k, v in self.items())
+
+    def __repr__(self):
+        return json.dumps(self.module_dict(), indent=2, default=str)
 
 
 def get_subcontainers(modules):
