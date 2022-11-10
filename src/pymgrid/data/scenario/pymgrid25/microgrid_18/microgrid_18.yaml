@@ -33,7 +33,7 @@ modules:
       forecaster_increase_uncertainty: false
       loss_load_cost: 10
       raise_errors: false
-      time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv'
+      time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv.gz'
     log: null
     name:
     - load
@@ -47,7 +47,7 @@ modules:
       battery_transition_model: null
       efficiency: 0.9
       init_charge: null
-      init_soc: &id001 1
+      init_soc: 1
       max_capacity: 82080
       max_charge: 20520
       max_discharge: 20520
@@ -60,7 +60,7 @@ modules:
     state:
       _current_step: 0
       current_charge: 82080
-      soc: *id001
+      soc: 1.0
 - - grid
   - !GridModule
     cls_params:
@@ -71,7 +71,7 @@ modules:
       max_export: 68836
       max_import: 68836
       raise_errors: false
-      time_series: !NDArray 'data/cls_params/GridModule/time_series.csv'
+      time_series: !NDArray 'data/cls_params/GridModule/time_series.csv.gz'
     log: null
     name:
     - grid
@@ -86,7 +86,7 @@ modules:
       forecaster_increase_uncertainty: false
       provided_energy_name: renewable_used
       raise_errors: false
-      time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv'
+      time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv.gz'
     log: null
     name:
     - PV
