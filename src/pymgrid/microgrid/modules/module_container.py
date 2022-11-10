@@ -134,7 +134,7 @@ class _ModulePointer(UserDict):
         except KeyError:
             raise AttributeError(item)
 
-    def list_modules(self):
+    def module_list(self):
         l = []
         for _, raw_container in self.data.items():
             l.extend(raw_container.module_list())
@@ -151,7 +151,7 @@ class _ModulePointer(UserDict):
             yield name, modules
 
     def iterlist(self):
-        for module in self.list_modules():
+        for module in self.module_list():
             yield module
 
     def __len__(self):
