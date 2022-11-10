@@ -428,7 +428,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             return NotImplemented
 
         diff = [(k1, v1, v2) for (k1, v1), (k2, v2) in zip(self.__dict__.items(), other.__dict__.items()) if
-                ((hasattr(v1, "any") and (v1 != v2).any()) or (not hasattr(v1, "any") and v1 != v2))]
+                ((hasattr(v1, "any") and not np.allclose(v1, v2)) or (not hasattr(v1, "any") and v1 != v2))]
 
         return len(diff) == 0
 
