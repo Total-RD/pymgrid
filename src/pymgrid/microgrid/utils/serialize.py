@@ -22,7 +22,7 @@ def add_path_to_arr_like(data_dict, path, yaml_tag):
         elif isinstance(value, TO_CSV_TYPES):
             if isinstance(value, np.ndarray):
                 value = NDArraySubclass(value)
-            value.path = path / f'{yaml_tag.lstrip("!")}/{key}.csv'
+            value.path = path / f'{yaml_tag.lstrip("!")}/{key}.csv.gz'
             data_dict[key] = value
 
     return data_dict
