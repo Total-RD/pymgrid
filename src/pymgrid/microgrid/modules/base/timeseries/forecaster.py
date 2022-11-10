@@ -134,6 +134,10 @@ class GaussianNoiseForecaster(Forecaster):
         forecast[(forecast*val_c_n) < 0] = 0
         return forecast
 
+    def __repr__(self):
+        return f'GaussianNoiseForecaster(noise_std={self.input_noise_std}, ' \
+               f'increase_uncertainty={self.increase_uncertainty}'
+
 
 class NoForecaster(Forecaster):
     def _forecast(self, val_c, val_c_n, n):
