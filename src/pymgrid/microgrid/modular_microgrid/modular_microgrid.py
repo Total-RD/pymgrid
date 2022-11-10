@@ -322,7 +322,7 @@ class Microgrid(yaml.YAMLObject):
     def __repr__(self):
         module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]
         module_str = ', '.join(module_str)
-        return f'ModularMicrogrid([{module_str}])'
+        return f'Microgrid([{module_str}])'
 
     def __getattr__(self, item):
         if item.startswith("__"):
