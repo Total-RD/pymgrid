@@ -1,3 +1,4 @@
+from pathlib import Path
 from setuptools import setup, find_packages
 
 EXTRAS = dict()
@@ -9,8 +10,11 @@ setup(
     name="pymgrid",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    version="0.1.0",
-    python_requires=">=3.0",
+    version="1.0",
+    python_requires=">=3.6",
+    download_url="https://github.com/Total-RD/pymgrid/archive/refs/tags/v1.0-beta.tar.gz",
+    long_description=(Path(__file__).parent / "README.md").read_text(),
+    long_description_content_type="test/markdown",
     include_package_data=True,
     install_requires=[
         "requests",
