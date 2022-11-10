@@ -427,3 +427,10 @@ class BaseMicrogridModule(yaml.YAMLObject):
                 ((hasattr(v1, "any") and (v1 != v2).any()) or (not hasattr(v1, "any") and v1 != v2))]
 
         return len(diff) == 0
+
+    def __repr__(self):
+        param_repr = {p: getattr(self, p) for p in inspect.signature(self.__init__).parameters}
+        param_repr = [f'{p}={type(v) if hasattr(v, "__len__") and not isinstance(v, str) else v}' for p, v in param_repr.items()]
+        param_repr = ', '.join(param_repr)
+        return f'{self.__class__.__name__}(' \
+               f'{param_repr})'
