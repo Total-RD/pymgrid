@@ -13,7 +13,7 @@ import numpy as np
 from pymgrid.MicrogridGenerator import MicrogridGenerator
 
 
-class TestMicrogrid(unittest.TestCase):
+class TestNonmodularMicrogrid(unittest.TestCase):
     def setUp(self):
         mgen = MicrogridGenerator()
         self.mg = mgen._create_microgrid()
