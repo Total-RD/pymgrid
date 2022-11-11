@@ -1,8 +1,9 @@
 from pathlib import Path
 from setuptools import setup, find_packages
 
+VERSION = (Path(__file__).parent / "version.txt").read_text()
 DESCRIPTION = "A simulator for tertiary control of electrical microgrids"
-DOWNLOAD_URL = "https://github.com/Total-RD/pymgrid/archive/refs/tags/v1.0-beta.tar.gz"
+DOWNLOAD_URL = f"https://github.com/Total-RD/pymgrid/archive/refs/tags/v{VERSION}.tar.gz"
 MAINTAINER = "Avishai Halev"
 MAINTAINER_EMAIL = "avishaihalev@gmail.com"
 LICENSE = "GNU LGPL 3.0"
@@ -19,6 +20,7 @@ setup(
     package_dir={"": "src"},
     packages=find_packages("src"),
     python_requires=">=3.6",
+    version=VERSION,
     maintainer=MAINTAINER,
     maintainer_email=MAINTAINER_EMAIL,
     download_url=DOWNLOAD_URL,
