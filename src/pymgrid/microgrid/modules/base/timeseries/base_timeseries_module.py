@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+from pymgrid.microgrid import DEFAULT_HORIZON
 from pymgrid.microgrid.modules.base import BaseMicrogridModule
 from pymgrid.microgrid.modules.base.timeseries.forecaster import get_forecaster
 
@@ -10,7 +11,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  time_series,
                  raise_errors,
                  forecaster=None,
-                 forecast_horizon=24,
+                 forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
                  provided_energy_name='provided_energy',
                  absorbed_energy_name='absorbed_energy',

@@ -1,6 +1,7 @@
 import numpy as np
 import yaml
 
+from pymgrid.microgrid import DEFAULT_HORIZON
 from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
@@ -13,7 +14,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
     def __init__(self, time_series,
                  raise_errors=False,
                  forecaster=None,
-                 forecast_horizon=24,
+                 forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
                  provided_energy_name='renewable_used'):
         super().__init__(time_series,
