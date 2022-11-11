@@ -1,6 +1,6 @@
 from pathlib import Path
 
-__version__ = '1.0.3'
+__version__ = (Path(__file__).parent.parent.parent / "version.txt").read_text()
 
 PROJECT_PATH = Path(__file__).parent
 
