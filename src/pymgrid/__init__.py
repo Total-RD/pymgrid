@@ -1,6 +1,6 @@
 from pathlib import Path
 
-__version__ = '1.0.2'
+__version__ = '1.0.3'
 
 PROJECT_PATH = Path(__file__).parent
 
