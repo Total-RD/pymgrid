@@ -53,12 +53,6 @@ class Forecaster:
     def _forecast(self, val_c, val_c_n, n):
         pass
 
-    def _correct_current_val(self, val_c_n, forecast):
-        if forecast.shape[0] == 0:
-            return forecast
-        forecast[0, :] = val_c_n[0, :]
-        return forecast
-
     def _pad(self, forecast, n):
         if forecast.shape[0] == n:
             return forecast
@@ -80,8 +74,9 @@ class Forecaster:
         if forecast is None:
             return None
         else:
-            forecast = self._correct_current_val(val_c_n, forecast)
-            return self._pad(forecast, n)
+            forecast = self._pad(forecast, n)
+            assert forecast.shape == val_c_n.shape
+            return forecast
 
     def __repr__(self):
         return self.__class__.__name__
