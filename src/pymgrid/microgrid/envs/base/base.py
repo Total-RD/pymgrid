@@ -15,7 +15,7 @@ class BaseMicrogridEnv(Microgrid, Env):
         elif "scenario" in kwargs or "microgrid_number" in kwargs:
             scenario = kwargs.get("scenario", "pymgrid25")
             microgrid_number = kwargs.get("microgrid_number", 0)
-            instance = cls.from_scenario(scenario=scenario, microgrid_number=microgrid_number)
+            instance = cls.from_scenario(microgrid_number=microgrid_number)
             cls.__init__ = skip_init(cls, cls.__init__)
             return instance
 

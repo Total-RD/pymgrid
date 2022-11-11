@@ -288,13 +288,11 @@ class Microgrid(yaml.YAMLObject):
         return to_nonmodular(self)
 
     @classmethod
-    def from_scenario(cls, microgrid_number=0, scenario="pymgrid25"):
-        # TODO use better serialization
-        import pickle
+    def from_scenario(cls, microgrid_number=0):
         from pymgrid import PROJECT_PATH
-        with open(PROJECT_PATH / f"data/scenario/{scenario}.pkl", "rb") as f:
-            mgen = pickle.load(f)
-        return cls.from_nonmodular(mgen.microgrids[microgrid_number])
+        n = microgrid_number
+        with open(PROJECT_PATH / f"data/scenario/pymgrid25/microgrid_{n}/microgrid_{n}.yaml", "r") as f:
+            return cls.load(f)
 
     def __getnewargs__(self):
         return (self.module_tuples(), )
