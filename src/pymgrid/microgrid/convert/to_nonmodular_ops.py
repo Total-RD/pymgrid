@@ -150,7 +150,7 @@ def add_genset_params(genset_module, params_dict):
     warn('GensetModules does not contain separate rated_power and p_max information.'
          'Assuming p_max=0.9.')
     genset_pmax=0.9
-    genset_rated_power = genset_module.max_production/genset_pmax
+    genset_rated_power = genset_module.running_max_production/genset_pmax
     _add_to_architecture(params_dict, 'genset')
     _add_genset_polynom(params_dict)
 
@@ -159,7 +159,7 @@ def add_genset_params(genset_module, params_dict):
 
     _add_to_parameters(params_dict,
                        genset_rated_power=genset_rated_power,
-                       genset_pmin=genset_module.min_production/genset_rated_power,
+                       genset_pmin=genset_module.running_min_production/genset_rated_power,
                        genset_pmax=genset_pmax,
                        fuel_cost=genset_module.genset_cost,
                        genset_co2=genset_module.co2_per_unit)
