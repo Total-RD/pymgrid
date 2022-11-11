@@ -84,13 +84,22 @@ class Forecaster:
 
 class UserDefinedForecaster(Forecaster):
     def __init__(self, forecaster_function, time_series):
-        is_vectorized_forecaster = _validate_callable_forecaster(forecaster_function, time_series)
-        if not is_vectorized_forecaster:
+        self.is_vectorized_forecaster, self.cast_to_arr = \
+            _validate_callable_forecaster(forecaster_function, time_series)
+
+        if not self.is_vectorized_forecaster:
             forecaster_function = vectorize_scalar_forecaster(forecaster_function)
+
         self._forecaster = forecaster_function
 
+    def _cast_to_arr(self, forecast, val_c_n):
+        if self.cast_to_arr:
+            return np.array(forecast.reshape(val_c_n.shape))
+        return forecast
+
     def _forecast(self, val_c, val_c_n, n):
-        return self._forecaster(val_c, val_c_n, n)
+        forecast = self._forecaster(val_c, val_c_n, n)
+        return self._cast_to_arr(forecast, val_c_n)
 
 
 class OracleForecaster(Forecaster):
@@ -144,14 +153,15 @@ def _validate_callable_forecaster(forecaster, time_series):
     n = np.random.randint(2, len(time_series))
     vector_true_forecast = time_series[:n]
     try:
-        _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n)
+        cast_to_arr = _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n)
         is_vectorized_forecaster = True
     except NotImplementedError:
         scalar_true_forecast = vector_true_forecast[-1]
         _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n)
         is_vectorized_forecaster = False
+        cast_to_arr = False
 
-    return is_vectorized_forecaster
+    return is_vectorized_forecaster, cast_to_arr
 
 
 def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
@@ -163,15 +173,24 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
                          f"\nraised {type(e).__name__}: {e}") from e
     else:
         # vectorized function call succeeded
-        if vectorized_forecast.shape != vector_true_forecast.shape:
-            raise ValueError(f"Forecaster vectorized output with shape {vectorized_forecast.shape}"
-                             f"does not match input shape {vector_true_forecast.shape}")
+        if not hasattr(vectorized_forecast, 'size'):
+            vectorized_forecast = np.array(vectorized_forecast)
+            cast_to_arr = True
+        else:
+            cast_to_arr = False
+        try:
+            vectorized_forecast = vectorized_forecast.reshape(vector_true_forecast.shape)
+        except ValueError:
+            raise ValueError(f"Forecaster output of shape {vectorized_forecast.shape} cannot be casted to "
+                             f"necessary forecast shape {vector_true_forecast.shape}")
 
         for i, (forecast, true_forecast) in enumerate(zip(vectorized_forecast, vector_true_forecast)):
             try:
                 _validate_forecasted_value(forecast, true_forecast, val_c, n)
             except Exception as e:
                 raise type(e)(f"Failed validating forecast at position {i} due to exception {e}") from e
+
+        return cast_to_arr
 
 
 def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
