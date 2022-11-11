@@ -1,5 +1,7 @@
 from pathlib import Path
 
+__version__ = '1.0.2'
+
 PROJECT_PATH = Path(__file__).parent
 
 from .non_modular_microgrid import NonModularMicrogrid
