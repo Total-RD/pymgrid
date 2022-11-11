@@ -78,7 +78,7 @@ modules:
     - 0
     state:
       _current_step: 0
-- - PV
+- - pv
   - !RenewableModule
     cls_params:
       forecast_horizon: 23
@@ -89,7 +89,7 @@ modules:
       time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv.gz'
     log: null
     name:
-    - PV
+    - pv
     - 0
     state:
       _current_step: 0
