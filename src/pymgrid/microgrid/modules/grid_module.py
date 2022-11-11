@@ -1,6 +1,7 @@
 import numpy as np
 import yaml
 
+from pymgrid.microgrid import DEFAULT_HORIZON
 from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
@@ -55,7 +56,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
                  max_export,
                  time_series,
                  forecaster=None,
-                 forecast_horizon=24,
+                 forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
                  cost_per_unit_co2=0.0,
                  raise_errors=False):
