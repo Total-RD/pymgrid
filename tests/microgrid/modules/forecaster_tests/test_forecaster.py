@@ -166,8 +166,8 @@ class TestUserDefinedForecaster(TestCase):
 
     def test_vectorized_forecaster_bad_output_shape(self):
         bad_output_shape_forecaster = lambda val_c, val_c_n, n: np.append(val_c_n, [0])
-        with self.assertRaisesRegex(ValueError, "Forecaster vectorized output with shape(.*)"
-                                                "does not match input shape"):
+        with self.assertRaisesRegex(ValueError, "Forecaster output of shape (.*) "
+                                                "cannot be casted to necessary forecast shape (.*, 1)"):
             _ = UserDefinedForecaster(forecaster_function=bad_output_shape_forecaster,
                                       time_series=self.simple_time_series)
 
