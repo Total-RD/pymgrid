@@ -1,5 +1,3 @@
-import pymgrid
-
 from pathlib import Path
 from setuptools import setup, find_packages
 
@@ -20,7 +18,6 @@ setup(
     name="pymgrid",
     package_dir={"": "src"},
     packages=find_packages("src"),
-    version=pymgrid.__version__,
     python_requires=">=3.6",
     maintainer=MAINTAINER,
     maintainer_email=MAINTAINER_EMAIL,
