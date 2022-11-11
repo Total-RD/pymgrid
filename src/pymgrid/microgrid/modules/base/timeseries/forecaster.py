@@ -134,7 +134,7 @@ class GaussianNoiseForecaster(Forecaster):
         return self._noise_std
 
     def _forecast(self, val_c, val_c_n, n):
-        forecast = val_c_n + self._get_noise(len(val_c_n))
+        forecast = val_c_n + self._get_noise(len(val_c_n)).reshape(val_c_n.shape)
         forecast[(forecast*val_c_n) < 0] = 0
         return forecast
 
