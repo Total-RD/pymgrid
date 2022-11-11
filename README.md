@@ -8,36 +8,29 @@ For more context, please see the [presentation](https://www.climatechange.ai/pap
 
 ## Installation
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install pymgrid. You can clone and cd in the repo and then do: 
+The easiest way to install pymgrid is with pip:
+
+`pip install -U pymgrid`
+
+Alternatively, you can install from source. First clone the repo:
+ 
+```bash
+git clone https://github.com/Total-RD/pymgrid.git
+``` 
+Then navigate to the root directory of pymgrid and call
 
 ```bash
 pip install .
 ```
-
-You can also run this pip command:
-```bash
-pip install git+https://github.com/Total-RD/pymgrid/
-```
-
-
-And in Google Colab:
-```bash
-!pip install git+https://github.com/Total-RD/pymgrid/
-```
-
 ## Getting Started
 
-Microgrids are straightforward to generate from scratch; simply define some modules and pass them
+Microgrids are straightforward to generate from scratch. Simply define some modules and pass them
 to a microgrid:
 ```python
 import numpy as np
 from pymgrid import Microgrid
-from pymgrid.microgrid.modules import (
-    GensetModule,
-    BatteryModule,
-    LoadModule,
-    RenewableModule
-)
+from pymgrid.microgrid.modules import GensetModule, BatteryModule, LoadModule, RenewableModule
+
 
 genset = GensetModule(running_min_production=10,
                       running_max_production=50,
