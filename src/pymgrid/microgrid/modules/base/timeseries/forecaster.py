@@ -75,7 +75,7 @@ class Forecaster:
             return None
         else:
             forecast = self._pad(forecast, n)
-            assert forecast.shape == val_c_n.shape
+            assert forecast.shape == (n, val_c_n.shape[1])
             return forecast
 
     def __repr__(self):
