@@ -70,3 +70,7 @@ class BaseMicrogridEnv(Microgrid, Env):
     def from_nonmodular(cls, nonmodular):
         microgrid = super().from_nonmodular(nonmodular)
         return cls.from_microgrid(microgrid)
+
+    @classmethod
+    def load(cls, stream):
+        return cls(super().load(stream))
