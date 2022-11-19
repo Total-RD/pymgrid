@@ -6,7 +6,11 @@ from abc import abstractmethod
 def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
-    :param forecaster: callable, float, "oracle", or None, default None. Function that gives a forecast n-steps ahead.
+
+    Parameters
+    ----------
+    forecaster: callable, float, "oracle", or None, default None.
+        Function that gives a forecast n-steps ahead.
         If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
             val_c is the current value in the time series: self.time_series[self.current_step],
             val_{c+n} is the value in the time series n steps in the future,
@@ -21,17 +25,20 @@ def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_unce
 
         If None, no forecast.
 
-    :param forecast_horizon: int. Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+    forecast_horizon: int. Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
-    :param time_series: ndarray[float] or None, default None.
+    time_series: ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
 
-    :param increase_uncertainty: bool, default False. Whether to increase uncertainty for farther-out dates if using
+    increase_uncertainty: bool, default False. Whether to increase uncertainty for farther-out dates if using
         a GaussianNoiseForecaster. Ignored otherwise.
 
-    :return:
-    forecast, callable[float, float, int]. The forecasting function.
+    Returns
+    -------
+    forecast, callable[float, float, int].
+        The forecasting function.
+
     """
 
     if forecaster is None:
