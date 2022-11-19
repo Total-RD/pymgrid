@@ -11,7 +11,8 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 
-    def __init__(self, time_series,
+    def __init__(self,
+                 time_series,
                  loss_load_cost,
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,

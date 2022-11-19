@@ -11,7 +11,8 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
     yaml_loader = yaml.SafeLoader
     yaml_dumper = yaml.SafeDumper
 
-    def __init__(self, time_series,
+    def __init__(self,
+                 time_series,
                  raise_errors=False,
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
