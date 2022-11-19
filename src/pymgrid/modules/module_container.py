@@ -260,7 +260,7 @@ class _ModuleSubContainer(UserDict):
                                      f'Module {name} of type {module.__class__.module_type[1]} conflicts with previous modules'
                                      f'of type {fixed_or_flex}')
                 if source_or_sink is not None and _get_source_sink(module) != source_or_sink:
-                    raise ValueError('Subcontainer must only one of sources, sinks, or sources and sinks, but not combinations.'
+                    raise ValueError('Subcontainer must be one of sources, sinks, or sources and sinks, but not combinations.'
                                      f'Module {name} of type {_get_source_sink(module)} conflicts with previous modules'
                                      f'of type {source_or_sink}')
 
@@ -282,7 +282,6 @@ class _ModuleSubContainer(UserDict):
     def iterdict(self):
         for name, modules in self.items():
             yield name, modules
-
 
     def __len__(self):
         return sum([len(v) for k, v in self.items()])
