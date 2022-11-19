@@ -384,4 +384,4 @@ class Microgrid(yaml.YAMLObject):
         except AttributeError:
             names = ", ".join([f'"{x}"' for x in self.modules.names()])
             raise AttributeError(f'ModularMicrogrid has no attribute "{item}". '
-                                 f'Did you mean one of the modules {names}?')
+                                 f'Did you mean one of the modules {names}?').with_traceback(None)
