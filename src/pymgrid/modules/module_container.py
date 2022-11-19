@@ -154,6 +154,15 @@ class _ModulePointer(UserDict):
         for module in self.module_list():
             yield module
 
+    def __getitem__(self, item):
+        try:
+            return self.data[item]
+        except KeyError:
+            try:
+                return self.module_dict()[item]
+            except KeyError:
+                raise KeyError(item)
+
     def __len__(self):
         return sum(len(v) for k, v in self.items())
 
