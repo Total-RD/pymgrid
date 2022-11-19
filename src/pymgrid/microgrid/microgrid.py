@@ -13,6 +13,65 @@ from pymgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pan
 
 
 class Microgrid(yaml.YAMLObject):
+    """
+    Microgrid class, used to define and simulate an environment with a variety of modules.
+
+    Parameters
+    ----------
+    modules: List[Union[Tuple[str, BaseMicrogridModule], BaseMicrogridModule]]
+        List of modules that define the microgrid. The list can contain either/both microgrid modules -- subclasses of
+        ``BaseMicrogridModule`` -- and tuples of length two, which must contain a string defining the name of the module
+        followed by the module.
+
+        ``Microgrid`` groups modules into lists based on their names. If no name is given (e.g. an element in ``modules``
+        is a subclass of ``BaseMicrogridModule`` and not a tuple, then the name is defined to be
+        ``module.__class__.__name__[0]``. Modules are then exposed (within lists) by name as attributes to the microgrid.
+        See below for an example.
+    add_unbalanced_module: bool, default True.
+        Whether to add an unbalanced energy module to your microgrid. Such a module computes and attributes
+        costs to any excess supply or demand.
+        Set to True unless ``modules`` contains an ``UnbalancedEnergyModule``.
+    loss_load_cost: float, default 10.0
+        Cost per unit of unmet demand. Ignored if ``add_unbalanced_module=False``.
+    overgeneration_cost: float, default 2.0
+        Cost per unit of excess generation.  Ignored if ``add_unbalanced_module=False``.
+
+    Examples
+    --------
+    >>> timesteps = 10
+    >>> load = LoadModule(10*np.random.rand(timesteps), loss_load_cost=10.)
+    >>> pv = RenewableModule(10*np.random.rand(timesteps))
+    >>> grid = GridModule(max_import=100, max_export=10, time_series=np.random.rand(timesteps, 3))
+    >>> battery_0 = BatteryModule(min_capacity=0,
+                                  max_capacity=100,
+                                  max_charge=1,
+                                  max_discharge=10,
+                                  efficiency=0.9,
+                                  init_soc=0.5)
+    >>> battery_1 = BatteryModule(min_capacity=1,
+                                  max_capacity=20,
+                                  max_charge=5,
+                                  max_discharge=10,
+                                  efficiency=0.9,
+                                  init_soc=0.5)
+
+    >>> microgrid = Microgrid(modules=[load, ('pv', pv), grid, battery_0, battery_1])
+    >>> # The modules are now available as attributes. The exception to this is `load`, which is an exposed method.
+    >>> print(microgrid.pv)
+    [RenewableModule(time_series=<class 'numpy.ndarray'>, raise_errors=False, forecaster=NoForecaster, forecast_horizon=0, forecaster_increase_uncertainty=False, provided_energy_name=renewable_used)]
+    >>> print(microgrid.grid)
+    [GridModule(max_import=100, max_export=10)]
+    >>> print(microgrid.grid.item()) # Return the module instead of a list containing the module, if list has one item.
+    GridModule(max_import=100, max_export=10)
+    >>> for j, battery in enumerate(microgrid.battery):
+    >>>     print(f"Battery {j}:\n\t{battery}")
+    Battery 0:
+	    BatteryModule(min_capacity=0, max_capacity=100, max_charge=1, max_discharge=10, efficiency=0.9, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)
+    Battery 1:
+	    BatteryModule(min_capacity=1, max_capacity=20, max_charge=5, max_discharge=10, efficiency=0.9, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)
+
+    """
+
     yaml_tag = u"!Microgrid"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
@@ -20,19 +79,13 @@ class Microgrid(yaml.YAMLObject):
     def __init__(self,
                  modules,
                  add_unbalanced_module=True,
-                 loss_load_cost=10,
-                 overgeneration_cost=2):
-        """
-
-        :param modules: list-like. List of _modules or tuples. Latter case: tup(str, Module); str to define name of module
-            and second element is the module.
-
-        """
-
+                 loss_load_cost=10.,
+                 overgeneration_cost=2.):
         self._modules = self._get_module_container(modules,
-                                                    add_unbalanced_module,
-                                                    loss_load_cost,
-                                                    overgeneration_cost)
+                                                   add_unbalanced_module,
+                                                   loss_load_cost,
+                                                   overgeneration_cost)
+
         self._balance_logger = ModularLogger()
 
     def _get_unbalanced_energy_module(self,
