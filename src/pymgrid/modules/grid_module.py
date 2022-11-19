@@ -7,19 +7,24 @@ from pymgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 class GridModule(BaseTimeSeriesMicrogridModule):
     """
-    Module representing a grid
+    Module representing a grid.
 
-    :param max_import: float. Maximum import at any time step.
+    Parameters
+    ----------
+    max_import: float
+        Maximum import at any time step.
 
-    :param max_export: float. Maximum export at any time step.
+    max_export: float
+        Maximum export at any time step.
 
-    :param time_series: array-like, shape (n_features, n_steps), n_features = {3, 4}.
+    time_series: array-like, shape (n_features, n_steps), n_features = {3, 4}
         If n_features=3, time series of (import_price, export_price, co2_per_kwH) in each column, respectively.
             Grid is assumed to have no outages.
         If n_features=4, time series of (import_price, export_price, co2_per_kwH, grid_status)
             in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
 
-    :param forecaster: callable, float, "oracle", or None, default None. Function that gives a forecast n-steps ahead.
+    forecaster: callable, float, "oracle", or None, default None.
+        Function that gives a forecast n-steps ahead.
         If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
             val_c is the current value in the time series: self.time_series[self.current_step],
             val_{c+n} is the value in the time series n steps in the future,
@@ -34,18 +39,21 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
         If None, no forecast.
 
-    :param forecast_horizon: int. Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+    forecast_horizon: int.
+        Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
-    :param forecaster_increase_uncertainty: bool, default False. Whether to increase uncertainty for farther-out dates if using
-        a GaussianNoiseForecaster. Ignored otherwise.
+    forecaster_increase_uncertainty: bool, default False
+        Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
 
-    :param cost_per_unit_co2: float, default 0.0. Marginal cost of grid co2 production.
+    cost_per_unit_co2: float, default 0.0
+        Marginal cost of grid co2 production.
 
-    :param raise_errors: bool, default False.
+    raise_errors: bool, default False
         Whether to raise errors if bounds are exceeded in an action.
         If False, actions are clipped to the limit possible.
 
     """
+
     module_type = ('grid', 'fixed')
     yaml_tag = u"!GridModule"
     yaml_loader = yaml.SafeLoader
