@@ -16,7 +16,8 @@ import pymgrid
 project = 'pymgrid'
 copyright = '2022, TotalEnergies'
 author = 'Avishai Halev'
-release = '0.1'
+release = pymgrid.__version__
+version = pymgrid.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
