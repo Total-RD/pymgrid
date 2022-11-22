@@ -1,7 +1,7 @@
 from abc import ABC
 import gym, logging, numpy as np, pandas as pd
 from gym import Env
-from pymgrid.non_modular_microgrid import NonModularMicrogrid
+from pymgrid._deprecated.non_modular_microgrid import NonModularMicrogrid
 from pymgrid.MicrogridGenerator import MicrogridGenerator
 from copy import deepcopy
 from pymgrid.algos.saa.saa import SampleAverageApproximation

@@ -1,4 +1,4 @@
-from pymgrid.non_modular_microgrid import NonModularMicrogrid
+from pymgrid._deprecated.non_modular_microgrid import NonModularMicrogrid
 from pymgrid.microgrid.modular_microgrid.modular_microgrid import Microgrid
 from pymgrid.microgrid.convert.get_module import get_module
 from pymgrid.microgrid.convert.to_nonmodular_ops import check_viability, add_params_from_module, get_empty_params, finalize_params
