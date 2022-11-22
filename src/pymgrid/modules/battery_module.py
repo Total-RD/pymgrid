@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+from pymgrid.modules.base import BaseMicrogridModule
 import numpy as np
 import yaml
 from warnings import warn

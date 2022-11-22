@@ -6,8 +6,7 @@ from copy import deepcopy
 from warnings import warn
 
 from pymgrid.microgrid import DEFAULT_HORIZON
-from pymgrid.microgrid.modules import *
-from pymgrid.microgrid.modules.module_container import ModuleContainer
+from pymgrid.modules import ModuleContainer, UnbalancedEnergyModule
 from pymgrid.microgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
 from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data

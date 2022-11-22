@@ -2,7 +2,7 @@ import numpy as np
 import yaml
 
 from pymgrid.microgrid import DEFAULT_HORIZON
-from pymgrid.microgrid.modules.base import BaseTimeSeriesMicrogridModule
+from pymgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class LoadModule(BaseTimeSeriesMicrogridModule):

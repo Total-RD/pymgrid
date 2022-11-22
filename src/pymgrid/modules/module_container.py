@@ -1,6 +1,6 @@
 import json
 from collections import UserDict, UserList
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+from pymgrid.modules.base import BaseMicrogridModule
 
 
 class ModuleContainer(UserDict):

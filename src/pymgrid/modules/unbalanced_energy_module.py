@@ -1,7 +1,7 @@
 import numpy as np
 import yaml
 
-from pymgrid.microgrid.modules.base import BaseMicrogridModule
+from pymgrid.modules.base import BaseMicrogridModule
 
 
 class UnbalancedEnergyModule(BaseMicrogridModule):

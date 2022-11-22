@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules import LoadModule, RenewableModule, BatteryModule, GridModule, GensetModule, UnbalancedEnergyModule
+from pymgrid.modules import LoadModule, RenewableModule, BatteryModule, GridModule, GensetModule, UnbalancedEnergyModule
 from copy import deepcopy
 import pandas as pd
 import numpy as np
