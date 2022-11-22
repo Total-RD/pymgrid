@@ -64,11 +64,9 @@ class Microgrid(yaml.YAMLObject):
     >>> print(microgrid.grid.item()) # Return the module instead of a list containing the module, if list has one item.
     GridModule(max_import=100, max_export=10)
     >>> for j, battery in enumerate(microgrid.battery):
-    >>>     print(f"Battery {j}:\n\t{battery}")
-    Battery 0:
-	    BatteryModule(min_capacity=0, max_capacity=100, max_charge=1, max_discharge=10, efficiency=0.9, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)
-    Battery 1:
-	    BatteryModule(min_capacity=1, max_capacity=20, max_charge=5, max_discharge=10, efficiency=0.9, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)
+    >>>     print(f"Battery {j}: {battery}")
+    Battery 0: BatteryModule(min_capacity=0, max_capacity=100, max_charge=1, max_discharge=10, efficiency=0.9, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)
+    Battery 1: BatteryModule(min_capacity=1, max_capacity=20, max_charge=5, max_discharge=10, efficiency=0.9, battery_cost_cycle=0.0, battery_transition_model=None, init_charge=None, init_soc=0.5, raise_errors=False)
 
     """
 
