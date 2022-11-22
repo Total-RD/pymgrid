@@ -3,7 +3,7 @@ from gym.spaces import Dict, Tuple, flatten_space, flatten
 from abc import abstractmethod
 
 from pymgrid import NonModularMicrogrid, Microgrid
-from pymgrid.microgrid.envs.base.skip_init import skip_init
+from pymgrid.envs.base import skip_init
 
 
 class BaseMicrogridEnv(Microgrid, Env):

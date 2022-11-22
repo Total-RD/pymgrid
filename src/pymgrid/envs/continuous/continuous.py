@@ -1,7 +1,7 @@
 from gym.spaces import Dict, Tuple, flatten_space
 from warnings import warn
 
-from pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
+from pymgrid.envs.base import BaseMicrogridEnv
 
 
 class ContinuousMicrogridEnv(BaseMicrogridEnv):

@@ -4,7 +4,7 @@ import numpy as np
 from gym.spaces import Discrete
 from math import isclose
 
-from pymgrid.microgrid.envs.base.base import BaseMicrogridEnv
+from pymgrid.envs.base import BaseMicrogridEnv
 from pymgrid.microgrid.utils.logger import ModularLogger
 
 
