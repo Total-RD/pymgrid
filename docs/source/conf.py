@@ -14,7 +14,7 @@ import pymgrid
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'pymgrid'
-copyright = '2022, Avishai Halev'
+copyright = '2022, TotalEnergies'
 author = 'Avishai Halev'
 release = '0.1'
 
