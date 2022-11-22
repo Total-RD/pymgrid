@@ -24,6 +24,10 @@ version = pymgrid.__version__
 
 extensions = [
     'sphinx.ext.duration',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.coverage',
+    # 'sphinx.ext.napoleon',
+    'sphinx.ext.doctest'
 ]
 
 templates_path = ['_templates']
@@ -34,5 +38,10 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'alabaster'
+html_theme = 'pydata_sphinx_theme'
+
+html_theme_options = {
+    "primary_sidebar_end": ["indices.html", "sidebar-ethical-ads.html"]
+}
+
 html_static_path = ['_static']
