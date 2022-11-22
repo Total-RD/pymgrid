@@ -14,7 +14,7 @@ class TestMPC(TestCase):
         self.assertEqual(mpc.horizon, 1)
 
     def test_run_with_load_pv_battery_grid(self):
-        from pymgrid.microgrid.modules import RenewableModule, LoadModule
+        from pymgrid.modules import RenewableModule, LoadModule
 
         forecast_steps = 10
         pv_const = 50
@@ -35,7 +35,7 @@ class TestMPC(TestCase):
                         )
 
     def test_run_with_load_pv_battery_genset(self):
-        from pymgrid.microgrid.modules import RenewableModule, LoadModule
+        from pymgrid.modules import RenewableModule, LoadModule
 
         forecast_steps = 10
         pv_const = 50
@@ -56,7 +56,7 @@ class TestMPC(TestCase):
                          [10.] * mpc_output.shape[0])
 
     def test_run_twice_with_load_pv_battery_genset(self):
-        from pymgrid.microgrid.modules import RenewableModule, LoadModule
+        from pymgrid.modules import RenewableModule, LoadModule
 
         forecast_steps = 10
         pv_const = 50
@@ -83,7 +83,7 @@ class TestMPC(TestCase):
         self.assertEqual(mpc_output[("genset", 0, "genset_production")].values, [10.] * mpc_output.shape[0])
 
     def test_run_with_load_pv_battery_grid_different_names(self):
-        from pymgrid.microgrid.modules import RenewableModule, LoadModule
+        from pymgrid.modules import RenewableModule, LoadModule
 
         forecast_steps = 10
         pv_const = 50
