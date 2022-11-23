@@ -278,11 +278,11 @@ class Microgrid(yaml.YAMLObject):
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
-        from pymgrid.microgrid.convert.convert import to_modular
+        from pymgrid.convert.convert import to_modular
         return to_modular(nonmodular)
 
     def to_nonmodular(self):
-        from pymgrid.microgrid.convert.convert import to_nonmodular
+        from pymgrid.convert.convert import to_nonmodular
         return to_nonmodular(self)
 
     @classmethod

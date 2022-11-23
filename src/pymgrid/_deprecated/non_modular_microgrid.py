@@ -23,12 +23,8 @@ You should have received a copy of the GNU Lesser General Public License along w
 import pandas as pd
 import numpy as np
 from copy import copy
-import cvxpy as cp
-import operator
-import sys
 from plotly.offline import init_notebook_mode, iplot
 import matplotlib.pyplot as plt
-import cufflinks as cf
 from IPython.display import display
 from IPython import get_ipython
 
@@ -1263,10 +1259,10 @@ class NonModularMicrogrid:
 
     @classmethod
     def from_modular(cls, modular):
-        from pymgrid.microgrid.convert.convert import to_nonmodular
+        from pymgrid.convert.convert import to_nonmodular
         return to_nonmodular(modular)
 
     def to_modular(self):
-        from pymgrid.microgrid.convert.convert import to_modular
+        from pymgrid.convert.convert import to_modular
         return to_modular(self)
 
