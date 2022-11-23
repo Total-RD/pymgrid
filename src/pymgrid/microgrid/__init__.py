@@ -1,2 +1,1 @@
-DEFAULT_HORIZON = 23
 

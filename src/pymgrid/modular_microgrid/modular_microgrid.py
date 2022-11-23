@@ -5,7 +5,7 @@ import yaml
 from copy import deepcopy
 from warnings import warn
 
-from pymgrid.microgrid import DEFAULT_HORIZON
+from pymgrid.modular_microgrid import DEFAULT_HORIZON
 from pymgrid.modules import ModuleContainer, UnbalancedEnergyModule
 from pymgrid.utils.logger import ModularLogger
 from pymgrid.modular_microgrid.utils.step import MicrogridStep
