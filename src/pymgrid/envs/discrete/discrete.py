@@ -5,7 +5,7 @@ from gym.spaces import Discrete
 from math import isclose
 
 from pymgrid.envs.base import BaseMicrogridEnv
-from pymgrid.microgrid.utils.logger import ModularLogger
+from pymgrid.utils.logger import ModularLogger
 
 
 class DiscreteMicrogridEnv(BaseMicrogridEnv):

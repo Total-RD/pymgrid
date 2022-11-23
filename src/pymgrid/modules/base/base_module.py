@@ -7,9 +7,9 @@ import numpy as np
 from gym.spaces import Box
 from warnings import warn
 
-from pymgrid.microgrid.utils.logger import ModularLogger
-from pymgrid.microgrid.utils.normalize import Normalize, IdentityNormalize
-from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
+from pymgrid.utils.logger import ModularLogger
+from pymgrid.modules.utils.normalize import Normalize, IdentityNormalize
+from pymgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
 
 
 script_logger = logging.getLogger(__name__)

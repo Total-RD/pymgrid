@@ -7,9 +7,9 @@ from warnings import warn
 
 from pymgrid.microgrid import DEFAULT_HORIZON
 from pymgrid.modules import ModuleContainer, UnbalancedEnergyModule
-from pymgrid.microgrid.utils.logger import ModularLogger
-from pymgrid.microgrid.utils.step import MicrogridStep
-from pymgrid.microgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
+from pymgrid.utils.logger import ModularLogger
+from pymgrid.modular_microgrid.utils.step import MicrogridStep
+from pymgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
 
 
 class Microgrid(yaml.YAMLObject):
