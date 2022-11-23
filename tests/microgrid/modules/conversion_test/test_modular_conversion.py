@@ -15,7 +15,6 @@ class TestToModular(TestCase):
         self.strong_grid_and_genset = [microgrid for microgrid in mgen.microgrids if
                                        microgrid.architecture["genset"] and self.is_strong_grid(microgrid)]
 
-
     @staticmethod
     def is_weak_grid(microgrid):
         return microgrid.architecture["grid"] and microgrid._grid_status_ts.min().item() < 1

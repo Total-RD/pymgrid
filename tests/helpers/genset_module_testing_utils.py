@@ -1,4 +1,4 @@
-from pymgrid.microgrid.modules import GensetModule
+from pymgrid.modules import GensetModule
 
 
 default_params = dict(running_min_production=10,

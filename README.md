@@ -29,7 +29,7 @@ to a microgrid:
 ```python
 import numpy as np
 from pymgrid import Microgrid
-from pymgrid.microgrid.modules import GensetModule, BatteryModule, LoadModule, RenewableModule
+from pymgrid.modules import GensetModule, BatteryModule, LoadModule, RenewableModule
 
 
 genset = GensetModule(running_min_production=10,

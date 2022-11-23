@@ -1,6 +1,14 @@
-from pymgrid.microgrid.modular_microgrid.modular_microgrid import Microgrid
-from pymgrid.microgrid.modules import *
 import numpy as np
+
+from pymgrid import Microgrid
+
+from pymgrid.modules import (
+    BatteryModule,
+    GensetModule,
+    GridModule,
+    LoadModule,
+    RenewableModule
+)
 
 
 def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbalanced_module=True):
