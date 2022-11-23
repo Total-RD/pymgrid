@@ -46,3 +46,23 @@ html_theme_options = {
 }
 
 html_static_path = ['_static']
+
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+
+    if what != 'method':
+        return None
+
+    try:
+        exclusions = obj.__self__.__autodoc_exclusions__
+    except AttributeError: # not a method of an object, or object has no attribute '__autodoc_exclusions__'
+        return None
+
+    if name in exclusions:
+        return True
+
+    return None
+
+
+def setup(app):
+    app.connect('autodoc-skip-member', autodoc_skip_member)
