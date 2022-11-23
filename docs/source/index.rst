@@ -32,9 +32,11 @@ See the :doc:`getting_started` section for further information, including instru
 
    This project is under active development.
 
+Contents
+========
+
 .. toctree::
    :maxdepth: 3
-   :caption: Contents:
 
    getting_started
    reference/index
