@@ -123,10 +123,10 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return reward, self._done(), info
 
     def get_cost(self, import_export, as_source, as_sink):
-        if as_source:                                               # Import
+        if as_source:  # Import
             import_cost = self._time_series[self.current_step, 0]
             return -1 * import_cost*import_export + self.get_co2_cost(import_export, as_source, as_sink)
-        elif as_sink:                                               # Export
+        elif as_sink:  # Export
             export_cost = self._time_series[self.current_step, 1]
             return export_cost * import_export + self.get_co2_cost(import_export, as_source, as_sink)
         else:
@@ -136,11 +136,11 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return -1.0 * self.cost_per_unit_co2*self.get_co2_production(import_export, as_source, as_sink)
 
     def get_co2_production(self, import_export, as_source, as_sink):
-        if as_source:                                               # Import
+        if as_source:  # Import
             co2_prod_per_kWh = self._time_series[self.current_step, 2]
             co2 = import_export*co2_prod_per_kWh
             return co2
-        elif as_sink:                                               # Export
+        elif as_sink:  # Export
             return 0.0
         else:
             raise RuntimeError
