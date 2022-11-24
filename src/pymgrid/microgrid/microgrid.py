@@ -18,7 +18,7 @@ class Microgrid(yaml.YAMLObject):
 
     Parameters
     ----------
-    modules: List[Union[Tuple[str, BaseMicrogridModule], BaseMicrogridModule]]
+    modules : List[Union[Tuple[str, BaseMicrogridModule], BaseMicrogridModule]]
         List of modules that define the microgrid. The list can contain either/both microgrid modules -- subclasses of
         ``BaseMicrogridModule`` -- and tuples of length two, which must contain a string defining the name of the module
         followed by the module.
@@ -27,13 +27,13 @@ class Microgrid(yaml.YAMLObject):
         is a subclass of ``BaseMicrogridModule`` and not a tuple, then the name is defined to be
         ``module.__class__.__name__[0]``. Modules are then exposed (within lists) by name as attributes to the microgrid.
         See below for an example.
-    add_unbalanced_module: bool, default True.
+    add_unbalanced_module : bool, default True.
         Whether to add an unbalanced energy module to your microgrid. Such a module computes and attributes
         costs to any excess supply or demand.
         Set to True unless ``modules`` contains an ``UnbalancedEnergyModule``.
-    loss_load_cost: float, default 10.0
+    loss_load_cost : float, default 10.0
         Cost per unit of unmet demand. Ignored if ``add_unbalanced_module=False``.
-    overgeneration_cost: float, default 2.0
+    overgeneration_cost : float, default 2.0
         Cost per unit of excess generation.  Ignored if ``add_unbalanced_module=False``.
 
     Examples
