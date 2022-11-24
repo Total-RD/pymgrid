@@ -7,48 +7,48 @@ from pymgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 class GridModule(BaseTimeSeriesMicrogridModule):
     """
-    Module representing a grid.
+    An electrical grid module.
 
     Parameters
     ----------
-    max_import: float
+    max_import : float
         Maximum import at any time step.
 
-    max_export: float
+    max_export : float
         Maximum export at any time step.
 
-    time_series: array-like, shape (n_features, n_steps), n_features = {3, 4}
+    time_series : array-like, shape (n_features, n_steps), n_features = {3, 4}
         If n_features=3, time series of (import_price, export_price, co2_per_kwH) in each column, respectively.
-            Grid is assumed to have no outages.
+        Grid is assumed to have no outages.
         If n_features=4, time series of (import_price, export_price, co2_per_kwH, grid_status)
-            in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
+        in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
 
-    forecaster: callable, float, "oracle", or None, default None.
+    forecaster : callable, float, "oracle", or None, default None.
         Function that gives a forecast n-steps ahead.
-        If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
-            val_c is the current value in the time series: self.time_series[self.current_step],
-            val_{c+n} is the value in the time series n steps in the future,
-            n is the number of steps in the future at which we are forecasting.
-            The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
-            as the inputs val_c and val_{c+n}.
+        * If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
+        val_c is the current value in the time series: self.time_series[self.current_step],
+        val_{c+n} is the value in the time series n steps in the future,
+        n is the number of steps in the future at which we are forecasting.
+        The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
+        as the inputs val_c and val_{c+n}.
 
-        If float, serves as a standard deviation for a mean-zero gaussian noise function
+        * If float, serves as a standard deviation for a mean-zero gaussian noise function
             that is added to the true value.
 
-        If "oracle", gives a perfect forecast.
+        * If "oracle", gives a perfect forecast.
 
-        If None, no forecast.
+        * If None, no forecast.
 
-    forecast_horizon: int.
+    forecast_horizon : int.
         Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
-    forecaster_increase_uncertainty: bool, default False
+    forecaster_increase_uncertainty : bool, default False
         Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
 
-    cost_per_unit_co2: float, default 0.0
+    cost_per_unit_co2 : float, default 0.0
         Marginal cost of grid co2 production.
 
-    raise_errors: bool, default False
+    raise_errors : bool, default False
         Whether to raise errors if bounds are exceeded in an action.
         If False, actions are clipped to the limit possible.
 
