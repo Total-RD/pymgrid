@@ -134,6 +134,14 @@ class Microgrid(yaml.YAMLObject):
         return ModuleContainer(modules)
 
     def reset(self):
+        """
+        Reset the microgrid and flush the log.
+
+        Returns
+        -------
+        dict[str, list[float]]
+            Observations from resetting the modules as well as the flushed balance log.
+        """
         return {
             **{name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()},
             **{"balance": self._balance_logger.flush()}
@@ -141,10 +149,28 @@ class Microgrid(yaml.YAMLObject):
 
     def run(self, control, normalized=True):
         """
-        control must contain controls for all fixed _modules in the microgrid.
-        Flex _modules are consumed/deployed in the order passed to the microgrid (maybe this should be changed?)
-        :param control: dict. keys are names of all fixed _modules
-        :return:
+
+        Run the microgrid for a single step.
+
+        Parameters
+        ----------
+        control : dict[str, list[float]]
+            Actions to pass to each fixed module.
+        normalized : bool, default True
+            Whether ``control`` is a normalized value or not. If not, each module de-normalizes its respective action.
+
+        Returns
+        -------
+        observation : dict[str, list[float]]
+            Observations of each module after using the passed ``control``.
+        reward : float
+            Reward/cost of running the microgrid. A positive value implies revenue while a negative
+            value is a cost.
+        done : bool
+            Whether the microgrid terminates.
+        info : dict
+            Additional information from this step.
+
         """
         control_copy = control.copy()
         microgrid_step = MicrogridStep()
@@ -221,26 +247,117 @@ class Microgrid(yaml.YAMLObject):
         return _log_dict
 
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
+        """
+        Get a random action within the microgrid's action space.
+
+        Parameters
+        ----------
+        strict_bound : bool, default False
+            If True, choose actions that is guaranteed to satisfy self.max_consumption and
+            self.max_production bounds. Otherwise selects action from min_act and min_act, which may not satisfy
+            instantaneous bounds.
+        sample_flex_modules : bool, default false
+            Whether to sample the flex modules in the microgrid.
+            ``run`` does not expect actions for flex modules.
+
+        Returns
+        -------
+
+        dict[str, list[float]]
+            Random action in the action space.
+
+        """
+
         module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
         return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list] for module_name, module_list in module_iterator.items()}
 
     def get_empty_action(self, sample_flex_modules=False):
+        """
+        Get an action for the microgrid with no values set.
+
+        Values are all ``None``; every ``None`` value should be replaced before passing an action to ``run``.
+
+        Parameters
+        ----------
+        sample_flex_modules : bool, default false
+            Whether to sample the flex modules in the microgrid.
+            ``run`` does not expect actions for flex modules.
+
+        Returns
+        -------
+
+        dict[str, list[None]]
+            Empty action.
+
+        """
         module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
 
         return {module_name: [None]*len(module_list) for module_name, module_list in module_iterator.items()}
 
-
     def to_normalized(self, data_dict, act=False, obs=False):
+        """
+        Normalize an action or observation.
+
+        Parameters
+        ----------
+        data_dict : dict[str, list[int]]
+            Action or observation to normalize. Dictionary keys are names of the modules while dictionary values
+            are lists containing an action corresponding to all modules with that name.
+        act : bool, default False
+            Set to True if you are normalizing an action.
+        obs : bool, default False
+            Set to True if you are normalizing an observation.
+
+        Returns
+        -------
+        dict[str, list[float]]
+            Normalized action.
+        """
         assert act + obs == 1, 'One of act or obs must be True but not both.'
         return {module_name: [module.to_normalized(value, act=act, obs=obs) for module, value in zip(module_list, data_dict[module_name])]
                 for module_name, module_list in self._modules.iterdict() if module_name in data_dict}
 
     def from_normalized(self, data_dict, act=False, obs=False):
+        """
+        De-normalize an action or observation.
+
+        Parameters
+        ----------
+        data_dict : dict[str, list[int]]
+            Action or observation to de-normalize. Dictionary keys are names of the modules while dictionary values
+            are lists containing an action corresponding to all modules with that name.
+        act : bool, default False
+            Set to True if you are de-normalizing an action.
+        obs : bool, default False
+            Set to True if you are de-normalizing an observation.
+
+        Returns
+        -------
+        dict[str, list[float]]
+            De-normalized action.
+        """
         assert act + obs == 1, 'One of act or obs must be True but not both.'
         return {module_name: [module.from_normalized(value, act=act, obs=obs) for module, value in zip(module_list, data_dict[module_name])]
                 for module_name, module_list in self._modules.iterdict() if module_name in data_dict}
 
     def get_log(self, as_frame=True, drop_singleton_key=False):
+        """
+
+        Collect a log of controls and responses of the microgrid.
+
+        Parameters
+        ----------
+        as_frame : bool, default True
+            Whether to return the log as a pd.DataFrame. If False, returns a nested dict.
+        drop_singleton_key : bool, default False
+            Whether to drop index level enumerating the modules by name if each module name has only one module.
+            Ignored otherwise.
+
+        Returns
+        -------
+        pd.DataFrame or dict
+
+        """
         _log_dict = dict()
         for name, modules in self._modules.iterdict():
             for j, module in enumerate(modules):
@@ -265,6 +382,20 @@ class Microgrid(yaml.YAMLObject):
         return _log_dict
 
     def get_forecast_horizon(self):
+        """
+        Get the forecast horizon of timeseries modules contained in the microgrid.
+
+        Returns
+        -------
+        int
+            The forecast horizon.
+
+        Raises
+        ------
+        ValueError
+            If horizons between modules are inconsistent.
+
+        """
         horizons = []
         for module in self.iterlist():
             try:
@@ -286,10 +417,25 @@ class Microgrid(yaml.YAMLObject):
 
     @property
     def fixed_modules(self):
+        """
+        List of all fixed modules in the microgrid.
+
+        Returns
+        -------
+        list of modules
+        """
         return self._modules.fixed
 
     @property
     def flex_modules(self):
+        """
+        List of all flex modules in the microgrid.
+
+        Returns
+        -------
+        list
+            The list of modules
+        """
         return self._modules.flex
 
     @property
@@ -298,17 +444,72 @@ class Microgrid(yaml.YAMLObject):
 
     @property
     def module_list(self):
+        """
+        List of all modules in the microgrid.
+
+        Returns
+        -------
+        list
+            The list of modules
+
+        """
         return self._modules.module_list()
 
     @property
     def n_modules(self):
+        """
+        Number of modules in the microgrid.
+
+        Returns
+        -------
+        int
+        """
         return len(self._modules)
 
     def dump(self, stream=None):
+        """
+        Save a microgrid to a YAML buffer.
+
+        Supports both strings of YAML or storing YAML in a path-like object.
+
+        Parameters
+        ----------
+        stream : file-like object or None, default None
+            Stream to save the YAML document. If None, returns the document instead.
+
+        Returns
+        -------
+        str or None :
+            Returns the YAMl document as a string if ``stream=None``. Returns None otherwise
+
+        .. note::
+
+            ``dump`` handles the serialization of array-like objects (e.g. time series and logs) differently depending
+            on the value of ``stream``.  If ``stream=None``, array-like objects are serialized inline. If ``stream`` is
+            a stream to a file-like object, however, array-like objects will be serialized as `.csv.gz` files in a
+            directory relative to ``stream``, and the relative locations stored inline in the YAML file. For an example of
+             this behavior, see `data/scenario/pymgrid25/microgrid_0`.
+
+        """
         return yaml.safe_dump(self, stream=stream)
 
     @classmethod
     def load(cls, stream):
+        """
+        Load a microgrid from a yaml buffer.
+
+        Supports both strings of YAML or YAML stored in a path-like object.
+
+        Parameters
+        ----------
+        stream : str or file-like object
+            YAML document. Can be either a string of loaded YAML or a stream to a local file containing a YAML document.
+
+        Returns
+        -------
+        Microgrid : the loaded microgrid.
+
+        """
         return yaml.safe_load(stream)
 
     @classmethod
@@ -331,15 +532,67 @@ class Microgrid(yaml.YAMLObject):
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
+        """
+        Convert to Microgrid from old-style NonModularMicrogrid.
+
+        Parameters
+        ----------
+        nonmodular : pymgrid.NonModularMicrogrid
+            Non-modular (old-style) microgrid to be converted.
+
+        Returns
+        -------
+        converted : pymgrid.Microgrid
+            New-style modular microgrid.
+
+        See Also
+        --------
+        pymgrid.Microgrid.to_nonmodular : Converter from new-style to old-style.
+
+        .. warning::
+
+            Any logs that have accumulated will be lost in conversion.
+
+        """
         from pymgrid.convert.convert import to_modular
         return to_modular(nonmodular)
 
     def to_nonmodular(self):
+        """
+        Convert Microgrid to old-style NonModularMicrogrid.
+
+        Returns
+        -------
+        converted : pymgrid.NonModularMicrogrid
+            Old-style microgrid.
+
+        See Also
+        --------
+        :meth:`Microgrid.to_modular` : Converter from old-style to new-style.
+
+        .. warning::
+
+            Any logs that have accumulated will be lost in conversion.
+
+        """
         from pymgrid.convert.convert import to_nonmodular
         return to_nonmodular(self)
 
     @classmethod
     def from_scenario(cls, microgrid_number=0):
+        """
+        Load one of the *pymgrid25* benchmark microgrids.
+
+        Parameters
+        ----------
+        microgrid_number : int, default 0
+            Number of the microgrid to return. 0<=microgrid_number<25.
+
+        Returns
+        -------
+        scenario : pymgrid.Microgrid
+            The loaded microgrid.
+        """
         from pymgrid import PROJECT_PATH
         n = microgrid_number
         with open(PROJECT_PATH / f"data/scenario/pymgrid25/microgrid_{n}/microgrid_{n}.yaml", "r") as f:

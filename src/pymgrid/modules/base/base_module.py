@@ -215,11 +215,20 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     def sample_action(self, strict_bound=False):
         """
-        Need to change this in the case of non-singleton action space
-        :param strict_bound: bool. If True, choose action that is guaranteed to satisfy self.max_consumption and
+
+        Sample an action from the module's action space.
+
+        Parameters
+        ----------
+        strict_bound : bool, default False
+            If True, choose action that is guaranteed to satisfy self.max_consumption and
             self.max_production bounds. Otherwise select action from min_act and min_act, which may not satisfy
             instantaneous bounds.
-        :return:
+
+        Returns
+        -------
+        float
+            An action within the action space for this module.
         """
 
         min_bound, max_bound = 0, 1
