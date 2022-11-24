@@ -11,7 +11,13 @@ PROJECT_URLS = {"Source Code": "https://github.com/Total-RD/pymgrid"}
 
 EXTRAS = dict()
 EXTRAS["genset_mpc"] = ["Mosek", "cvxopt"]
-EXTRAS["dev"] = ["pytest", "flake8", *EXTRAS["genset_mpc"]]
+EXTRAS["dev"] = [
+    "pytest",
+    "flake8",
+    "sphinx",
+    "pydata_sphinx_theme",
+    "numpydoc",
+    *EXTRAS["genset_mpc"]]
 EXTRAS["all"] = list(set(sum(EXTRAS.values(), [])))
 
 

@@ -7,45 +7,53 @@ from pymgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 class GridModule(BaseTimeSeriesMicrogridModule):
     """
-    Module representing a grid
+    An electrical grid module.
 
-    :param max_import: float. Maximum import at any time step.
+    Parameters
+    ----------
+    max_import : float
+        Maximum import at any time step.
 
-    :param max_export: float. Maximum export at any time step.
+    max_export : float
+        Maximum export at any time step.
 
-    :param time_series: array-like, shape (n_features, n_steps), n_features = {3, 4}.
+    time_series : array-like, shape (n_features, n_steps), n_features = {3, 4}
         If n_features=3, time series of (import_price, export_price, co2_per_kwH) in each column, respectively.
-            Grid is assumed to have no outages.
+        Grid is assumed to have no outages.
         If n_features=4, time series of (import_price, export_price, co2_per_kwH, grid_status)
-            in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
+        in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
 
-    :param forecaster: callable, float, "oracle", or None, default None. Function that gives a forecast n-steps ahead.
-        If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
-            val_c is the current value in the time series: self.time_series[self.current_step],
-            val_{c+n} is the value in the time series n steps in the future,
-            n is the number of steps in the future at which we are forecasting.
-            The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
-            as the inputs val_c and val_{c+n}.
+    forecaster : callable, float, "oracle", or None, default None.
+        Function that gives a forecast n-steps ahead.
+        * If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
+        val_c is the current value in the time series: self.time_series[self.current_step],
+        val_{c+n} is the value in the time series n steps in the future,
+        n is the number of steps in the future at which we are forecasting.
+        The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
+        as the inputs val_c and val_{c+n}.
 
-        If float, serves as a standard deviation for a mean-zero gaussian noise function
+        * If float, serves as a standard deviation for a mean-zero gaussian noise function
             that is added to the true value.
 
-        If "oracle", gives a perfect forecast.
+        * If "oracle", gives a perfect forecast.
 
-        If None, no forecast.
+        * If None, no forecast.
 
-    :param forecast_horizon: int. Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+    forecast_horizon : int.
+        Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
-    :param forecaster_increase_uncertainty: bool, default False. Whether to increase uncertainty for farther-out dates if using
-        a GaussianNoiseForecaster. Ignored otherwise.
+    forecaster_increase_uncertainty : bool, default False
+        Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
 
-    :param cost_per_unit_co2: float, default 0.0. Marginal cost of grid co2 production.
+    cost_per_unit_co2 : float, default 0.0
+        Marginal cost of grid co2 production.
 
-    :param raise_errors: bool, default False.
+    raise_errors : bool, default False
         Whether to raise errors if bounds are exceeded in an action.
         If False, actions are clipped to the limit possible.
 
     """
+
     module_type = ('grid', 'fixed')
     yaml_tag = u"!GridModule"
     yaml_loader = yaml.SafeLoader
@@ -95,7 +103,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
         return time_series
 
-    def get_bounds(self):
+    def _get_bounds(self):
         min_obs = self._time_series.min(axis=0)
         max_obs = self._time_series.max(axis=0)
         assert len(min_obs) in (3, 4)
@@ -115,10 +123,10 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return reward, self._done(), info
 
     def get_cost(self, import_export, as_source, as_sink):
-        if as_source:                                               # Import
+        if as_source:  # Import
             import_cost = self._time_series[self.current_step, 0]
             return -1 * import_cost*import_export + self.get_co2_cost(import_export, as_source, as_sink)
-        elif as_sink:                                               # Export
+        elif as_sink:  # Export
             export_cost = self._time_series[self.current_step, 1]
             return export_cost * import_export + self.get_co2_cost(import_export, as_source, as_sink)
         else:
@@ -128,11 +136,11 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return -1.0 * self.cost_per_unit_co2*self.get_co2_production(import_export, as_source, as_sink)
 
     def get_co2_production(self, import_export, as_source, as_sink):
-        if as_source:                                               # Import
+        if as_source:  # Import
             co2_prod_per_kWh = self._time_series[self.current_step, 2]
             co2 = import_export*co2_prod_per_kWh
             return co2
-        elif as_sink:                                               # Export
+        elif as_sink:  # Export
             return 0.0
         else:
             raise RuntimeError
@@ -143,21 +151,62 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def as_fixed(self):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
+    @property
     def import_price(self):
+        """
+        Current and forecasted import prices.
+
+        Returns
+        -------
+        prices : np.ndarray, shape (forecast_horizon, )
+            prices[0] gives the current import price while prices[1:] gives forecasted import prices.
+
+        """
         return self.state[::4]
 
+    @property
     def export_price(self):
+        """
+        Current and forecasted export prices.
+
+        Returns
+        -------
+        prices : np.ndarray, shape (forecast_horizon, )
+            prices[0] gives the current export price while prices[1:] gives forecasted export prices.
+
+        """
         return self.state[1::4]
 
+    @property
     def co2_per_kwh(self):
+        """
+        Current and forecasted carbon dioxide production per kWh.
+
+        Returns
+        -------
+        marginal_production : np.ndarray, shape (forecast_horizon, )
+            marginal_production[0] gives the current production per kWh while
+            marginal_production[1:] gives forecasted production per kWh.
+
+        """
         return self.state[2::4]
 
+    @property
     def grid_status(self):
+        """
+        Current and forecasted grid status.
+
+        Returns
+        -------
+        status : np.ndarray, shape (forecast_horizon, )
+            status[0] gives the current status of the grid while  status[1:] gives forecasted status.
+
+        """
         return self.state[3::4]
 
     @property
     def current_status(self):
-        return self.grid_status()[0]
+        return self.grid_status[0]
 
     @property
     def state_components(self):

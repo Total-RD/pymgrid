@@ -17,7 +17,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  absorbed_energy_name='absorbed_energy',
                  normalize_pos=...):
         self._time_series = self._set_time_series(time_series)
-        self._min_obs, self._max_obs, self._min_act, self._max_act = self.get_bounds()
+        self._min_obs, self._max_obs, self._min_act, self._max_act = self._get_bounds()
         self._forecast_param = forecaster
         self.forecaster, self._forecast_horizon = get_forecaster(forecaster,
                                                                 forecast_horizon,
@@ -38,7 +38,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         assert len(_time_series) == len(time_series)
         return _time_series
 
-    def get_bounds(self):
+    def _get_bounds(self):
         _min, _max = np.min(self._time_series), np.max(self._time_series)
         if self.is_sink and not self.is_source:
             _min, _max = -1*_max, -1*_min
@@ -79,7 +79,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     @time_series.setter
     def time_series(self, value):
         self._time_series = self._set_time_series(value)
-        self.get_bounds()
+        self._min_obs, self._max_obs, self._min_act, self._max_act = self._get_bounds()
 
     @property
     def min_obs(self):
