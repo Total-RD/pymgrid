@@ -74,6 +74,8 @@ class Microgrid(yaml.YAMLObject):
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 
+    __autodoc_exclusions__ = 'from_yaml', 'to_yaml', 'serialize'
+
     def __init__(self,
                  modules,
                  add_unbalanced_module=True,
