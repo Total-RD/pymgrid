@@ -407,7 +407,7 @@ class Microgrid(yaml.YAMLObject):
             warn(f"No forecast horizon found in microgrid.modules. Using default horizon {DEFAULT_HORIZON}")
             return DEFAULT_HORIZON
         elif not np.min(horizons) == np.max(horizons):
-                raise ValueError(f"Mismatched forecast_horizons found: {horizons}")
+            raise ValueError(f"Mismatched forecast_horizons found: {horizons}")
 
         return horizons[0]
 
