@@ -151,21 +151,62 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     def as_fixed(self):
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
+    @property
     def import_price(self):
+        """
+        Current and forecasted import prices.
+
+        Returns
+        -------
+        prices : np.ndarray, shape (forecast_horizon, )
+            prices[0] gives the current import price while prices[1:] gives forecasted import prices.
+
+        """
         return self.state[::4]
 
+    @property
     def export_price(self):
+        """
+        Current and forecasted export prices.
+
+        Returns
+        -------
+        prices : np.ndarray, shape (forecast_horizon, )
+            prices[0] gives the current export price while prices[1:] gives forecasted export prices.
+
+        """
         return self.state[1::4]
 
+    @property
     def co2_per_kwh(self):
+        """
+        Current and forecasted carbon dioxide production per kWh.
+
+        Returns
+        -------
+        marginal_production : np.ndarray, shape (forecast_horizon, )
+            marginal_production[0] gives the current production per kWh while
+            marginal_production[1:] gives forecasted production per kWh.
+
+        """
         return self.state[2::4]
 
+    @property
     def grid_status(self):
+        """
+        Current and forecasted grid status.
+
+        Returns
+        -------
+        status : np.ndarray, shape (forecast_horizon, )
+            status[0] gives the current status of the grid while  status[1:] gives forecasted status.
+
+        """
         return self.state[3::4]
 
     @property
     def current_status(self):
-        return self.grid_status()[0]
+        return self.grid_status[0]
 
     @property
     def state_components(self):

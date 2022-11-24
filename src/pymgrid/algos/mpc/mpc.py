@@ -874,9 +874,9 @@ class ModelPredictiveControl:
         else:
             grid_status = np.ones(self.horizon)
 
-            price_import = grid.import_price()
-            price_export = grid.export_price()
-            grid_co2_per_kwh = grid.co2_per_kwh()
+            price_import = grid.import_price
+            price_export = grid.export_price
+            grid_co2_per_kwh = grid.co2_per_kwh
             cost_co2 = [grid.cost_per_unit_co2]
 
             grid_max_import, grid_max_export = grid.max_import, grid.max_export
