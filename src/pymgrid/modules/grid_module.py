@@ -103,7 +103,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
         return time_series
 
-    def get_bounds(self):
+    def _get_bounds(self):
         min_obs = self._time_series.min(axis=0)
         max_obs = self._time_series.max(axis=0)
         assert len(min_obs) in (3, 4)
