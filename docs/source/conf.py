@@ -4,9 +4,12 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import sys
+import os
+
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+sys.path.insert(0, os.path.abspath(".."))
+
 try:
     import pymgrid
 except ImportError:
