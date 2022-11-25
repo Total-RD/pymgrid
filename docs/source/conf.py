@@ -7,8 +7,12 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
-import pymgrid
+try:
+    import pymgrid
+except ImportError:
+    pymgrid_path = Path(sys.path[0])
+    print('Contents of sys.path[0]')
+    print('\n'.join(str([x for x in sorted(pymgrid_path.iterdir())])))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
