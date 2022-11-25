@@ -1,8 +1,9 @@
 from pathlib import Path
 from setuptools import setup, find_packages
 
-exec(open('src/pymgrid/version.py').read()) # read __version__
-VERSION = __version__
+v = {}
+exec(open('src/pymgrid/version.py').read(), v) # read __version__
+VERSION = v['__version__']
 DESCRIPTION = "A simulator for tertiary control of electrical microgrids"
 DOWNLOAD_URL = f"https://github.com/Total-RD/pymgrid/archive/refs/tags/v{VERSION}.tar.gz"
 MAINTAINER = "Avishai Halev"
