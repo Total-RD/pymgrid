@@ -7,7 +7,7 @@ except FileNotFoundError:
     file = PROJECT_PATH / "version.txt"
     nl ='\n'
     err_msg = f'version.txt file not found at {file}.\n' \
-              f'Contents of parent dir:\n{nl.join(list(sorted(file.parent.iterdir())))}'
+              f'Contents of parent dir:\n{nl.join([str(x) for x in sorted(file.parent.iterdir())])}'
     raise FileNotFoundError(err_msg)
 
 from ._deprecated.non_modular_microgrid import NonModularMicrogrid
