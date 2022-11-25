@@ -11,8 +11,9 @@ try:
     import pymgrid
 except ImportError:
     pymgrid_path = Path(sys.path[0])
-    print('Contents of sys.path[0]')
-    print('\n'.join(str([x for x in sorted(pymgrid_path.iterdir())])))
+    err_msg = 'Contents of sys.path[0]:\n'
+    err_msg += '\n'.join([str(x) for x in sorted(pymgrid_path.iterdir())])
+    raise ImportError(err_msg)
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
