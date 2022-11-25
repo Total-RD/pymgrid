@@ -3,20 +3,8 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-import sys
-import os
+import pymgrid
 
-from pathlib import Path
-
-sys.path.insert(0, os.path.abspath("../../src"))
-
-try:
-    import pymgrid
-except ImportError:
-    pymgrid_path = Path(sys.path[0])
-    err_msg = 'Contents of sys.path[0]:\n'
-    err_msg += '\n'.join([str(x) for x in sorted(pymgrid_path.iterdir())])
-    raise ImportError(err_msg)
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
