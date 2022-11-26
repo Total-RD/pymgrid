@@ -9,7 +9,8 @@ DOWNLOAD_URL = f"https://github.com/Total-RD/pymgrid/archive/refs/tags/v{VERSION
 MAINTAINER = "Avishai Halev"
 MAINTAINER_EMAIL = "avishaihalev@gmail.com"
 LICENSE = "GNU LGPL 3.0"
-PROJECT_URLS = {"Source Code": "https://github.com/Total-RD/pymgrid"}
+PROJECT_URLS = {"Source Code": "https://github.com/Total-RD/pymgrid",
+                "Documentation": "https://pymgrid.readthedocs.io/en/latest/"}
 
 EXTRAS = dict()
 EXTRAS["genset_mpc"] = ["Mosek", "cvxopt"]
