@@ -18,8 +18,6 @@ version = pymgrid.__version__
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-master_doc = 'index'
-
 extensions = [
     'sphinx.ext.duration',
     'sphinx.ext.autodoc',
