@@ -4,7 +4,8 @@
 
 pymgrid (PYthon MicroGRID) is a python library to generate and simulate a large number of microgrids.
 
-For more context, please see the [presentation](https://www.climatechange.ai/papers/neurips2020/3) done at Climate Change AI.
+For more context, please see the [presentation](https://www.climatechange.ai/papers/neurips2020/3) done at Climate Change AI
+and the [documentation](https://pymgrid.readthedocs.io).
 
 ## Installation
 
