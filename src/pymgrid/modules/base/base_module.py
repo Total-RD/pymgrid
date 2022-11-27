@@ -50,7 +50,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         except AttributeError:
             script_logger.debug(f'min_{_str} and max_{_str} attributes not found for module {self.__class__.__name__}. '
-                  f'Returning identity normalizer')
+                                f'Returning identity normalizer')
 
             return IdentityNormalize()
 
