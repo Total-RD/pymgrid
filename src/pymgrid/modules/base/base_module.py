@@ -21,6 +21,13 @@ class BaseMicrogridModule(yaml.YAMLObject):
     All values passed to step(self) that result in non-negative
     """
     module_type = None
+    """
+    Type of the module.
+
+    Returns : tuple[str, {'fixed', 'flex'}]
+        length-two tuple denoting the name of the module class and whether it is a fixed or flex module.
+
+    """
 
     def __init__(self,
                  raise_errors,
