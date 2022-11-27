@@ -351,8 +351,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def is_sink(self):
         return False
 
-    def dump(self):
-        return yaml.safe_dump(self)
+    def dump(self, stream=None):
+        return yaml.safe_dump(self, stream=stream)
 
     @classmethod
     def load(cls, stream):
