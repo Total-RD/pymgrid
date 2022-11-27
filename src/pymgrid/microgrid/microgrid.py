@@ -514,11 +514,17 @@ class Microgrid(yaml.YAMLObject):
 
     @classmethod
     def to_yaml(cls, dumper, data):
+        """
+        :meta private:
+        """
         add_numpy_pandas_representers()
         return dumper.represent_mapping(cls.yaml_tag, data.serialize(dumper.stream), flow_style=cls.yaml_flow_style)
 
     @classmethod
     def from_yaml(cls, loader, node):
+        """
+        :meta private:
+        """
         add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls(mapping["modules"], add_unbalanced_module=False)
@@ -526,6 +532,9 @@ class Microgrid(yaml.YAMLObject):
         return instance
 
     def serialize(self, dumper_stream):
+        """
+        :meta private:
+        """
         data = {"modules": self._modules.module_tuples(),
                 "balance_log": self._balance_logger.serialize()}
         return dump_data(data, dumper_stream, self.yaml_tag)
