@@ -21,26 +21,31 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         Maximum export at any time step.
 
     time_series : array-like, shape (n_features, n_steps), n_features = {3, 4}
-        If n_features=3, time series of (import_price, export_price, co2_per_kwH) in each column, respectively.
+        If n_features=3, time series of ``(import_price, export_price, co2_per_kwH)`` in each column, respectively.
         Grid is assumed to have no outages.
-        If n_features=4, time series of (import_price, export_price, co2_per_kwH, grid_status)
-        in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
+        If n_features=4, time series of ``(import_price, export_price, co2_per_kwH, grid_status)``
+        in each column, respectively. ``time_series[:, -1]`` -- the grid status -- must be binary.
 
     forecaster : callable, float, "oracle", or None, default None.
         Function that gives a forecast n-steps ahead.
-        * If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
-        val_c is the current value in the time series: self.time_series[self.current_step],
-        val_{c+n} is the value in the time series n steps in the future,
-        n is the number of steps in the future at which we are forecasting.
-        The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
-        as the inputs val_c and val_{c+n}.
 
-        * If float, serves as a standard deviation for a mean-zero gaussian noise function
-            that is added to the true value.
+        * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
 
-        * If "oracle", gives a perfect forecast.
+          * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
 
-        * If None, no forecast.
+          * ``val_{c+n}`` is the value in the time series n steps in the future
+
+          * n is the number of steps in the future at which we are forecasting.
+
+          The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+          as the inputs ``val_c`` and ``val_{c+n}``.
+
+        * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+          that is added to the true value.
+
+        * If ``"oracle"``, gives a perfect forecast.
+
+        * If ``None``, no forecast.
 
     forecast_horizon : int.
         Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
