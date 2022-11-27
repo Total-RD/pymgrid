@@ -9,6 +9,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     """
     An electrical grid module.
 
+    By default, ``GridModule`` is a *fixed* module; it can be transformed to a flex module with ``GridModule.as_flex``.
+    ``GridModule`` is the only built-in module that can be both a fixed and flex module.
+
     Parameters
     ----------
     max_import : float
