@@ -613,7 +613,6 @@ class Microgrid(yaml.YAMLObject):
     def __len__(self):
         """
         Length of available underlying data.
-        :return:
         """
         l = []
         for module in self.modules.iterlist():
