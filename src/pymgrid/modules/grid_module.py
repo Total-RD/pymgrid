@@ -125,6 +125,29 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return reward, self._done(), info
 
     def get_cost(self, import_export, as_source, as_sink):
+        """
+        Current cost of the grid's usage.
+
+        Includes both the cost of importing/exporting as well as the cost of carbon dioxide production.
+        Note that the "cost" of exporting may be negative as the module may receive revenue in exchange for
+        energy export.
+        If the module is exporting to the grid, co2 production cost will be zero.
+
+        Parameters
+        ----------
+        import_export : float
+            Amount of energy that is imported or exported.
+        as_source : bool
+            Whether the grid is acting as a source.
+        as_sink : bool
+            Whether the grid is acting as a sink.
+
+        Returns
+        -------
+        cost : float
+            Cost of using the grid.
+
+        """
         if as_source:  # Import
             import_cost = self._time_series[self.current_step, 0]
             return -1 * import_cost*import_export + self.get_co2_cost(import_export, as_source, as_sink)
@@ -135,9 +158,50 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             raise RuntimeError
 
     def get_co2_cost(self, import_export, as_source, as_sink):
+        """
+        Current cost of the carbon dioxide production of the grid's usage.
+
+        If the module is exporting to the grid, co2 production cost will be zero.
+
+        Parameters
+        ----------
+        import_export : float
+            Amount of energy that is imported or exported.
+        as_source : bool
+            Whether the grid is acting as a source.
+        as_sink : bool
+            Whether the grid is acting as a sink.
+
+        Returns
+        -------
+        co2_cost : float
+            Cost of carbon dioxide production.
+
+        """
         return -1.0 * self.cost_per_unit_co2*self.get_co2_production(import_export, as_source, as_sink)
 
     def get_co2_production(self, import_export, as_source, as_sink):
+        """
+
+        Current carbon dioxide production of the grid's usage.
+
+        If the module is exporting to the grid, co2 production will be zero.
+
+        Parameters
+        ----------
+        import_export : float
+            Amount of energy that is imported or exported.
+        as_source : bool
+            Whether the grid is acting as a source.
+        as_sink : bool
+            Whether the grid is acting as a sink.
+
+        Returns
+        -------
+        co2_production : float
+            Carbon dioxide production.
+
+        """
         if as_source:  # Import
             co2_prod_per_kWh = self._time_series[self.current_step, 2]
             co2 = import_export*co2_prod_per_kWh
@@ -148,9 +212,21 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             raise RuntimeError
 
     def as_flex(self):
+        """
+        Convert the module to a flex module.
+
+        Flex modules do not require a control to be passed, and are deployed as necessary to balance load and demand.
+
+        """
         self.__class__.module_type = (self.__class__.module_type[0], 'flex')
 
     def as_fixed(self):
+        """
+        Convert the module to a fixed module.
+
+        Flex modules require a control to be passed.
+
+        """
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
     @property
@@ -208,6 +284,15 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def current_status(self):
+        """
+        Current status of the grid.
+
+        Returns
+        -------
+        status : {0, 1}
+            Current status.
+
+        """
         return self.grid_status[0]
 
     @property
@@ -232,6 +317,15 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def weak_grid(self):
+        """
+        Whether the grid has outages or not.
+
+        Returns
+        -------
+        weak_grid : bool
+            True if the grid has outages.
+
+        """
         return self._time_series[:, -1].min() < 1
 
     def __repr__(self):
