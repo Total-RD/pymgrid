@@ -485,7 +485,7 @@ class Microgrid(yaml.YAMLObject):
         .. note::
 
             ``dump`` handles the serialization of array-like objects (e.g. time series and logs) differently depending
-            on the value of ``stream``.  If ``stream=None``, array-like objects are serialized inline. If ``stream`` is
+            on the value of ``stream``.  If ``stream is None``, array-like objects are serialized inline. If ``stream`` is
             a stream to a file-like object, however, array-like objects will be serialized as `.csv.gz` files in a
             directory relative to ``stream``, and the relative locations stored inline in the YAML file. For an example of
              this behavior, see `data/scenario/pymgrid25/microgrid_0`.
