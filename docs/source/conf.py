@@ -43,8 +43,13 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
+skip_members = ['yaml_flow_style']
+
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
+    if name in skip_members:
+        return True
+
     try:
         doc = obj.__doc__
     except AttributeError:
