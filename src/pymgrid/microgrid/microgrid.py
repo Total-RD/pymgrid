@@ -38,21 +38,23 @@ class Microgrid(yaml.YAMLObject):
 
     Examples
     --------
+    >>> from pymgrid import Microgrid
+    >>> from pymgrid.modules import LoadModule, RenewableModule, GridModule, BatteryModule
     >>> timesteps = 10
     >>> load = LoadModule(10*np.random.rand(timesteps), loss_load_cost=10.)
     >>> pv = RenewableModule(10*np.random.rand(timesteps))
     >>> grid = GridModule(max_import=100, max_export=10, time_series=np.random.rand(timesteps, 3))
-    >>> battery_0 = BatteryModule(min_capacity=0,
-                                  max_capacity=100,
-                                  max_charge=1,
-                                  max_discharge=10,
-                                  efficiency=0.9,
+    >>> battery_0 = BatteryModule(min_capacity=0, \
+                                  max_capacity=100, \
+                                  max_charge=1,\
+                                  max_discharge=10, \
+                                  efficiency=0.9, \
                                   init_soc=0.5)
-    >>> battery_1 = BatteryModule(min_capacity=1,
-                                  max_capacity=20,
-                                  max_charge=5,
-                                  max_discharge=10,
-                                  efficiency=0.9,
+    >>> battery_1 = BatteryModule(min_capacity=1, \
+                                  max_capacity=20, \
+                                  max_charge=5, \
+                                  max_discharge=10, \
+                                  efficiency=0.9, \
                                   init_soc=0.5)
 
     >>> microgrid = Microgrid(modules=[load, ('pv', pv), grid, battery_0, battery_1])
