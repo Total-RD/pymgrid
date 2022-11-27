@@ -49,6 +49,14 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         return _min, _max, _min, _max
 
     def forecast(self):
+        """
+        Forecast the module's time series from the current state.
+
+        Returns
+        -------
+        forecast : None or np.ndarray, shape (n, len(self.state_components))
+            The forecasted time series.
+        """
         val_c_n = self.time_series[1+self.current_step:1+self.current_step+self.forecast_horizon, :]
         factor = -1 if (self.is_sink and not self.is_source) else 1
         try:
@@ -66,6 +74,14 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @property
     def current_obs(self):
+        """
+        Current observation.
+
+        Returns
+        -------
+        obs : np.ndarray, shape (len(self.state_components), )
+            The observation.
+        """
         factor = -1 if (self.is_sink and not self.is_source) else 1
         try:
             return factor * self.time_series[self.current_step, :]
@@ -74,6 +90,15 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @property
     def time_series(self):
+        """
+        View of the module's time series.
+
+        Returns
+        -------
+        time_series : np.ndarray, shape (len(self), len(self.state_components))
+            The underlying time series.
+
+        """
         return self._time_series
 
     @time_series.setter
@@ -99,6 +124,15 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @property
     def forecast_horizon(self):
+        """
+        The number of steps until which the module forecasts.
+
+        Returns
+        -------
+        forecast_horizon : int
+            The forecast horizon.
+
+        """
         return self._forecast_horizon
 
     @forecast_horizon.setter
@@ -114,6 +148,18 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @property
     def forecaster_increase_uncertainty(self):
+        """
+        View of ``self.forecaster.increase_uncertainty``.
+
+        Required for serialization as a mirror to the class parameter.
+        Will only ever be True if ``self.forecaster`` is a ``GaussianNoiseForecaster``.
+
+        Returns
+        -------
+        forecaster_increase_uncertainty : bool
+            Associated attribute of ``self.forecaster``.
+
+        """
         try:
             return self.forecaster.increase_uncertainty
         except AttributeError:
@@ -122,6 +168,16 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     @property
     @abstractmethod
     def state_components(self):
+        """
+        Labels of the components of each entry in the module's time series.
+
+        Column labels of self.time_series.
+
+        Returns
+        -------
+        state_components : np.ndarray[str], shape (self.time_series.shape[1], )
+            The state components.
+        """
         pass
 
     @property
