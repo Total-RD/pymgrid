@@ -45,18 +45,13 @@ html_static_path = ['_static']
 
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
-
-    if what != 'method':
-        return None
-
     try:
-        exclusions = obj.__self__.__autodoc_exclusions__
-    except AttributeError: # not a method of an object, or object has no attribute '__autodoc_exclusions__'
+        doc = obj.__doc__
+    except AttributeError:
         return None
 
-    if name in exclusions:
+    if doc is not None and ':meta private:' in doc:
         return True
-
     return None
 
 
