@@ -65,9 +65,6 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     module_type = ('grid', 'fixed')
 
     yaml_tag = u"!GridModule"
-    """
-    Tag used for yaml serialization.
-    """
     yaml_loader = yaml.SafeLoader
     yaml_dumper = yaml.SafeDumper
 

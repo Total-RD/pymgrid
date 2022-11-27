@@ -28,6 +28,10 @@ class BaseMicrogridModule(yaml.YAMLObject):
         length-two tuple denoting the name of the module class and whether it is a fixed or flex module.
 
     """
+    yaml_tag = None
+    """
+    Tag used for yaml serialization.
+    """
 
     def __init__(self,
                  raise_errors,
