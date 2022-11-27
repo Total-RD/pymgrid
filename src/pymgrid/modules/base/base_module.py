@@ -28,10 +28,6 @@ class BaseMicrogridModule(yaml.YAMLObject):
                  absorbed_energy_name='absorbed_energy',
                  normalize_pos=...
                  ):
-        """
-
-        :param raise_errors:
-        """
 
         self.raise_errors = raise_errors
         self._current_step = 0
