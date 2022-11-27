@@ -65,8 +65,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             return np.zeros((self._forecast_horizon, len(self.state_components)))
 
         forecast = self.forecaster(val_c=val_c,
-                               val_c_n=val_c_n,
-                               n=self.forecast_horizon)
+                                   val_c_n=val_c_n,
+                                   n=self.forecast_horizon)
         return None if forecast is None else factor * forecast
 
     def _done(self):

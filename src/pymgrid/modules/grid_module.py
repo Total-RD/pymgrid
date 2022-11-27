@@ -114,7 +114,6 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     def update(self, external_energy_change, as_source=False, as_sink=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
-
         reward = self.get_cost(external_energy_change, as_source, as_sink)
         info_key = 'provided_energy' if as_source else 'absorbed_energy'
         info = {info_key: external_energy_change,
