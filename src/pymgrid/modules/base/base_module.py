@@ -98,6 +98,15 @@ class BaseMicrogridModule(yaml.YAMLObject):
                                      dtype=np.float64))
 
     def reset(self):
+        """
+        Reset the module to step zero and flush the log.
+
+        Returns
+        -------
+        np.ndarray
+            Normalized observation after resetting.
+
+        """
         self._current_step = 0
         self._logger.flush()
         return self.to_normalized(self.state, obs=True)
@@ -119,6 +128,47 @@ class BaseMicrogridModule(yaml.YAMLObject):
                              f'Max currently capable of absorbing: {available_v}.')
 
     def step(self, action, normalized=True):
+        """
+        Take one step in the module, attempting to draw or send ``action`` amount of energy.
+
+        Parameters
+        ----------
+        action : float or scalar array
+            The amount of energy to draw or send.
+
+            If ``normalized``, the action is assumed to be normalized and is un-normalized into the range
+            ``[self.min_act, self.max_act]``.
+
+            If the **unnormalized** action is positive, the module acts as a source and provides energy to the
+            microgrid. Otherwise, the module acts as a sink and absorbs energy.
+
+            If the unnormalized action implies acting as a sink and ``is_sink`` is False -- or the converse -- an
+            ``AssertionError`` is raised.
+
+        normalized : bool, default True
+            Whether ``action`` is normalized. If True, action is assumed to be normalized and is un-normalized into the
+            range ``[self.min_act, self.max_act]``.
+
+        Raises
+        ------
+        AssertionError
+            If action implies acting as a source and module is not a source. Likewise if action implies acting as a
+            sink and module is not a sink.
+
+        Returns
+        -------
+        observation : np.ndarray
+            State of the module after taking action ``action``.
+        reward : float
+            Reward/cost after taking the action.
+        done : bool
+            Whether the module terminates.
+        info : dict
+            Additional information from this step.
+            Will include either``provided_energy`` or ``absorbed_energy`` as a key, denoting the amount of energy
+            this module provided to or absorbed from the microgrid.
+
+        """
         try:
             action = action.item()
         except AttributeError:
@@ -150,8 +200,36 @@ class BaseMicrogridModule(yaml.YAMLObject):
                 return self.as_sink(-1.0 * unnormalized_action)
 
     def as_source(self, energy_demand):
-        # Act as source. For example, discharge battery, import from grid, use PV.
-        # Will be called when action is positive.
+        """
+        Act as an energy source to the microgrid.
+
+        Microgrid will attempt to provide ``energy_demand`` amount of energy.
+        Examples of this include discharging a battery, importing from a grid, or using renewables.
+
+        It is assumed that ``energy_demand>=0``.
+
+        Parameters
+        ----------
+        energy_demand : float
+            Amount of energy that the microgrid is requesting. Must be non-negative.
+
+        Returns
+        -------
+        reward : float
+            Reward/cost after attempting the satisfy the energy demand.
+        done : bool
+            Whether the module terminates.
+        info : dict
+            Additional information from this step.
+            Will include``provided_energy`` as a key, denoting the amount of energy
+            this module provided to the microgrid.
+
+        Raises
+        ------
+        AssertionError
+            If ``energy_demand<0`` or the module is not a source.
+
+        """
 
         assert energy_demand >= 0
         assert self.is_source, f'step() was called with positive energy (source) for module {self} but ' \
@@ -174,8 +252,37 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return self.update(provided_energy, as_source=True)
 
     def as_sink(self, energy_excess):
-        # Act as sink e.g. charge battery, export to grid, use for load. Will be called when action is negative
-        # (but energy_excess should be positive)
+        """
+        Act as an energy sink to the microgrid.
+
+        Microgrid will attempt to provide ``energy_excess`` amount of energy.
+        Examples of this include charging a battery, exporting from a grid, or meeting a load.
+
+        It is assumed that ``energy_excess>=0``.
+
+        Parameters
+        ----------
+        energy_excess : float
+            Amount of energy that the microgrid is attempting to dissipate. Must be non-negative.
+
+        Returns
+        -------
+        reward : float
+            Reward/cost after attempting the absorb the energy excess.
+        done : bool
+            Whether the module terminates.
+        info : dict
+            Additional information from this step.
+            Will include``absorbed_energy`` as a key, denoting the amount of energy
+            this module provided to the microgrid.
+
+        Raises
+        ------
+        AssertionError
+            If ``energy_excess<0`` or the module is not a sink.
+
+        """
+
         assert energy_excess >= 0
 
         if energy_excess > self.max_consumption:
@@ -207,11 +314,34 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @abstractmethod
     def update(self, external_energy_change, as_source=False, as_sink=False):
+        """
+        Update the state of the module given an energy request.
+
+        Parameters
+        ----------
+        external_energy_change : float
+            Amount of energy to provide or absorb.
+        as_source : bool
+            Whether the module is acting as a source.
+        as_sink
+            Whether the module is acting as a sink.
+
+        Returns
+        -------
+        reward : float
+            Reward/cost after attempting the absorb the energy excess.
+        done : bool
+            Whether the module terminates.
+        info : dict
+            Additional information from this step.
+            Will include``absorbed_energy`` as a key, denoting the amount of energy
+            this module provided to the microgrid.
+        """
+
         pass
 
     def sample_action(self, strict_bound=False):
         """
-
         Sample an action from the module's action space.
 
         Parameters
@@ -225,6 +355,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         -------
         float
             An action within the action space for this module.
+
         """
 
         min_bound, max_bound = 0, 1
@@ -242,6 +373,24 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return np.random.rand()*(max_bound-min_bound) + min_bound
 
     def to_normalized(self, value, act=False, obs=False):
+        """
+        Normalize an action or observation.
+
+        Parameters
+        ----------
+        value : scalar or array-like
+            Action or observation to normalize.
+        act : bool, default False
+            Set to True if you are normalizing an action.
+        obs : bool, default False
+            Set to True if you are normalizing an observation.
+
+        Returns
+        -------
+        np.ndarray
+            Normalized action.
+
+        """
         assert act + obs == 1, 'One of act or obs must be True but not both.'
         if act:
             return self._act_normalizer.to_normalized(value)
@@ -249,6 +398,24 @@ class BaseMicrogridModule(yaml.YAMLObject):
             return self._obs_normalizer.to_normalized(value)
 
     def from_normalized(self, value, act=False, obs=False):
+        """
+        Un-normalized an action or observation.
+
+        Parameters
+        ----------
+        value : scalar or array-like
+            Action or observation to un-normalize.
+        act : bool, default False
+            Set to True if you are un-normalizing an action.
+        obs : bool, default False
+            Set to True if you are un-normalizing an observation.
+
+        Returns
+        -------
+        np.ndarray
+            Un-normalized action.
+
+        """
         assert act + obs == 1, 'One of act or obs must be True but not both.'
         if act:
             return self._act_normalizer.from_normalized(value)
@@ -256,17 +423,50 @@ class BaseMicrogridModule(yaml.YAMLObject):
             return self._obs_normalizer.from_normalized(value)
 
     def log_dict(self):
+        """
+        Module's log as a dict.
+
+        Returns
+        -------
+        dict
+
+        """
         return self._logger.to_dict()
 
     def log_frame(self):
+        """
+        Module's log as a DataFrame.
+
+        Returns
+        -------
+        pd.DataFrame
+
+        """
         return self._logger.to_frame()
 
     @property
     def logger(self):
+        """
+        The module's logger.
+
+        Returns
+        -------
+        ModularLogger
+        ModularLogger
+
+        """
         return self._logger
 
     @property
     def logger_last(self):
+        """
+        The last log entry in the logger.
+
+        Returns
+        -------
+        dict
+
+        """
         return {k: v[-1] for k, v in self._logger}
 
     @logger.setter
@@ -277,85 +477,304 @@ class BaseMicrogridModule(yaml.YAMLObject):
     @property
     @abstractmethod
     def state_dict(self):
+        """
+        Current state of the module as a dictionary.
+
+        Returns
+        -------
+        dict
+
+        """
         return NotImplemented
 
     @property
     def state(self):
+        """
+        Current state of the module as a vector.
+
+        Equivalent to the values of ``state_dict``.
+
+        Returns
+        -------
+        np.ndarray
+
+        """
         return np.array([*self.state_dict.values()])
 
     @property
     def current_step(self):
+        """
+        Current step of the module.
+
+        Returns
+        -------
+        int
+
+        """
         return self._current_step
 
     @property
     def act_normalizer(self):
+        """
+        Module's action normalizer.
+
+        Returns
+        -------
+        Normalize
+
+        """
         return self._act_normalizer
 
     @property
     def obs_normalizer(self):
+        """
+        Module's observation normalizer.
+
+        Returns
+        -------
+        Normalize
+
+        """
         return self._obs_normalizer
 
     @property
     @abstractmethod
     def min_obs(self):
+        """
+        Minimum observation that the module gives.
+
+        Used in normalization and to define observation spaces.
+
+        Returns
+        -------
+        float or np.ndarray
+            Scalar or vector minimum observation.
+
+        """
         raise NotImplementedError('Must define min_obs (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
     @abstractmethod
     def max_obs(self):
+        """
+        Maximum observation that the module gives.
+
+        Used in normalization and to define observation spaces.
+
+        Returns
+        -------
+        float or np.ndarray
+            Scalar or vector maximum observation.
+
+        """
         raise NotImplementedError('Must define max_obs (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
     @abstractmethod
     def min_act(self):
+        """
+        Minimum action that the module allows.
+
+        Used in normalization and to define action spaces.
+
+        Returns
+        -------
+        float or np.ndarray
+            Scalar or vector minimum action.
+
+        """
         raise NotImplementedError('Must define min_act (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
     @abstractmethod
     def max_act(self):
+        """
+        Maximum action that the module allows.
+
+        Used in normalization and to define action spaces.
+
+        Returns
+        -------
+        float or np.ndarray
+            Scalar or vector maximum action.
+
+        """
         raise NotImplementedError('Must define max_act (along with the other three bounds) '
                                   'before calling super().__init__().')
 
     @property
     def min_production(self):
+        """
+        Minimum amount of production at the current time step.
+
+        In general, this value is zero. Some modules, such as ``GensetModule``,
+        must produce a minimum amount of energy in some cases, and this value will be positive.
+
+        Must be defined in any child class that is a source.
+        If the module is not a source, this value is irrelevant.
+
+        Returns
+        -------
+        float
+
+        """
         return 0
 
     @property
     def max_production(self):
+        """
+        Maximum amount of production at the current time step.
+
+        Must be defined in any child class that is a source.
+        If the module is not a source, this value is irrelevant.
+
+        Returns
+        -------
+        float
+
+        """
         return NotImplemented
 
     @property
     def max_consumption(self):
+        """
+        Maximum amount of consumption at the current time step.
+
+        Must be defined in any child class that is a sink.
+        If the module is not a sink, this value is irrelevant.
+
+        Returns
+        -------
+        float
+
+        """
         return NotImplemented
 
     @property
     def action_spaces(self):
+        """
+        Action spaces of the module.
+
+        Contains both normalized and un-normalized action spaces.
+
+        Returns
+        -------
+        dict[{'normalized', 'unnormalized'}, gym.spaces.Box]
+            The observation spaces.
+        """
         return self._action_spaces
 
     @property
     def observation_spaces(self):
+        """
+        Observation spaces of the module.
+
+        Contains both normalized and un-normalized observation spaces.
+
+        Returns
+        -------
+        dict[{'normalized', 'unnormalized'}, gym.spaces.Box]
+            The observation spaces.
+        """
         return self._observation_spaces
 
     @property
     def is_source(self):
+        """
+        Whether the module is a source.
+
+        Returns
+        -------
+        bool
+
+        """
         return False
 
     @property
     def is_sink(self):
+        """
+        Whether the module is a sink.
+
+        Returns
+        -------
+        bool
+
+        """
         return False
 
     def dump(self, stream=None):
+        """
+        Save a module to a YAML buffer.
+
+        Supports both strings of YAML or storing YAML in a path-like object.
+
+        Parameters
+        ----------
+        stream : file-like object or None, default None
+            Stream to save the YAML document. If None, returns the document instead.
+
+        Returns
+        -------
+        str or None :
+            Returns the YAMl document as a string if ``stream=None``. Otherwise, returns None.
+
+        .. note::
+
+            ``dump`` handles the serialization of array-like objects (e.g. time series and logs) differently depending
+            on the value of ``stream``.  If ``stream is None``, array-like objects are serialized inline. If ``stream`` is
+            a stream to a file-like object, however, array-like objects will be serialized as `.csv.gz` files in a
+            directory relative to ``stream``, and the relative locations stored inline in the YAML file. For an example of
+             this behavior, see `data/scenario/pymgrid25/microgrid_0`.
+
+        """
         return yaml.safe_dump(self, stream=stream)
 
     @classmethod
     def load(cls, stream):
+        """
+        Load a module from yaml representation.
+
+        Equivalent to ``yaml.safe_load(stream)``.
+
+        Parameters
+        ----------
+        stream : str or file-like object
+            Stream from which to read yaml representation of a module.
+
+        Returns
+        -------
+        BaseMicrogridModule or child class of BaseMicrogridModule
+            Deserialized module, populated with the state it possessed upon serialization.
+
+        """
         return yaml.safe_load(stream)
 
     @classmethod
     def from_yaml(cls, loader, node):
+        """
+        Convert a yaml representation of a module to a module.
+
+        Part of the ``load`` and equivalently the ``yaml.safe_load`` procedures.
+        Should not be called directly.
+
+        :meta private:
+
+        Parameters
+        ----------
+        loader : yaml.SafeLoader
+            The yaml loader.
+        node : yaml.node.MappingNode
+            yaml node representation of the module.
+
+        Returns
+        -------
+        BaseMicrogridModule or child class of BaseMicrogridModule
+            Deserialized module, populated with the state it possessed upon serialization.
+
+        """
         add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls.deserialize_instance(mapping["cls_params"])
@@ -365,10 +784,46 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @classmethod
     def to_yaml(cls, dumper, data):
+        """
+        Convert a module to a yaml representation node.
+
+        Part of the ``dump`` and equivalently the ``yaml.safe_dump`` procedures.
+        Should not be called directly.
+
+        :meta private:
+
+        Parameters
+        ----------
+        dumper : yaml.SafeDumper
+            The yaml dumper.
+        data : BaseMicrogridModule or child class of BaseMicrogridModule
+            Module to be serialized
+
+        Returns
+        -------
+        yaml.node.MappingNode
+
+        """
         add_numpy_pandas_representers()
         return dumper.represent_mapping(cls.yaml_tag, data.serialize(dumper.stream), flow_style=cls.yaml_flow_style)
 
     def serialize(self, dumper_stream):
+        """
+        Serialize module. The result is passed to a YAML dumper.
+
+        :meta private:
+
+        Parameters
+        ----------
+        dumper_stream : file-like object or None.
+            The stream that the object will be dumped to.
+
+        Returns
+        -------
+        dict
+            The serialized module.
+
+        """
         data = {
             "name": self.name,
             "log": self._logger.serialize(),
@@ -379,6 +834,18 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return dump_data(data, dumper_stream, self.yaml_tag)
 
     def serializable_state_attributes(self):
+        """
+
+        Return the attributes of the module that represent the module's current state for serialization.
+
+        :meta private:
+
+        Returns
+        -------
+        list[str]
+            List of attribute names.
+
+        """
         return ["_current_step", *self.state_dict.keys()]
 
     def _serialize_state_attributes(self):
@@ -399,6 +866,24 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     @classmethod
     def deserialize_instance(cls, param_dict):
+        """
+        Generate an instance of this module with the arguments in param_dict.
+
+        Part of the ``load`` and ``yaml.safe_load`` methods. Should not be called directly.
+
+        :meta private:
+
+        Parameters
+        ----------
+        param_dict : dict
+            Class arguments.
+
+        Returns
+        -------
+        BaseMicrogridModule or child class of BaseMicrogridModule
+            The module instance.
+
+        """
         param_dict = param_dict.copy()
         cls_params = inspect.signature(cls).parameters
 
@@ -415,6 +900,24 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return cls(**cls_kwargs)
 
     def deserialize(self, serialized_dict):
+        """
+        Populate the attributes in ``self.serializable_state_attributes``.
+
+        Part of the ``load`` and ``yaml.safe_load`` methods. Should not be called directly.
+
+        :meta private:
+
+        Parameters
+        ----------
+        serialized_dict : dict
+            Serialized state attributes
+
+        Returns
+        -------
+        BaseMicrogridModule or child of BaseMicrogridModule
+            The module instance.
+
+        """
         serialized_dict = serialized_dict.copy()
         for attr_name in self.serializable_state_attributes():
             if not hasattr(self, attr_name):
