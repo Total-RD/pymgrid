@@ -36,5 +36,4 @@ Serialization/IO/Conversion
     Microgrid.dump
     Microgrid.from_nonmodular
     Microgrid.from_scenario
-    Microgrid.serialize
     Microgrid.to_nonmodular
