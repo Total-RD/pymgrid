@@ -9,6 +9,9 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     """
     An electrical grid module.
 
+    By default, ``GridModule`` is a *fixed* module; it can be transformed to a flex module with ``GridModule.as_flex``.
+    ``GridModule`` is the only built-in module that can be both a fixed and flex module.
+
     Parameters
     ----------
     max_import : float
@@ -18,26 +21,31 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         Maximum export at any time step.
 
     time_series : array-like, shape (n_features, n_steps), n_features = {3, 4}
-        If n_features=3, time series of (import_price, export_price, co2_per_kwH) in each column, respectively.
+        If n_features=3, time series of ``(import_price, export_price, co2_per_kwH)`` in each column, respectively.
         Grid is assumed to have no outages.
-        If n_features=4, time series of (import_price, export_price, co2_per_kwH, grid_status)
-        in each column, respectively. time_series[:, -1] -- the grid status -- must be binary.
+        If n_features=4, time series of ``(import_price, export_price, co2_per_kwH, grid_status)``
+        in each column, respectively. ``time_series[:, -1]`` -- the grid status -- must be binary.
 
     forecaster : callable, float, "oracle", or None, default None.
         Function that gives a forecast n-steps ahead.
-        * If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
-        val_c is the current value in the time series: self.time_series[self.current_step],
-        val_{c+n} is the value in the time series n steps in the future,
-        n is the number of steps in the future at which we are forecasting.
-        The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
-        as the inputs val_c and val_{c+n}.
 
-        * If float, serves as a standard deviation for a mean-zero gaussian noise function
-            that is added to the true value.
+        * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
 
-        * If "oracle", gives a perfect forecast.
+          * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
 
-        * If None, no forecast.
+          * ``val_{c+n}`` is the value in the time series n steps in the future
+
+          * n is the number of steps in the future at which we are forecasting.
+
+          The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+          as the inputs ``val_c`` and ``val_{c+n}``.
+
+        * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+          that is added to the true value.
+
+        * If ``"oracle"``, gives a perfect forecast.
+
+        * If ``None``, no forecast.
 
     forecast_horizon : int.
         Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
@@ -55,6 +63,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     """
 
     module_type = ('grid', 'fixed')
+
     yaml_tag = u"!GridModule"
     yaml_loader = yaml.SafeLoader
     yaml_dumper = yaml.SafeDumper
@@ -114,7 +123,6 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     def update(self, external_energy_change, as_source=False, as_sink=False):
         assert as_source + as_sink == 1, 'Must act as either source or sink but not both or neither.'
-
         reward = self.get_cost(external_energy_change, as_source, as_sink)
         info_key = 'provided_energy' if as_source else 'absorbed_energy'
         info = {info_key: external_energy_change,
@@ -123,6 +131,29 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return reward, self._done(), info
 
     def get_cost(self, import_export, as_source, as_sink):
+        """
+        Current cost of the grid's usage.
+
+        Includes both the cost of importing/exporting as well as the cost of carbon dioxide production.
+        Note that the "cost" of exporting may be negative as the module may receive revenue in exchange for
+        energy export.
+        If the module is exporting to the grid, co2 production cost will be zero.
+
+        Parameters
+        ----------
+        import_export : float
+            Amount of energy that is imported or exported.
+        as_source : bool
+            Whether the grid is acting as a source.
+        as_sink : bool
+            Whether the grid is acting as a sink.
+
+        Returns
+        -------
+        cost : float
+            Cost of using the grid.
+
+        """
         if as_source:  # Import
             import_cost = self._time_series[self.current_step, 0]
             return -1 * import_cost*import_export + self.get_co2_cost(import_export, as_source, as_sink)
@@ -133,9 +164,50 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             raise RuntimeError
 
     def get_co2_cost(self, import_export, as_source, as_sink):
+        """
+        Current cost of the carbon dioxide production of the grid's usage.
+
+        If the module is exporting to the grid, co2 production cost will be zero.
+
+        Parameters
+        ----------
+        import_export : float
+            Amount of energy that is imported or exported.
+        as_source : bool
+            Whether the grid is acting as a source.
+        as_sink : bool
+            Whether the grid is acting as a sink.
+
+        Returns
+        -------
+        co2_cost : float
+            Cost of carbon dioxide production.
+
+        """
         return -1.0 * self.cost_per_unit_co2*self.get_co2_production(import_export, as_source, as_sink)
 
     def get_co2_production(self, import_export, as_source, as_sink):
+        """
+
+        Current carbon dioxide production of the grid's usage.
+
+        If the module is exporting to the grid, co2 production will be zero.
+
+        Parameters
+        ----------
+        import_export : float
+            Amount of energy that is imported or exported.
+        as_source : bool
+            Whether the grid is acting as a source.
+        as_sink : bool
+            Whether the grid is acting as a sink.
+
+        Returns
+        -------
+        co2_production : float
+            Carbon dioxide production.
+
+        """
         if as_source:  # Import
             co2_prod_per_kWh = self._time_series[self.current_step, 2]
             co2 = import_export*co2_prod_per_kWh
@@ -146,9 +218,21 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             raise RuntimeError
 
     def as_flex(self):
+        """
+        Convert the module to a flex module.
+
+        Flex modules do not require a control to be passed, and are deployed as necessary to balance load and demand.
+
+        """
         self.__class__.module_type = (self.__class__.module_type[0], 'flex')
 
     def as_fixed(self):
+        """
+        Convert the module to a fixed module.
+
+        Flex modules require a control to be passed.
+
+        """
         self.__class__.module_type = (self.__class__.module_type[0], 'fixed')
 
     @property
@@ -206,6 +290,15 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def current_status(self):
+        """
+        Current status of the grid.
+
+        Returns
+        -------
+        status : {0, 1}
+            Current status.
+
+        """
         return self.grid_status[0]
 
     @property
@@ -230,6 +323,15 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def weak_grid(self):
+        """
+        Whether the grid has outages or not.
+
+        Returns
+        -------
+        weak_grid : bool
+            True if the grid has outages.
+
+        """
         return self._time_series[:, -1].min() < 1
 
     def __repr__(self):

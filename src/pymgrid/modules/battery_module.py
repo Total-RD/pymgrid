@@ -5,6 +5,59 @@ from warnings import warn
 
 
 class BatteryModule(BaseMicrogridModule):
+    """
+    A battery module.
+
+    Battery modules are fixed: when calling ``Microgrid.run``, you must pass a control for batteries.
+
+    Parameters
+    ----------
+    min_capacity : float
+        Minimum energy that must be contained in the battery.
+
+    max_capacity : float
+        Maximum energy that can be contained in the battery.
+        If ``soc=1``, capacity is at this maximum.
+
+    max_charge : float
+        Maximum amount the battery can be charged in one step.
+
+    max_discharge : float
+        Maximum amount the battery can be discharged in one step.
+
+    efficiency : float
+        Efficiency of the battery.
+        See :meth:`BatteryModule.model_transition` for details.
+
+    battery_cost_cycle : float, default 0.0
+        Marginal cost of charging and discharging.
+
+    battery_transition_model : callable or None, default None
+        Function to model the battery's transition.
+        If None, :meth:`BatteryModule.default_transition_model` is used.
+
+        .. note::
+            If you define a battery_transition_model, it must be YAML-serializable if you plan to serialize
+            your battery module or any microgrid containing your battery.
+
+            For example, you can define it as a class with a ``__call__`` method and ``yaml.YAMLObject`` as its metaclass.
+            See the `PyYAML documentation <https://pyyaml.org/wiki/PyYAMLDocumentation>`_ for details.
+
+    init_charge : float or None, default None
+        Initial charge of the battery.
+        One of ``init_charge`` or ``init_soc`` must be passed, else an exception is raised.
+        If both are passed, ``init_soc`` is ignored and ``init_charge`` is used.
+
+    init_soc : float or None, default None
+        Initial state of charge of the battery.
+        One of ``init_charge`` or ``init_soc`` must be passed, else an exception is raised.
+        If both are passed, ``init_soc`` is ignored and ``init_charge`` is used.
+
+    raise_errors : bool, default False
+        Whether to raise errors if bounds are exceeded in an action.
+        If False, actions are clipped to the limit possible.
+
+    """
     module_type = ('battery', 'fixed')
     yaml_tag = f"!BatteryModule"
     yaml_dumper = yaml.SafeDumper
@@ -22,10 +75,10 @@ class BatteryModule(BaseMicrogridModule):
                  init_soc=None,
                  raise_errors=False):
         assert 0 < efficiency <= 1
-        self.min_capacity = min_capacity        # Minimum energy that must be contained in the battery
-        self.max_capacity = max_capacity        # Maximum energy that can be contained in the battery. Equiv. to soc=1
-        self.max_charge = max_charge            # Maximum charge in one step
-        self.max_discharge = max_discharge      # Maximum discharge in one step.
+        self.min_capacity = min_capacity
+        self.max_capacity = max_capacity
+        self.max_charge = max_charge
+        self.max_discharge = max_discharge
         self.efficiency = efficiency
         self.battery_transition_model = battery_transition_model
         self.battery_cost_cycle = battery_cost_cycle
@@ -41,7 +94,7 @@ class BatteryModule(BaseMicrogridModule):
     def _init_battery(self, init_charge, init_soc):
         if init_charge is not None:
             if init_soc is not None:
-                warn('Passed both init_capacity and init_soc. Using init_capacity and ignoring init_soc')
+                warn('Passed both init_capacity and init_soc. Using init_charge and ignoring init_soc')
             init_soc = init_charge / self.max_capacity
         elif init_soc is not None:
             init_charge = init_soc * self.max_capacity
@@ -75,16 +128,108 @@ class BatteryModule(BaseMicrogridModule):
         self._soc = self._current_charge/self.max_capacity
 
     def get_cost(self, energy_change):
+        """
+        Get the cost of charging or discharging.
+
+        Parameters
+        ----------
+        energy_change : float
+            Internal energy change.
+
+        Returns
+        -------
+        cost : float
+            Cost of charging or discharging.
+
+        """
         return np.abs(energy_change)*self.battery_cost_cycle
 
     def model_transition(self, energy):
+        """
+        Convert an external energy request to a change in internal energy.
+
+        This function uses the class argument ``battery_transition_model`` if one was passed.
+
+        ``battery_transition_model`` must use the following api:
+
+        .. code-block:: bash
+
+            internal_energy_change = battery_transition_model(
+                external_energy_change,
+                min_capacity,
+                max_capacity,
+                max_charge,
+                max_discharge,
+                efficiency,
+                battery_cost_cycle,
+                max_production,
+                max_consumption,
+               state_dict
+            )
+
+        The return value ``internal_energy_change``  must be a float.
+        See :meth:`transition_kwargs` and :meth:`battery_transition_model` for details on these parameters;
+        all parameters are passed as keyword arguments.
+
+        Parameters
+        ----------
+        energy : float
+            External energy change.
+
+        Returns
+        -------
+        internal_energy : float
+            Amount of energy that the battery must use or will retain given the external amount of energy.
+
+        """
         if self.battery_transition_model is None:
-            return self.default_transition_model(energy, **self.transition_kwargs())
-        return self.battery_transition_model(energy, **self.transition_kwargs())
+            return self.default_transition_model(external_energy_change=energy, **self.transition_kwargs())
+        return self.battery_transition_model(external_energy_change=energy, **self.transition_kwargs())
 
     def transition_kwargs(self):
-        return dict(max_capacity=self.max_capacity,
-                    min_capacity=self.min_capacity,
+        """
+        Values passed to transition models.
+
+        Keys
+        ----
+        min_capacity : float
+            Minimum energy that must be contained in the battery.
+
+        max_capacity : float
+            Maximum energy that can be contained in the battery.
+            If ``soc=1``, capacity is at this maximum.
+
+        max_charge : float
+            Maximum amount the battery can be charged in one step.
+
+        max_discharge : float
+            Maximum amount the battery can be discharged in one step.
+
+        efficiency : float
+            Efficiency of the battery.
+
+        battery_cost_cycle : float
+            Marginal cost of charging and discharging.
+
+        max_production : float
+            Maximum amount of production, which is the lower of the maximum discharge and the discharge that would
+            send the battery to ``min_capacity``.
+
+        max_consumption : float
+            Maximum amount of consumption, which is the lower of the maximum charge and the charge that would send
+            the battery to ``max_capacity``.
+
+        state_dict : dict
+            State dictionary, with state of charge and current capacity information.
+
+        Returns
+        -------
+        kwargs : dict
+            Transition keyword arguments.
+
+        """
+        return dict(min_capacity=self.min_capacity,
+                    max_capacity=self.max_capacity,
                     max_charge=self.max_charge,
                     max_discharge=self.max_discharge,
                     efficiency=self.efficiency,
@@ -95,21 +240,44 @@ class BatteryModule(BaseMicrogridModule):
                     )
 
     @staticmethod
-    def default_transition_model(energy, efficiency, **transition_kwargs):
+    def default_transition_model(external_energy_change, efficiency, **transition_kwargs):
         """
-        :param energy: float.
-            If >0, it is energy that is absorbed by the battery, i.e. charging.
-            If <0, it is energy provided by the battery, i.e. discharging.
-        :return: internal_energy_change
+        A simple battery transition model.
+
+        In this model, the amount of energy retained is given by ``efficiency``.
+
+        For example, if a microgrid requests 100 kWh of energy and ``efficiency=0.5``, the battery must use
+        200 kWh of energy. Alternatively, if a microgrid sends a battery 100 kWh of energy and ``efficiency=0.5``,
+        the battery's charge will increase by 50 kWh.
+
+        Parameters
+        ----------
+        external_energy_change : float
+            Amount of energy that is being requested externally.
+            If ``energy > 0``, it is energy that is absorbed by the battery -- a charge.
+            If ``energy < 0``, it is energy provided by the battery: a discharge.
+
+        efficiency : float
+            Battery efficiency.
+
+        transition_kwargs : dict
+            State transition values given by :meth:`BatteryModule.transition_kwargs`.
+
+        Returns
+        -------
+        internal_energy : float
+            Amount of energy that the battery must use or will retain given the external amount of energy.
+
         """
-        if energy < 0:
-            return energy / efficiency
+
+        if external_energy_change < 0:
+            return external_energy_change / efficiency
         else:
-            return energy * efficiency
+            return external_energy_change * efficiency
 
     @property
     def state_dict(self):
-        return dict(zip(('soc', 'current_charge'), self.current_obs))
+        return dict(zip(('soc', 'current_charge'), [self._soc, self._current_charge]))
 
     @property
     def max_production(self):
@@ -122,15 +290,33 @@ class BatteryModule(BaseMicrogridModule):
         return min(self.max_charge, self.max_capacity - self._current_charge) / self.efficiency
 
     @property
-    def current_obs(self):
-        return np.array([self.soc, self.current_charge])
-
-    @property
     def current_charge(self):
+        """
+        Battery charge.
+
+        Level of charge of the battery.
+
+        Returns
+        -------
+        current_charge : float
+            Charge.
+
+        """
         return self._current_charge
 
     @property
     def soc(self):
+        """
+        Battery state of charge.
+
+        Level of charge of the battery relative to its capacity.
+
+        Returns
+        -------
+        soc : float
+            State of charge. In the range [0, 1].
+
+        """
         return self._soc
 
     @property

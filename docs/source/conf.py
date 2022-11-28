@@ -43,20 +43,20 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
+skip_members = ['yaml_flow_style']
+
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
-
-    if what != 'method':
-        return None
-
-    try:
-        exclusions = obj.__self__.__autodoc_exclusions__
-    except AttributeError: # not a method of an object, or object has no attribute '__autodoc_exclusions__'
-        return None
-
-    if name in exclusions:
+    if name in skip_members:
         return True
 
+    try:
+        doc = obj.__doc__
+    except AttributeError:
+        return None
+
+    if doc is not None and ':meta private:' in doc:
+        return True
     return None
 
 

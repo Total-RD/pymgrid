@@ -38,21 +38,23 @@ class Microgrid(yaml.YAMLObject):
 
     Examples
     --------
+    >>> from pymgrid import Microgrid
+    >>> from pymgrid.modules import LoadModule, RenewableModule, GridModule, BatteryModule
     >>> timesteps = 10
     >>> load = LoadModule(10*np.random.rand(timesteps), loss_load_cost=10.)
     >>> pv = RenewableModule(10*np.random.rand(timesteps))
     >>> grid = GridModule(max_import=100, max_export=10, time_series=np.random.rand(timesteps, 3))
-    >>> battery_0 = BatteryModule(min_capacity=0,
-                                  max_capacity=100,
-                                  max_charge=1,
-                                  max_discharge=10,
-                                  efficiency=0.9,
+    >>> battery_0 = BatteryModule(min_capacity=0, \
+                                  max_capacity=100, \
+                                  max_charge=1,\
+                                  max_discharge=10, \
+                                  efficiency=0.9, \
                                   init_soc=0.5)
-    >>> battery_1 = BatteryModule(min_capacity=1,
-                                  max_capacity=20,
-                                  max_charge=5,
-                                  max_discharge=10,
-                                  efficiency=0.9,
+    >>> battery_1 = BatteryModule(min_capacity=1, \
+                                  max_capacity=20, \
+                                  max_charge=5, \
+                                  max_discharge=10, \
+                                  efficiency=0.9, \
                                   init_soc=0.5)
 
     >>> microgrid = Microgrid(modules=[load, ('pv', pv), grid, battery_0, battery_1])
@@ -73,8 +75,6 @@ class Microgrid(yaml.YAMLObject):
     yaml_tag = u"!Microgrid"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
-
-    __autodoc_exclusions__ = 'from_yaml', 'to_yaml', 'serialize'
 
     def __init__(self,
                  modules,
@@ -485,7 +485,7 @@ class Microgrid(yaml.YAMLObject):
         .. note::
 
             ``dump`` handles the serialization of array-like objects (e.g. time series and logs) differently depending
-            on the value of ``stream``.  If ``stream=None``, array-like objects are serialized inline. If ``stream`` is
+            on the value of ``stream``.  If ``stream is None``, array-like objects are serialized inline. If ``stream`` is
             a stream to a file-like object, however, array-like objects will be serialized as `.csv.gz` files in a
             directory relative to ``stream``, and the relative locations stored inline in the YAML file. For an example of
              this behavior, see `data/scenario/pymgrid25/microgrid_0`.
@@ -514,11 +514,17 @@ class Microgrid(yaml.YAMLObject):
 
     @classmethod
     def to_yaml(cls, dumper, data):
+        """
+        :meta private:
+        """
         add_numpy_pandas_representers()
         return dumper.represent_mapping(cls.yaml_tag, data.serialize(dumper.stream), flow_style=cls.yaml_flow_style)
 
     @classmethod
     def from_yaml(cls, loader, node):
+        """
+        :meta private:
+        """
         add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls(mapping["modules"], add_unbalanced_module=False)
@@ -526,6 +532,9 @@ class Microgrid(yaml.YAMLObject):
         return instance
 
     def serialize(self, dumper_stream):
+        """
+        :meta private:
+        """
         data = {"modules": self._modules.module_tuples(),
                 "balance_log": self._balance_logger.serialize()}
         return dump_data(data, dumper_stream, self.yaml_tag)
@@ -604,7 +613,6 @@ class Microgrid(yaml.YAMLObject):
     def __len__(self):
         """
         Length of available underlying data.
-        :return:
         """
         l = []
         for module in self.modules.iterlist():
