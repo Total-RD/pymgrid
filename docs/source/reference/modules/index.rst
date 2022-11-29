@@ -23,7 +23,7 @@ Modules that are temporal in nature.
     RenewableModule
 
 Non-temporal Modules
--------------
+--------------------
 
 Modules that do not depend on an underlying timeseries.
 
