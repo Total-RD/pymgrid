@@ -204,7 +204,7 @@ class GensetModule(BaseMicrogridModule):
             self._non_instantaneous_update(goal_status)
 
         if not self._current_status == next_prediction:
-            raise ValueError('This is to check is self.next_status works. If raised, it doesn\'t.')
+            raise ValueError('self.next_status working incorrectly.')
 
     def _finish_in_progress_change(self):
         if self._steps_until_up == 0 and self._goal_status == 1:
@@ -244,7 +244,8 @@ class GensetModule(BaseMicrogridModule):
         if self._goal_status != self._current_status:
             """
             Current status is not equal to status goal; thus a status change is in progress and the relevant
-            incrementer should be positive"""
+            incrementer should be positive.
+            """
             if self._goal_status:
                 assert self._steps_until_up > 0
             else:
