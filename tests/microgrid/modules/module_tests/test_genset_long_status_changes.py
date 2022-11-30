@@ -30,7 +30,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         genset, _ = self.get_genset()
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 1)
-        self.assertEqual(genset.current_obs, np.array([1, 1, 0, 3]))
+        self.assertEqual(genset.state, np.array([1, 1, 0, 3]))
 
     def test_turn_off_step_1(self):
         genset, params = self.get_genset()
@@ -39,7 +39,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, -1.0*params['genset_cost']*unnormalized_production)
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([1, 0, 0, 2]))
+        self.assertEqual(genset.state, np.array([1, 0, 0, 2]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
 
@@ -53,7 +53,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, -1.0*params['genset_cost']*unnormalized_production)
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([1, 0, 0, 1]))
+        self.assertEqual(genset.state, np.array([1, 0, 0, 1]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
 
@@ -67,7 +67,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, -1.0*params['genset_cost']*unnormalized_production)
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([1, 0, 0, 0]))
+        self.assertEqual(genset.state, np.array([1, 0, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
 
@@ -84,7 +84,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([0, 0, 2, 0]))
+        self.assertEqual(genset.state, np.array([0, 0, 2, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 
@@ -102,7 +102,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([0, 0, 2, 0]))
+        self.assertEqual(genset.state, np.array([0, 0, 2, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 
@@ -111,7 +111,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 1)
-        self.assertEqual(genset.current_obs, np.array([0, 1, 1, 0]))
+        self.assertEqual(genset.state, np.array([0, 1, 1, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 
@@ -129,7 +129,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([0, 0, 2, 0]))
+        self.assertEqual(genset.state, np.array([0, 0, 2, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 
@@ -140,7 +140,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 1)
-        self.assertEqual(genset.current_obs, np.array([0, 1, 0, 0]))
+        self.assertEqual(genset.state, np.array([0, 1, 0, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 
@@ -158,7 +158,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([0, 0, 2, 0]))
+        self.assertEqual(genset.state, np.array([0, 0, 2, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 
@@ -173,7 +173,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, -1.0*unnormalized_production*params['genset_cost'])
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 1)
-        self.assertEqual(genset.current_obs, np.array([1, 1, 0, 3]))
+        self.assertEqual(genset.state, np.array([1, 1, 0, 3]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
 
@@ -184,7 +184,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         for j in range(2):
             self.turn_off(genset, unnormalized_production)
 
-        self.assertEqual(genset.current_obs, np.array([1, 0, 0, 1]))
+        self.assertEqual(genset.state, np.array([1, 0, 0, 1]))
 
         # Step 3: abort!
         obs, reward, done, info = self.turn_on(genset, unnormalized_production)
@@ -192,7 +192,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, -1.0*unnormalized_production*params['genset_cost'])
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 1)
-        self.assertEqual(genset.current_obs, np.array([1, 1, 0, 3]))
+        self.assertEqual(genset.state, np.array([1, 1, 0, 3]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], unnormalized_production)
 
@@ -201,7 +201,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         unnormalized_production = 0.
 
         self.turn_on(genset, unnormalized_production)
-        self.assertEqual(genset.current_obs, np.array([0, 1, 1, 0]))
+        self.assertEqual(genset.state, np.array([0, 1, 1, 0]))
 
         # Step 3: abort!
         obs, reward, done, info = self.turn_off(genset, unnormalized_production)
@@ -209,7 +209,7 @@ class TestGensetStartUp2WindDown3OnAtStartUp(TestCase):
         self.assertEqual(reward, 0)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([0, 0, 2, 0]))
+        self.assertEqual(genset.state, np.array([0, 0, 2, 0]))
         self.assertFalse(done)
         self.assertEqual(info['provided_energy'], 0)
 

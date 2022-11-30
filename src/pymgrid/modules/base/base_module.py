@@ -450,10 +450,23 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Returns
         -------
-        pd.DataFrame
+        log : pd.DataFrame
 
         """
         return self._logger.to_frame()
+
+    @property
+    def log(self):
+        """
+        Module's log as a DataFrame.
+
+        Equivalent to :meth:`log_frame`.
+
+        Returns
+        -------
+        log : pd.DataFrame
+
+        """
 
     @property
     def logger(self):
@@ -462,8 +475,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Returns
         -------
-        ModularLogger
-        ModularLogger
+        logger : ModularLogger
 
         """
         return self._logger
@@ -471,11 +483,11 @@ class BaseMicrogridModule(yaml.YAMLObject):
     @property
     def logger_last(self):
         """
-        The last log entry in the logger.
+        The most recent entry in the log.
 
         Returns
         -------
-        dict
+        entry : dict
 
         """
         return {k: v[-1] for k, v in self._logger}
@@ -738,7 +750,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             on the value of ``stream``.  If ``stream is None``, array-like objects are serialized inline. If ``stream`` is
             a stream to a file-like object, however, array-like objects will be serialized as `.csv.gz` files in a
             directory relative to ``stream``, and the relative locations stored inline in the YAML file. For an example of
-             this behavior, see `data/scenario/pymgrid25/microgrid_0`.
+            this behavior, see `data/scenario/pymgrid25/microgrid_0`.
 
         """
         return yaml.safe_dump(self, stream=stream)

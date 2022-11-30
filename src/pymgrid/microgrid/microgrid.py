@@ -25,14 +25,20 @@ class Microgrid(yaml.YAMLObject):
 
         ``Microgrid`` groups modules into lists based on their names. If no name is given (e.g. an element in ``modules``
         is a subclass of ``BaseMicrogridModule`` and not a tuple, then the name is defined to be
-        ``module.__class__.__name__[0]``. Modules are then exposed (within lists) by name as attributes to the microgrid.
+        ``module.__class__.name[0]``. Modules are then exposed (within lists) by name as attributes to the microgrid.
         See below for an example.
+
+        .. note::
+        The constructor copies modules passed to it.
+
     add_unbalanced_module : bool, default True.
         Whether to add an unbalanced energy module to your microgrid. Such a module computes and attributes
         costs to any excess supply or demand.
         Set to True unless ``modules`` contains an ``UnbalancedEnergyModule``.
+
     loss_load_cost : float, default 10.0
         Cost per unit of unmet demand. Ignored if ``add_unbalanced_module=False``.
+
     overgeneration_cost : float, default 2.0
         Cost per unit of excess generation.  Ignored if ``add_unbalanced_module=False``.
 
@@ -371,14 +377,20 @@ class Microgrid(yaml.YAMLObject):
             for key, value in self.log_dict.items():
                 _log_dict[(key, '', '')] = value
 
+        col_names = ['module_name', 'module_number', 'field']
+
         if drop_singleton_key:
             keys_arr = np.array(list(_log_dict.keys()))
             module_counters = keys_arr[:, 1].astype(np.int64)
             if module_counters.min() == module_counters.max():
                 _log_dict = {(key[0], key[2]): value for key, value in _log_dict.items()}
+                col_names.pop(1)
 
         if as_frame:
-            return pd.DataFrame(_log_dict)
+            df = pd.DataFrame(_log_dict)
+            df.columns.set_names(col_names, inplace=True)
+            return df
+
         return _log_dict
 
     def get_forecast_horizon(self):
@@ -416,7 +428,34 @@ class Microgrid(yaml.YAMLObject):
         return self._modules
 
     @property
-    def fixed_modules(self):
+    def state_dict(self):
+        return {name: [module.state_dict for module in modules] for name, modules in self._modules.iterdict()}
+
+    @property
+    def log(self):
+        """
+        Microgrid's log as a DataFrame.
+
+        This is equivalent to `:meth:`get_log`.
+        Returns
+        -------
+        log : pd.DataFrame
+            The log of the microgrid.
+
+        """
+        return self.get_log()
+
+    @property
+    def state_series(self):
+        return pd.Series(
+            {(name, num, key): value
+                for name, sd_list in self.state_dict.items()
+                    for num, sd in enumerate(sd_list)
+                        for key, value in sd.items()}
+        )
+
+    @property
+    def fixed(self):
         """
         List of all fixed modules in the microgrid.
 
@@ -427,7 +466,7 @@ class Microgrid(yaml.YAMLObject):
         return self._modules.fixed
 
     @property
-    def flex_modules(self):
+    def flex(self):
         """
         List of all flex modules in the microgrid.
 

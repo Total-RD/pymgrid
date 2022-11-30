@@ -3,6 +3,10 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+import inspect
+import os
+import sys
+
 import pymgrid
 
 
@@ -23,8 +27,11 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.coverage',
     'sphinx.ext.autosummary',
-    # 'sphinx.ext.napoleon',
-    'sphinx.ext.doctest'
+    'sphinx.ext.doctest',
+    'sphinx.ext.linkcode',
+    'nbsphinx',
+    'nbsphinx_link',
+    'IPython.sphinxext.ipython_console_highlighting'
 ]
 
 templates_path = ['_templates']
@@ -43,6 +50,7 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
+
 skip_members = ['yaml_flow_style']
 
 
@@ -58,6 +66,57 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     if doc is not None and ':meta private:' in doc:
         return True
     return None
+
+
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    if domain != "py":
+        return None
+
+    modname = info["module"]
+    fullname = info["fullname"]
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split("."):
+        try:
+            obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(inspect.unwrap(obj))
+    except TypeError:
+        try:  # property
+            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
+        except (AttributeError, TypeError):
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except TypeError:
+        try:  # property
+            source, lineno = inspect.getsourcelines(obj.fget)
+        except (AttributeError, TypeError):
+            lineno = None
+    except OSError:
+        lineno = None
+
+    if lineno:
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
+    else:
+        linespec = ""
+
+    fn = os.path.relpath(fn, start=os.path.dirname(pymgrid.__file__))
+
+    return f"https://github.com/Total-RD/pymgrid/tree/v{pymgrid.__version__}/src/pymgrid/{fn}{linespec}"
 
 
 def setup(app):

@@ -6,6 +6,51 @@ from pymgrid.modules.base import BaseMicrogridModule
 
 
 class GensetModule(BaseMicrogridModule):
+    """
+    A genset/generator module.
+
+    This module is a fixed source module; when used as a module in a microgrid, you must pass it an energy production
+    request.
+
+    Parameters
+    ----------
+    running_min_production : float
+        Minimum production of the genset when it is running.
+
+    running_max_production : float
+        Maximum production of the genset when it is running.
+
+    genset_cost : float or callable
+       * If float, the marginal cost of running the genset: ``total_cost = genset_cost * production``.
+
+       * If callable, a function that takes the genset production as an argument and returns the genset cost.
+
+    co2_per_unit : float, default 0.0
+        Carbon dioxide production per unit energy production.
+
+    cost_per_unit_co2 : float, default 0.0
+        Carbon dioxide cost per unit carbon dioxide production.
+
+    start_up_time : int, default 0
+        Number of steps it takes to turn on the genset.
+
+    wind_down_time : int, default 0
+        Number of steps it takes to turn off the genset.
+
+    allow_abortion : bool, default True
+        Whether the genset is able to remain shut down while in the process of starting up and vice versa.
+
+    init_start_up : bool, default True
+        Whether the genset is running upon reset.
+
+    raise_errors : bool, default False
+        Whether to raise errors if bounds are exceeded in an action.
+        If False, actions are clipped to the limit possible.
+
+    provided_energy_name : str, default "genset_production"
+        Name of the energy provided by this microgrid used in logging.
+
+    """
     module_type = 'genset', 'fixed'
     yaml_tag = f"!Genset"
     yaml_dumper = yaml.SafeDumper
@@ -15,8 +60,8 @@ class GensetModule(BaseMicrogridModule):
                  running_min_production,
                  running_max_production,
                  genset_cost,
-                 co2_per_unit=0,
-                 cost_per_unit_co2=0,
+                 co2_per_unit=0.0,
+                 cost_per_unit_co2=0.0,
                  start_up_time=0,
                  wind_down_time=0,
                  allow_abortion=True,
@@ -56,9 +101,35 @@ class GensetModule(BaseMicrogridModule):
         return super().step(action[1:], normalized=normalized)
 
     def get_co2(self, production):
+        """
+        Carbon dioxide emissions of energy production.
+
+        Parameters
+        ----------
+        production : float
+            Energy production.
+        Returns
+        -------
+        co2 : float
+            Carbon dioxide production.
+
+        """
         return self.co2_per_unit*production
 
     def get_co2_cost(self, production):
+        """
+        Carbon dioxide production cost.
+
+        Parameters
+        ----------
+        production : float
+            Energy production.
+        Returns
+        -------
+        co2_cost : float
+            Carbon dioxide cost.
+
+        """
         return self.cost_per_unit_co2 * self.get_co2(production)
 
     def _get_fuel_cost(self, production):
@@ -67,6 +138,22 @@ class GensetModule(BaseMicrogridModule):
         return self.genset_cost*production
 
     def get_cost(self, production):
+        """
+        Total cost of energy production.
+
+        Includes both fuel and carbon dioxide costs.
+
+        Parameters
+        ----------
+        production : float
+            Energy production.
+
+        Returns
+        -------
+        cost : float
+            Total cost.
+
+        """
         return self._get_fuel_cost(production) + self.get_co2_cost(production)
 
     def update(self, external_energy_change, as_source=False, as_sink=False):
@@ -99,27 +186,49 @@ class GensetModule(BaseMicrogridModule):
 
     def update_status(self, goal_status):
         """
+        Update the status of the microgrid.
 
-        If steps_until_up/steps_until_down is zero:
-            Change status. Then continue with the below.
+        The status and goal status are updated, taking into account any in-progress status change as well as
+        ``goal_status``. This method updates the internal properties ``self.current_status``, ``self.goal_status``,
+        ``self.steps_until_up``, and ``self.steps_until_down`` as follows:
 
-        Things stay the same when _goal_status equals self._current_status equals self._goal_status.
-            (I.e. goal status is same as current status and same as goal status. In this case, one of steps_until_up/steps_until_down
-            should be zero (the current status one) and the other should be self.start_up_time/self.wind_down_time, respectively).
-        If _goal_status equals self._current_status but does not equal self._goal_status:
-            We are trying to abort a status change.
-            If self.allow_abortion:
-                Change self._goal_status, and reset steps_until_up/steps_until_down (one to zero, one to max).
-            Otherwise:
-            Increment steps_until_up/steps_until_down (whichever is being undergone).
+        1. If ``steps_until_up == 0`` or ``steps_until_down == 0``, the status is changed to on and off, respectively.
+           The following steps are then executed.
+        
+        2. If ``goal_status == self.current_status == self.goal_status``, the genset is in equilibrium and its status
+           does not change.
 
-        If _goal_status equals self._goal_status but not self._current_status.
-            We are continuing a previously requested status change. Increment steps_until_up/steps_until_down (whichever is being undergone).
+           In this case, one of ``self.steps_until_up``/``self.steps_until_down`` should be zero -- the former
+           if ``self.current_status`` and the latter if not -- and the other should be
+           ``self.start_up_time``/``self.wind_down_time``, respectively.
 
-        :param goal_status:
-        :return:
+        3. If ``goal_status == self.current_status != self.goal_status``, we are trying to abort a status change.
+
+           * If ``self.allow_abortion``, the abortion can succeed. ``self.goal_status`` changes to ``goal_status``
+             and ``steps_until_up``/``steps_until_down`` are reset (one to zero, one to
+             the corresponding ``self.start_up_time``/``self.wind_down_time``).
+
+           * Otherwise, we proceed with an in-progress status change, and the corresponding
+             ``steps_until_up``/``steps_until_down`` is incremented. This is identical to the case below.
+
+        4. If ``goal_status == self.goal_status != self.current_status``, a previously requested status change is
+           being continued, and the corresponding ``steps_until_up``/``steps_until_down`` is incremented.
+
+        .. note::
+            Steps 2, 3, and 4 are mutually exclusive, while step 1 is not and will be executed before the relevant
+            step 2, 3 or 4.
+
+        Parameters
+        ----------
+        goal_status : float in [0, 1].
+            Goal status as defined by an external action.
+
+            Will be rounded to 0 or 1 to define the goal status.
         """
         assert self._steps_until_down >= 0 and self._steps_until_up >= 0
+
+        if not 0 <= goal_status <= 1:
+            raise ValueError(f"Invalid goal_status value {goal_status}, must be in [0, 1].")
 
         goal_status = round(goal_status)
         next_prediction = self.next_status(goal_status)
@@ -140,7 +249,7 @@ class GensetModule(BaseMicrogridModule):
             self._non_instantaneous_update(goal_status)
 
         if not self._current_status == next_prediction:
-            raise ValueError('This is to check is self.next_status works. If raised, it doesn\'t.')
+            raise ValueError('self.next_status working incorrectly.')
 
     def _finish_in_progress_change(self):
         if self._steps_until_up == 0 and self._goal_status == 1:
@@ -180,7 +289,8 @@ class GensetModule(BaseMicrogridModule):
         if self._goal_status != self._current_status:
             """
             Current status is not equal to status goal; thus a status change is in progress and the relevant
-            incrementer should be positive"""
+            incrementer should be positive.
+            """
             if self._goal_status:
                 assert self._steps_until_up > 0
             else:
@@ -200,6 +310,22 @@ class GensetModule(BaseMicrogridModule):
                 raise ValueError(f'{e}\n This is despite the fact this genset module is currently running.') from e
 
     def next_status(self, goal_status):
+        """
+        Predict the next status of the genset given a goal status.
+
+        Does not modify the genset in any way.
+
+        Parameters
+        ----------
+        goal_status : {0, 1}
+            Goal status.
+
+        Returns
+        -------
+        next_status : {0, 1}
+            The next status given the current status and the goal status.
+
+        """
         if goal_status:
             if self._current_status:
                 return 1
@@ -216,9 +342,37 @@ class GensetModule(BaseMicrogridModule):
                 return 1
 
     def next_max_production(self, goal_status):
+        """
+        Maximum production given a goal status.
+
+        Parameters
+        ----------
+        goal_status : {0, 1}
+            A goal status.
+
+        Returns
+        -------
+        next_max_production : float
+            Maximum production given a goal status.
+
+        """
         return self.next_status(goal_status) * self.running_max_production
 
     def next_min_production(self, goal_status):
+        """
+        Minimum production given a goal status.
+
+        Parameters
+        ----------
+        goal_status : {0, 1}
+            A goal status.
+
+        Returns
+        -------
+        next_min_production : float
+            Minimum production given a goal status.
+
+        """
         return self.next_status(goal_status) * self.running_min_production
 
     def serializable_state_attributes(self):
@@ -226,30 +380,77 @@ class GensetModule(BaseMicrogridModule):
 
     @property
     def state_dict(self):
-        return dict(zip(('current_status', 'goal_status', 'steps_until_up', 'steps_until_down'), self.current_obs))
-
-    @property
-    def current_obs(self):
-        return np.array([self._current_status, self._goal_status, self._steps_until_up, self._steps_until_down])
+        return {'current_status': self._current_status,
+                'goal_status': self._goal_status,
+                'steps_until_up': self._steps_until_up,
+                'steps_until_down': self._steps_until_down}
 
     @property
     def current_status(self):
+        """
+        Status of the genset.
+
+        On or off.
+
+        Returns
+        -------
+        status : {0, 1}
+            Integer value denoting the genset's current status.
+
+        """
         return self._current_status
 
     @property
     def goal_status(self):
+        """
+        Goal of the genset.
+
+        Whether the genset is trying to turn -- or keep -- itself on or off.
+
+        Returns
+        -------
+        status : {0, 1}
+            Integer value denoting the genset's goal status.
+
+        """
         return self._goal_status
 
     @property
     def max_production(self):
-        # Note: these values know if the genset is currently running, but they don't know if you're planning on turning
-        #    it off at this step. Only applies if start_up_time or wind_down_time is 0.
+        """
+        Maximum amount of production at the current time step.
+
+        .. warning::
+            This value is aware of the genset's current status, but does not know if you're planning on turning
+            it off at this step.
+
+            This consideration is only relevant if ``start_up_time==0`` or ``wind_down_time==0``.
+
+        Returns
+        -------
+        max_production : float
+            Current maximum production.
+
+        """
         return self._current_status * self.running_max_production
 
     @property
     def min_production(self):
-        # Note: these values know if the genset is currently running, but they don't know if you're planning on turning
-        #    it off at this step. Only applies if start_up_time or wind_down_time is 0.
+        """
+        Minimum amount of production at the current time step.
+
+        .. warning::
+            This value is aware of the genset's current status, but does not know if you're planning on turning
+            it off at this step.
+
+            This consideration is only relevant if ``start_up_time==0`` or ``wind_down_time==0``.
+
+        Returns
+        -------
+        min_production : float
+            Current minimum production.
+
+        """
         return self._current_status * self.running_min_production
 
     @property
