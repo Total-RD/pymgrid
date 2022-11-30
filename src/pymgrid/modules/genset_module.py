@@ -6,6 +6,51 @@ from pymgrid.modules.base import BaseMicrogridModule
 
 
 class GensetModule(BaseMicrogridModule):
+    """
+    A genset/generator module.
+
+    This module is a fixed source module; when used as a module in a microgrid, you must pass it an energy production
+    request.
+
+    Parameters
+    ----------
+    running_min_production : float
+        Minimum production of the genset when it is running.
+
+    running_max_production : float
+        Maximum production of the genset when it is running.
+
+    genset_cost : float or callable
+       * If float, the marginal cost of running the genset: ``total_cost = genset_cost * production``.
+
+       * If callable, a function that takes the genset production as an argument and returns the genset cost.
+
+    co2_per_unit : float, default 0.0
+        Carbon dioxide production per unit energy production.
+
+    cost_per_unit_co2 : float, default 0.0
+        Carbon dioxide cost per unit carbon dioxide production.
+
+    start_up_time : int, default 0
+        Number of steps it takes to turn on the genset.
+
+    wind_down_time : int, default 0
+        Number of steps it takes to turn off the genset.
+
+    allow_abortion : bool, default True
+        Whether the genset is able to remain shut down while in the process of starting up and vice versa.
+
+    init_start_up : bool, default True
+        Whether the genset is running upon reset.
+
+    raise_errors : bool, default False
+        Whether to raise errors if bounds are exceeded in an action.
+        If False, actions are clipped to the limit possible.
+
+    provided_energy_name : str, default "genset_production"
+        Name of the energy provided by this microgrid used in logging.
+
+    """
     module_type = 'genset', 'fixed'
     yaml_tag = f"!Genset"
     yaml_dumper = yaml.SafeDumper
