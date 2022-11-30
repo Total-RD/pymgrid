@@ -13,7 +13,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
 
     Parameters
     ----------
-    time_series : array-like, shape (n_steps, ), n_features = {3, 4}
+    time_series : array-like, shape (n_steps, )
         Time series of renewable production.
 
     forecaster : callable, float, "oracle", or None, default None.
