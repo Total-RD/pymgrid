@@ -428,7 +428,34 @@ class Microgrid(yaml.YAMLObject):
         return self._modules
 
     @property
-    def fixed_modules(self):
+    def state_dict(self):
+        return {name: [module.state_dict for module in modules] for name, modules in self._modules.iterdict()}
+
+    @property
+    def log(self):
+        """
+        Microgrid's log as a DataFrame.
+
+        This is equivalent to `:meth:`get_log`.
+        Returns
+        -------
+        log : pd.DataFrame
+            The log of the microgrid.
+
+        """
+        return self.get_log()
+
+    @property
+    def state_series(self):
+        return pd.Series(
+            {(name, num, key): value
+                for name, sd_list in self.state_dict.items()
+                    for num, sd in enumerate(sd_list)
+                        for key, value in sd.items()}
+        )
+
+    @property
+    def fixed(self):
         """
         List of all fixed modules in the microgrid.
 
@@ -439,7 +466,7 @@ class Microgrid(yaml.YAMLObject):
         return self._modules.fixed
 
     @property
-    def flex_modules(self):
+    def flex(self):
         """
         List of all flex modules in the microgrid.
 
