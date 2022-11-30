@@ -48,7 +48,7 @@ class GensetModule(BaseMicrogridModule):
         If False, actions are clipped to the limit possible.
 
     provided_energy_name : str, default "genset_production"
-        Name of the energy provided by this microgrid used in logging.
+        Name of the energy provided by this module, to be used in logging.
 
     """
     module_type = 'genset', 'fixed'
