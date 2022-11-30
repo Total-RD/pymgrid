@@ -6,6 +6,51 @@ from pymgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class RenewableModule(BaseTimeSeriesMicrogridModule):
+    """
+    A renewable energy module.
+
+    The classic examples of renewables are photovoltaics (PV) and wind turbines.
+
+    Parameters
+    ----------
+    time_series : array-like, shape (n_steps, ), n_features = {3, 4}
+        Time series of renewable production.
+
+    forecaster : callable, float, "oracle", or None, default None.
+        Function that gives a forecast n-steps ahead.
+
+        * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
+
+          * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
+
+          * ``val_{c+n}`` is the value in the time series n steps in the future
+
+          * n is the number of steps in the future at which we are forecasting.
+
+          The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+          as the inputs ``val_c`` and ``val_{c+n}``.
+
+        * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+          that is added to the true value.
+
+        * If ``"oracle"``, gives a perfect forecast.
+
+        * If ``None``, no forecast.
+
+    forecast_horizon : int.
+        Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+
+    forecaster_increase_uncertainty : bool, default False
+        Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
+
+    provided_energy_name: str, default "renewable_used"
+        Name of the energy provided by this module, to be used in logging.
+
+    raise_errors : bool, default False
+        Whether to raise errors if bounds are exceeded in an action.
+        If False, actions are clipped to the limit possible.
+
+    """
     module_type = ('renewable', 'flex')
     yaml_tag = u"!RenewableModule"
     yaml_loader = yaml.SafeLoader
@@ -45,6 +90,15 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def current_renewable(self):
+        """
+        Current renewable production.
+
+        Returns
+        -------
+        renewable : float
+            Renewable production.
+
+        """
         return self._time_series[self._current_step]
 
     @property
