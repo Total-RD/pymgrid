@@ -39,9 +39,8 @@ Contents
    :maxdepth: 3
 
    getting_started
-   reference/index
    examples/index
-
+   reference/index
 
 Indices and tables
 ==================
