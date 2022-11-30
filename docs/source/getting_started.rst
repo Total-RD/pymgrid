@@ -38,3 +38,7 @@ The packages MOSEK and CVXOPT can both handle this case; you can install both by
 
 Note that MOSEK requires a license; see https://www.mosek.com/ for details.
 Academic and trial licenses are available.
+
+Simple Example
+--------------
+See :doc:`examples/quick-start` for a simple example to get started.
