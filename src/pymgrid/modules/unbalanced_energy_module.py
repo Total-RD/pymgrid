@@ -33,12 +33,38 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
         return reward, False, info
 
     def get_cost(self, energy_amount, as_source, as_sink):
-        if as_source: # loss-load
+        """
+        Get the cost of unmet load or excess production.
+
+        Parameters
+        ----------
+        energy_amount : float>=0
+            Amount of unmet load or excess production.
+
+        as_source : bool
+            Whether the energy is unmet load.
+
+        as_sink : bool
+            Whether the energy is excess production.
+
+        Returns
+        -------
+        cost : float
+
+        Raises
+        ------
+        TypeError
+            If both as_source and as_sink are True or neither are.
+
+        """
+        if as_source and as_sink:
+            raise TypeError("as_source and as_sink cannot both be True.")
+        if as_source:  # loss load
             return self.loss_load_cost*energy_amount
         elif as_sink:
             return self.overgeneration_cost*energy_amount
         else:
-            raise RuntimeError
+            raise TypeError("One of as_source or as_sink must be True.")
 
     @property
     def state_dict(self):
@@ -50,7 +76,6 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
 
     @property
     def min_obs(self):
-        # Min charge amount, min soc
         return np.array([])
 
     @property
@@ -80,5 +105,3 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
     @property
     def is_sink(self):
         return True
-
-
