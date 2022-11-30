@@ -20,10 +20,13 @@ class Normalize:
                 assert _min <= value <= _max, f'Value {value} is outside of range [{_min}, {_max}]'
             except (ValueError, AssertionError):
                 try:
-                    assert ((_min[~np.isnan(value)] <= value[~np.isnan(value)]) &
-                               (value[~np.isnan(value)] <= _max[~np.isnan(value)])).all()
-                except TypeError:
-                    assert np.isnan(value).all()
+                    assert np.allclose(_min, value) or np.allclose(_max, value)
+                except AssertionError:
+                    try:
+                        assert ((_min[~np.isnan(value)] <= value[~np.isnan(value)]) &
+                                (value[~np.isnan(value)] <= _max[~np.isnan(value)])).all()
+                    except TypeError:
+                        assert np.isnan(value).all()
         except AssertionError:
             warn(f'Value {value} resides out of expected bounds of value to be normalized: [{_min}, {_max}].')
 
