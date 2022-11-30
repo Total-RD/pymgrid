@@ -30,7 +30,7 @@ class TestGensetStartUp1WindDown0OffAtStartUp(TestCase):
         genset, _ = self.get_genset(new=True)
         self.assertFalse(genset.current_status)
         self.assertEqual(genset.goal_status, 0)
-        self.assertEqual(genset.current_obs, np.array([0, 0, 1, 0]))
+        self.assertEqual(genset.state, np.array([0, 0, 1, 0]))
 
     def test_warm_up(self):
         # Take a step, ask genset to turn on. Warm-up takes one step so genset is still off at this point.
@@ -148,7 +148,7 @@ class TestGensetStartUp1WindDown0OnAtStartUp(TestCase):
         genset, _ = self.get_genset(new=True)
         self.assertTrue(genset.current_status)
         self.assertEqual(genset.goal_status, 1)
-        self.assertEqual(genset.current_obs, np.array([1, 1, 0, 0]))
+        self.assertEqual(genset.state, np.array([1, 1, 0, 0]))
 
     def test_warm_up(self):
         # Take a step, ask genset to turn on.  Genset begins on so should be on at this point.
