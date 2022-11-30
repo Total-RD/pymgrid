@@ -450,10 +450,23 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Returns
         -------
-        pd.DataFrame
+        log : pd.DataFrame
 
         """
         return self._logger.to_frame()
+
+    @property
+    def log(self):
+        """
+        Module's log as a DataFrame.
+
+        Equivalent to :meth:`log_frame`.
+
+        Returns
+        -------
+        log : pd.DataFrame
+
+        """
 
     @property
     def logger(self):
@@ -462,8 +475,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Returns
         -------
-        ModularLogger
-        ModularLogger
+        logger : ModularLogger
 
         """
         return self._logger
@@ -471,11 +483,11 @@ class BaseMicrogridModule(yaml.YAMLObject):
     @property
     def logger_last(self):
         """
-        The last log entry in the logger.
+        The most recent entry in the log.
 
         Returns
         -------
-        dict
+        entry : dict
 
         """
         return {k: v[-1] for k, v in self._logger}
