@@ -21,7 +21,7 @@ EXTRAS["dev"] = [
     "pydata_sphinx_theme",
     "numpydoc",
     "nbsphinx",
-    "nbsphinx-link"
+    "nbsphinx-link",
     *EXTRAS["genset_mpc"]]
 EXTRAS["all"] = list(set(sum(EXTRAS.values(), [])))
 
