@@ -5,6 +5,10 @@
 
 import pymgrid
 
+import sys
+sys.path.insert(0, pymgrid.PROJECT_PATH.parent)
+
+print(f'Appended to path: {sys.path[0]}')
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -26,7 +30,8 @@ extensions = [
     # 'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'nbsphinx',
-    'nbsphinx_link'
+    'nbsphinx_link',
+    'IPython.sphinxext.ipython_console_highlighting'
 ]
 
 templates_path = ['_templates']
@@ -45,8 +50,29 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
-skip_members = ['yaml_flow_style']
+# -----------------------
+# This block does not work
 
+import inspect
+
+def mask_docstrings(cls):
+    if not cls.is_sink:
+        cls.as_sink.__doc__ = '\t\t:meta private:\n' + cls.as_sink.__doc__
+    if not cls.is_source:
+        cls.as_source.__doc__ = '\t\t:meta private:\n' + cls.as_source.__doc__
+
+
+for name, obj in inspect.getmembers(pymgrid.modules):
+    break
+    try:
+        mask_docstrings(obj)
+    except AttributeError:
+        pass
+
+
+# -----------------------
+
+skip_members = ['yaml_flow_style']
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
     if name in skip_members:
