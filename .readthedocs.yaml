@@ -20,3 +20,6 @@ python:
        path: .
        extra_requirements:
          - all
+
+formats:
+  - pdf
