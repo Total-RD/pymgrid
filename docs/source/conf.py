@@ -29,6 +29,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.linkcode',
+    'sphinx.ext.intersphinx',
     'nbsphinx',
     'nbsphinx_link',
     'IPython.sphinxext.ipython_console_highlighting'
@@ -117,6 +118,11 @@ def linkcode_resolve(domain, info):
     fn = os.path.relpath(fn, start=os.path.dirname(pymgrid.__file__))
 
     return f"https://github.com/Total-RD/pymgrid/tree/v{pymgrid.__version__}/src/pymgrid/{fn}{linespec}"
+
+
+intersphinx_mapping = {
+    'gym': ('https://www.gymlibrary.dev/', None)
+}
 
 
 def setup(app):
