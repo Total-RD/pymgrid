@@ -7,6 +7,9 @@ import inspect
 import os
 import sys
 
+from copy import deepcopy
+from builtins import object
+
 import pymgrid
 
 
@@ -69,6 +72,17 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     return None
 
 
+def autodoc_process_signature(app, what, name, obj, options, signature, return_annotation):
+    """
+    If a class signature is being read from cls.__new__, we want to replace it with the signature from cls.__init__.
+    """
+    if what == 'class' and signature[1:] in str(inspect.signature(obj.__new__)):
+        obj_copy = deepcopy(obj)
+        obj_copy.__new__ = object.__new__
+        signature = str(inspect.signature(obj_copy))
+        return signature, return_annotation
+
+
 def linkcode_resolve(domain, info):
     """
     Determine the URL corresponding to Python object
@@ -127,3 +141,4 @@ intersphinx_mapping = {
 
 def setup(app):
     app.connect('autodoc-skip-member', autodoc_skip_member)
+    app.connect('autodoc-process-signature', autodoc_process_signature)
