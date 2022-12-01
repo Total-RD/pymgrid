@@ -54,8 +54,13 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
-
-skip_members = ['yaml_flow_style']
+# These are attributes that don't have a __doc__ attribute to read ':meta private:' from.
+skip_members = ['yaml_flow_style',
+                'metadata',
+                'render_mode',
+                'reward_range'
+                'spec',
+                ]
 
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
