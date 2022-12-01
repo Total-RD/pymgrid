@@ -431,7 +431,7 @@ class Microgrid(yaml.YAMLObject):
 
         Returns
         -------
-        modules : :class:`pymgrid.modules.ModuleContainer`
+        modules : :class:`pymgrid.modules.module_container.ModuleContainer`
             View of the container.
 
         """
