@@ -79,6 +79,7 @@ class Microgrid(yaml.YAMLObject):
     """
 
     yaml_tag = u"!Microgrid"
+    """Tag used for yaml serialization."""
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 
@@ -425,10 +426,30 @@ class Microgrid(yaml.YAMLObject):
 
     @property
     def modules(self):
+        """
+        View of the module container.
+
+        Returns
+        -------
+        modules : :class:`pymgrid.modules.ModuleContainer`
+            View of the container.
+
+        """
         return self._modules
 
     @property
     def state_dict(self):
+        """
+        State of the microgrid as a dict.
+
+        Keys are module names and values are lists of state dicts for all modules with said name.
+
+        Returns
+        -------
+        state_dict : dict[str, list[dict]]
+            State of the microgrid as a nested dict.
+
+        """
         return {name: [module.state_dict for module in modules] for name, modules in self._modules.iterdict()}
 
     @property
@@ -447,6 +468,18 @@ class Microgrid(yaml.YAMLObject):
 
     @property
     def state_series(self):
+        """
+        State of the microgrid as a pandas Series.
+
+        Three are three levels in the MultiIndex: ``microgrid_name``, ``microgrid_number``
+        (relative to each ``microgrid_name``) and state key name.
+
+        Returns
+        -------
+        state : pd.Series
+            State of the microgrid as a pandas Series..
+
+        """
         return pd.Series(
             {(name, num, key): value
                 for name, sd_list in self.state_dict.items()
