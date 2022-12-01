@@ -8,3 +8,4 @@ This page contains an overview of all public *pymgrid* objects and functions.
 
    microgrid
    modules/index
+   envs/index
