@@ -1,8 +1,9 @@
-from itertools import permutations
-from warnings import warn
 import numpy as np
+
+from itertools import permutations
 from gym.spaces import Discrete
 from math import isclose
+from warnings import warn
 
 from pymgrid.envs.base import BaseMicrogridEnv
 from pymgrid.utils.logger import ModularLogger
