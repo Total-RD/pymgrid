@@ -481,10 +481,12 @@ class Microgrid(yaml.YAMLObject):
 
         """
         return pd.Series(
-            {(name, num, key): value
+            {
+                (name, num, key): value
                 for name, sd_list in self.state_dict.items()
-                    for num, sd in enumerate(sd_list)
-                        for key, value in sd.items()}
+                for num, sd in enumerate(sd_list)
+                for key, value in sd.items()
+            }
         )
 
     @property
