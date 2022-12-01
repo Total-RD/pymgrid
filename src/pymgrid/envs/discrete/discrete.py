@@ -12,12 +12,13 @@ from pymgrid.utils.logger import ModularLogger
 
 class DiscreteMicrogridEnv(BaseMicrogridEnv):
     """
-    A discrete env that implements priority lists on a microgrid.
+    A discrete env that implements priority lists as actions on a microgrid.
+
     The env assumes that you need to meet the consumption in fixed sink (e.g. load) modules and that
     you would like to use as much of your flex source modules (e.g. PV) as possible.
 
-    The Env assumes that all module actions are either singletons or have length 2. In the latter case, assumes that
-        the first value is boolean.
+    The env assumes that all module actions are either singletons or have length two. In the latter case, assumes that
+    the first value is boolean. This
 
     Attributes
     -----------------

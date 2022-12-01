@@ -135,6 +135,15 @@ class BaseMicrogridEnv(Microgrid, Env):
         obs = super().reset()
         return flatten(self._nested_observation_space, obs) if self._flat_spaces else obs
 
+    def render(self, mode="human"):
+        """:meta private:"""
+        raise NotImplementedError
+
+    @property
+    def unwrapped(self):
+        """:meta private:"""
+        return super().unwrapped
+
     @property
     def flat_spaces(self):
         """
@@ -156,21 +165,28 @@ class BaseMicrogridEnv(Microgrid, Env):
     @classmethod
     def from_microgrid(cls, microgrid):
         """
-        Construct a microgrid from
+        Construct an RL environment from a microgrid.
+
+        Effectively wraps the microgrid with the environment API.
+
+        .. warning::
+            Any logs contained in the microgrid will not be ported over to the environment.
 
         Parameters
         ----------
-        microgrid_number : int, default 0
-            Number of the microgrid to return. ``0<=microgrid_number<25``.
+        microgrid : :class:`pymgrid.Microgrid`
+            Microgrid to wrap.
 
         Returns
         -------
-        scenario : pymgrid.Microgrid
-            The loaded microgrid.
+        env
+            The environment, suitable for reinforcement learning.
+
         """
         try:
             return cls(microgrid.module_tuples(), add_unbalanced_module=False)
         except AttributeError:
+            assert isinstance(microgrid, NonModularMicrogrid)
             return cls.from_nonmodular(microgrid)
 
     @classmethod
