@@ -13,7 +13,7 @@ class ContinuousMicrogridEnv(BaseMicrogridEnv):
 
     Parameters
     ----------
-    modules: list, Microgrid, NonModularMicrogrid, or int.
+    modules : list, Microgrid, NonModularMicrogrid, or int.
         The constructor can be called in three ways:
 
         1. Passing a list of microgrid modules. This is identical to the :class:`.Microgrid` constructor.
