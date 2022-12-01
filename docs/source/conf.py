@@ -7,6 +7,9 @@ import inspect
 import os
 import sys
 
+from copy import deepcopy
+from builtins import object
+
 import pymgrid
 
 
@@ -29,6 +32,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.linkcode',
+    'sphinx.ext.intersphinx',
     'nbsphinx',
     'nbsphinx_link',
     'IPython.sphinxext.ipython_console_highlighting'
@@ -50,8 +54,13 @@ html_theme_options = {
 
 html_static_path = ['_static']
 
-
-skip_members = ['yaml_flow_style']
+# These are attributes that don't have a __doc__ attribute to read ':meta private:' from.
+skip_members = ['yaml_flow_style',
+                'metadata',
+                'render_mode',
+                'reward_range',
+                'spec'
+                ]
 
 
 def autodoc_skip_member(app, what, name, obj, skip, options):
@@ -66,6 +75,17 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     if doc is not None and ':meta private:' in doc:
         return True
     return None
+
+
+def autodoc_process_signature(app, what, name, obj, options, signature, return_annotation):
+    """
+    If a class signature is being read from cls.__new__, we want to replace it with the signature from cls.__init__.
+    """
+    if what == 'class' and signature[1:] in str(inspect.signature(obj.__new__)):
+        obj_copy = deepcopy(obj)
+        obj_copy.__new__ = object.__new__
+        signature = str(inspect.signature(obj_copy))
+        return signature, return_annotation
 
 
 def linkcode_resolve(domain, info):
@@ -116,8 +136,14 @@ def linkcode_resolve(domain, info):
 
     fn = os.path.relpath(fn, start=os.path.dirname(pymgrid.__file__))
 
-    return f"https://github.com/Total-RD/pymgrid/tree/v{pymgrid.__version__}/src/pymgrid/{fn}{linespec}"
+    return f'https://github.com/Total-RD/pymgrid/tree/v{pymgrid.__version__}/src/pymgrid/{fn}{linespec}'
+
+
+intersphinx_mapping = {
+    'gym': ('https://www.gymlibrary.dev/', None)
+}
 
 
 def setup(app):
     app.connect('autodoc-skip-member', autodoc_skip_member)
+    app.connect('autodoc-process-signature', autodoc_process_signature)

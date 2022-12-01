@@ -1,8 +1,10 @@
-from itertools import permutations
-from warnings import warn
 import numpy as np
+import yaml
+
+from itertools import permutations
 from gym.spaces import Discrete
 from math import isclose
+from warnings import warn
 
 from pymgrid.envs.base import BaseMicrogridEnv
 from pymgrid.utils.logger import ModularLogger
@@ -24,6 +26,11 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
             Each tuple contains three elements (module_name, total_actions_for_{module_name}, action_num).
             For example: (('genset', 0), 2, 1) is a tuple defining the first element (of two) for ('genset', 0).
     """
+
+    yaml_tag = u"!DiscreteMicrogridEnv"
+    yaml_loader = yaml.SafeLoader
+    yaml_dumper = yaml.SafeDumper
+
     def __init__(self,
                  modules,
                  add_unbalanced_module=True,

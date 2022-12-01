@@ -523,7 +523,7 @@ class Microgrid(yaml.YAMLObject):
             on the value of ``stream``.  If ``stream is None``, array-like objects are serialized inline. If ``stream`` is
             a stream to a file-like object, however, array-like objects will be serialized as `.csv.gz` files in a
             directory relative to ``stream``, and the relative locations stored inline in the YAML file. For an example of
-             this behavior, see `data/scenario/pymgrid25/microgrid_0`.
+            this behavior, see `data/scenario/pymgrid25/microgrid_0`.
 
         """
         return yaml.safe_dump(self, stream=stream)
@@ -630,7 +630,7 @@ class Microgrid(yaml.YAMLObject):
         Parameters
         ----------
         microgrid_number : int, default 0
-            Number of the microgrid to return. 0<=microgrid_number<25.
+            Number of the microgrid to return. ``0<=microgrid_number<25``.
 
         Returns
         -------
@@ -639,6 +639,10 @@ class Microgrid(yaml.YAMLObject):
         """
         from pymgrid import PROJECT_PATH
         n = microgrid_number
+
+        if n not in np.arange(25):
+            raise TypeError(f'Invalid microgrid_number {n}, must be an integer in the range [0, 25).')
+
         with open(PROJECT_PATH / f"data/scenario/pymgrid25/microgrid_{n}/microgrid_{n}.yaml", "r") as f:
             return cls.load(f)
 

@@ -6,6 +6,51 @@ from pymgrid.modules.base import BaseTimeSeriesMicrogridModule
 
 
 class LoadModule(BaseTimeSeriesMicrogridModule):
+    """
+    A renewable energy module.
+
+    The classic examples of renewables are photovoltaics (PV) and wind turbines.
+
+    Parameters
+    ----------
+    time_series : array-like, shape (n_steps, )
+        Time series of load demand.
+
+    loss_load_cost : float, default 10.0
+        Cost per unit of loss load (unmet load).
+
+    forecaster : callable, float, "oracle", or None, default None.
+        Function that gives a forecast n-steps ahead.
+
+        * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
+
+          * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
+
+          * ``val_{c+n}`` is the value in the time series n steps in the future
+
+          * n is the number of steps in the future at which we are forecasting.
+
+          The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+          as the inputs ``val_c`` and ``val_{c+n}``.
+
+        * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+          that is added to the true value.
+
+        * If ``"oracle"``, gives a perfect forecast.
+
+        * If ``None``, no forecast.
+
+    forecast_horizon : int.
+        Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+
+    forecaster_increase_uncertainty : bool, default False
+        Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise..
+
+    raise_errors : bool, default False
+        Whether to raise errors if bounds are exceeded in an action.
+        If False, actions are clipped to the limit possible.
+
+    """
     module_type = ('load', 'fixed')
     yaml_tag = u"!LoadModule"
     yaml_dumper = yaml.SafeDumper
@@ -13,7 +58,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
 
     def __init__(self,
                  time_series,
-                 loss_load_cost,
+                 loss_load_cost=10.0,
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
@@ -53,6 +98,15 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
 
     @property
     def current_load(self):
+        """
+        Current load.
+
+        Returns
+        -------
+        load : float
+            Current load demand.
+
+        """
         return self._time_series[self._current_step]
 
     @property

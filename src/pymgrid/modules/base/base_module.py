@@ -410,7 +410,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     def from_normalized(self, value, act=False, obs=False):
         """
-        Un-normalized an action or observation.
+        Un-normalize an action or observation.
 
         Parameters
         ----------

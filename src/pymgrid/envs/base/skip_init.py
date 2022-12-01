@@ -1,9 +1,19 @@
 def skip_init(cls, init):
     """
     Skip init once on cls, and then revert to original init.
-    :param cls: Class to skip init on.
-    :param init: original init.
-    :return: callable that skips init once.
+
+    Parameters
+    ----------
+    cls : Type
+        Class to skip init on.
+    init : callable
+        Original init.
+
+    Returns
+    -------
+    skip_init : callable
+        Callable that skips init once.
+
     """
     def reset_init(*args, **kwargs):
         cls.__init__ = init

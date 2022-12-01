@@ -7,19 +7,63 @@ from pymgrid.envs.base.skip_init import skip_init
 
 
 class BaseMicrogridEnv(Microgrid, Env):
+    """
+    Base class for all microgrid environments.
+
+    Implements the `OpenAI Gym API <https://www.gymlibrary.dev//>`_ for a microgrid;
+    inherits from both :class:`.Microgrid` and :class:`gym.Env`.
+
+    Parameters
+    ----------
+    modules : list, Microgrid, NonModularMicrogrid, or int.
+        The constructor can be called in three ways:
+
+        1. Passing a list of microgrid modules. This is identical to the :class:`.Microgrid` constructor.
+
+        2. Passing a :class:`.Microgrid` or :class:`.NonModularMicrogrid` instance.
+           This will effectively wrap the microgrid instance with the Gym API.
+
+        3. Passing an integer in [0, 25).
+           This will be result in loading the corresponding `pymgrid25` benchmark microgrids.
+
+    add_unbalanced_module : bool, default True.
+        Whether to add an unbalanced energy module to your microgrid. Such a module computes and attributes
+        costs to any excess supply or demand.
+        Set to True unless ``modules`` contains an :class:`.UnbalancedEnergyModule`.
+
+    loss_load_cost : float, default 10.0
+        Cost per unit of unmet demand. Ignored if ``add_unbalanced_module=False``.
+
+    overgeneration_cost : float, default 2.0
+        Cost per unit of excess generation.  Ignored if ``add_unbalanced_module=False``.
+
+    flat_spaces : bool, default True
+        Whether the environment's spaces should be flat.
+
+        If True, all continuous spaces are :class:`gym:gym.spaces.Box`.
+
+        Otherwise, they are nested :class:`gym:gym.spaces.Dict` of :class:`gym:gym.spaces.Tuple`
+        of :class:`gym:gym.spaces.Box`, corresponding to the structure of the ``control`` arg of :meth:`.Microgrid.run`.
+
+    """
+
+    action_space = None
+    'Space object corresponding to valid actions.'
+
+    observation_space = None
+    'Space object corresponding to valid observations.'
+
     def __new__(cls, modules, *args, **kwargs):
         if isinstance(modules, (NonModularMicrogrid, Microgrid)):
             instance = cls.from_microgrid(modules)
-            cls.__init__ = skip_init(cls, cls.__init__)
-            return instance
-        elif "scenario" in kwargs or "microgrid_number" in kwargs:
-            scenario = kwargs.get("scenario", "pymgrid25")
-            microgrid_number = kwargs.get("microgrid_number", 0)
-            instance = cls.from_scenario(microgrid_number=microgrid_number)
-            cls.__init__ = skip_init(cls, cls.__init__)
-            return instance
 
-        return super().__new__(cls)
+        elif isinstance(modules, int):
+            instance = cls.from_scenario(modules)
+        else:
+            return super().__new__(cls)
+
+        cls.__init__ = skip_init(cls, cls.__init__)
+        return instance
 
     def __init__(self,
                  modules,
@@ -59,8 +103,39 @@ class BaseMicrogridEnv(Microgrid, Env):
         obs = super().reset()
         return flatten(self._nested_observation_space, obs) if self._flat_spaces else obs
 
+    @property
+    def flat_spaces(self):
+        """
+        Whether the environment's spaces are flat.
+
+        If True, all continuous spaces are :class:`gym:gym.spaces.Box`.
+
+        Otherwise, they are nested :class:`gym:gym.spaces.Dict` of :class:`gym:gym.spaces.Tuple`
+        of :class:`gym:gym.spaces.Box`, corresponding to the structure of the ``control`` arg of :meth:`Microgrid.run`.
+
+        Returns
+        -------
+        flat_spaces : bool
+            Whether the environment's spaces are flat.
+
+        """
+        return self._flat_spaces
+
     @classmethod
     def from_microgrid(cls, microgrid):
+        """
+        Construct a microgrid from
+
+        Parameters
+        ----------
+        microgrid_number : int, default 0
+            Number of the microgrid to return. ``0<=microgrid_number<25``.
+
+        Returns
+        -------
+        scenario : pymgrid.Microgrid
+            The loaded microgrid.
+        """
         try:
             return cls(microgrid.module_tuples(), add_unbalanced_module=False)
         except AttributeError:
