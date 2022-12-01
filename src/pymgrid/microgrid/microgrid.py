@@ -478,10 +478,6 @@ class Microgrid(yaml.YAMLObject):
         return self._modules.flex
 
     @property
-    def flat_modules(self):
-        raise AttributeError('Getting attribute flat_modules has been deprecated. Call .modules_dict() instead.')
-
-    @property
     def module_list(self):
         """
         List of all modules in the microgrid.
