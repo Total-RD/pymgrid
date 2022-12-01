@@ -58,8 +58,8 @@ html_static_path = ['_static']
 skip_members = ['yaml_flow_style',
                 'metadata',
                 'render_mode',
-                'reward_range'
-                'spec',
+                'reward_range',
+                'spec'
                 ]
 
 
