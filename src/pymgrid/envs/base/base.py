@@ -10,16 +10,14 @@ class BaseMicrogridEnv(Microgrid, Env):
     def __new__(cls, modules, *args, **kwargs):
         if isinstance(modules, (NonModularMicrogrid, Microgrid)):
             instance = cls.from_microgrid(modules)
-            cls.__init__ = skip_init(cls, cls.__init__)
-            return instance
-        elif "scenario" in kwargs or "microgrid_number" in kwargs:
-            scenario = kwargs.get("scenario", "pymgrid25")
-            microgrid_number = kwargs.get("microgrid_number", 0)
-            instance = cls.from_scenario(microgrid_number=microgrid_number)
-            cls.__init__ = skip_init(cls, cls.__init__)
-            return instance
 
-        return super().__new__(cls)
+        elif isinstance(modules, int):
+            instance = cls.from_scenario(modules)
+        else:
+            return super().__new__(cls)
+
+        cls.__init__ = skip_init(cls, cls.__init__)
+        return instance
 
     def __init__(self,
                  modules,
