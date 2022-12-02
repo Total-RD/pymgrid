@@ -22,10 +22,6 @@ class ModuleSpace(Space):
         return self._unnormalized.sample()
 
     @property
-    def dtype(self):
-        return self._unnormalized.dtype
-
-    @property
     def normalized(self):
         return self._normalized
 
@@ -40,3 +36,12 @@ class ModuleSpace(Space):
             return self._unnormalized
 
         raise KeyError(item)
+
+    def __repr__(self):
+        return f'ModuleSpace{repr(self._unnormalized)[3:]}'
+
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return NotImplemented
+
+        return self.unnormalized == other.unnormalized
