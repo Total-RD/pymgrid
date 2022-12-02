@@ -35,7 +35,7 @@ def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbala
         try:
             modules.pop(module)
         except KeyError:
-            raise NameError(f"Module {module} not one of default modules {list(module.keys())}.")
+            raise NameError(f"Module {module} not one of default modules {list(modules.keys())}.")
 
     modules = list(modules.values())
     modules.extend(additional_modules if additional_modules else [])
