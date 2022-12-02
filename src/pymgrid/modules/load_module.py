@@ -74,6 +74,10 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         self.loss_load_cost = loss_load_cost
         self.name = ('load', None)
 
+    def _get_bounds(self):
+        _min_obs, _max_obs, _, _ = super()._get_bounds()
+        return _min_obs, _max_obs, np.array([]), np.array([])
+
     def update(self, external_energy_change, as_source=False, as_sink=False):
         assert as_sink, f'Class {self.__class__.__name__} is a sink.'
 
@@ -87,6 +91,9 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         loss_load_cost = -1.0 * loss_load * self.loss_load_cost
         assert loss_load >= 0
         return loss_load.item(), loss_load_cost.item()
+
+    def sample_action(self, strict_bound=False):
+        return np.array([])
 
     @property
     def state_components(self):
