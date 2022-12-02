@@ -193,7 +193,7 @@ class Microgrid(yaml.YAMLObject):
                     _zip = zip(modules, [module_controls])
 
             for module, _control in _zip:
-                module_step = module.step(_control, normalized=normalized) # obs, reward, done, info.
+                module_step = module.step(_control, normalized=normalized)  # obs, reward, done, info.
                 microgrid_step.append(name, *module_step)
 
         provided, consumed, _ = microgrid_step.balance()
