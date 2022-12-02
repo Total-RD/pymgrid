@@ -21,12 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 class ModelPredictiveControl:
-
     """
     A class to run Model Predictive Control using the model outlined in the pymgrid paper
 
     Parameters:
-        microgrid: Microgrid.Microgrid
+        microgrid : pymgrid.Microgrid
             The underlying microgrid on which MPC will be run
 
     Attributes:
