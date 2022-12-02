@@ -5,7 +5,7 @@ from copy import deepcopy
 from pymgrid.algos.Control import ControlOutput
 
 
-class RuleBasedControl:
+class NonModularRuleBasedControl:
     def __init__(self, microgrid):
         # if not isinstance(microgrid, Microgrid.Microgrid):
         #     raise TypeError('microgrid must be of type Microgrid, is {}'.format(type(microgrid)))
