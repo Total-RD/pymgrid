@@ -71,7 +71,7 @@ def add_params_from_module(module, params_dict):
     elif isinstance(module, GensetModule):
         add_genset_params(module, params_dict)
     elif isinstance(module, UnbalancedEnergyModule):
-        add_overgeneration_params(module, params_dict)
+        add_unbalanced_energy_params(module, params_dict)
     else:
         raise ValueError(f'Cannot parse module {module}.')
 
@@ -170,7 +170,7 @@ def add_genset_params(genset_module, params_dict):
     _add_cost_co2(params_dict, genset_module.cost_per_unit_co2)
 
 
-def add_overgeneration_params(unbalanced_energy_module, params_dict):
+def add_unbalanced_energy_params(unbalanced_energy_module, params_dict):
     _add_to_parameters(params_dict, cost_overgeneration=unbalanced_energy_module.overgeneration_cost)
     _add_to_df_actual_generation(params_dict, 'overgeneration')
     _add_to_df_cost(params_dict, 'overgeneration')
