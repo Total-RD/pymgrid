@@ -138,7 +138,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Parameters
         ----------
-        action : float or scalar array
+        action : float or np.ndarray, shape (1,)
             The amount of energy to draw or send.
 
             If ``normalized``, the action is assumed to be normalized and is un-normalized into the range
