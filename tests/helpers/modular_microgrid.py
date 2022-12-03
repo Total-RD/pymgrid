@@ -11,7 +11,7 @@ from pymgrid.modules import (
 )
 
 
-def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbalanced_module=True):
+def get_modular_microgrid(remove_modules=(), retain_only=None, additional_modules=None, add_unbalanced_module=True):
 
     modules = dict(
         genset=GensetModule(running_min_production=10, running_max_production=50, genset_cost=0.5),
@@ -30,11 +30,16 @@ def get_modular_microgrid(remove_modules=(), additional_modules=None, add_unbala
         grid=GridModule(max_import=100, max_export=0, time_series=np.ones((100, 3)), raise_errors=True)
         )
 
-    for module in remove_modules:
-        try:
-            modules.pop(module)
-        except KeyError:
-            raise NameError(f"Module {module} not one of default modules {list(modules.keys())}.")
+    if retain_only is not None:
+        modules = {k: v for k, v in modules.items() if k in retain_only}
+        if remove_modules:
+            raise RuntimeError('Can pass either remove_modules or retain_only, but not both.')
+    else:
+        for module in remove_modules:
+            try:
+                modules.pop(module)
+            except KeyError:
+                raise NameError(f"Module {module} not one of default modules {list(modules.keys())}.")
 
     modules = list(modules.values())
     modules.extend(additional_modules if additional_modules else [])
