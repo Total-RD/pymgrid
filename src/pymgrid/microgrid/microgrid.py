@@ -185,6 +185,9 @@ class Microgrid(yaml.YAMLObject):
             for module in modules:
                 microgrid_step.append(name, *module.step(0.0, normalized=False))
 
+        fixed_provided, fixed_consumed, _ = microgrid_step.balance()
+        log_dict = self._get_log_dict(fixed_provided, fixed_consumed, prefix='fixed')
+
         for name, modules in self.controllable.iterdict():
             try:
                 module_controls = control_copy.pop(name)
@@ -203,7 +206,8 @@ class Microgrid(yaml.YAMLObject):
         provided, consumed, _ = microgrid_step.balance()
         difference = provided - consumed                # if difference > 0, have an excess. Try to use flex sinks to dissapate
                                                         # otherwise, insufficient. Use flex sources to make up
-        log_dict = self._get_log_dict(provided, consumed, prefix='fixed')
+
+        log_dict = self._get_log_dict(provided-fixed_provided, consumed-fixed_consumed, log_dict=log_dict, prefix='controllable')
 
         if len(control_copy) > 0:
             warn(f'\nIgnoring the following keys in passed control:\n {list(control_copy.keys())}')
@@ -250,7 +254,7 @@ class Microgrid(yaml.YAMLObject):
         return microgrid_step.output()
 
     def _get_log_dict(self, provided_energy, absorbed_energy, log_dict=None, prefix=None):
-        _log_dict = dict(provided_to_microgrid=provided_energy, absorbed_by_microgrid=absorbed_energy)
+        _log_dict = dict(provided_to_microgrid=provided_energy, absorbed_from_microgrid=absorbed_energy)
         _log_dict = {(prefix + '_' + k if prefix is not None else k): v for k, v in _log_dict.items()}
         if log_dict:
             _log_dict.update(log_dict)

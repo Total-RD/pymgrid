@@ -124,16 +124,17 @@ class TestMicrogridLoadPV(TestCase):
 
         self.assertEqual(microgrid.log[('balance', 0, 'reward')], 0.0)
         self.assertEqual(microgrid.log[('balance', 0, 'overall_provided_to_microgrid')], load_met)
-        self.assertEqual(microgrid.log[('balance', 0, 'overall_absorbed_by_microgrid')], load_met)
+        self.assertEqual(microgrid.log[('balance', 0, 'overall_absorbed_from_microgrid')], load_met)
         self.assertEqual(microgrid.log[('balance', 0, 'fixed_provided_to_microgrid')], 0.0)
-        self.assertEqual(microgrid.log[('balance', 0, 'fixed_absorbed_by_microgrid')], 0.0)
-        self.assertEqual(microgrid.log[('balance', 0, 'static_absorbed_by_microgrid')], load_met)
+        self.assertEqual(microgrid.log[('balance', 0, 'fixed_absorbed_from_microgrid')], load_met)
+        self.assertEqual(microgrid.log[('balance', 0, 'controllable_absorbed_from_microgrid')], 0.0)
+        self.assertEqual(microgrid.log[('balance', 0, 'controllable_provided_to_microgrid')], 0.0)
+
 
     def test_run_n_steps(self):
         for step in range(len(self.load_ts)):
             with self.subTest(step=step):
                 pass
-
 
 class TestMicrogridLoadExcessPV(TestMicrogridLoadPV):
     #  Same as above but pv is greater than load.
