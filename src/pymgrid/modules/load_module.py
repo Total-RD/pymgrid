@@ -102,7 +102,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
             Current load demand.
 
         """
-        return self._time_series[self._current_step]
+        return self._time_series[self._current_step].item()
 
     @property
     def is_sink(self):
