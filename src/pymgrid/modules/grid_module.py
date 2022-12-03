@@ -62,7 +62,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
     """
 
-    module_type = ('grid', 'fixed')
+    module_type = ('grid', 'controllable')
 
     yaml_tag = u"!GridModule"
     yaml_loader = yaml.SafeLoader

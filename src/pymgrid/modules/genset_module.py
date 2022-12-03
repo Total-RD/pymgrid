@@ -51,7 +51,7 @@ class GensetModule(BaseMicrogridModule):
         Name of the energy provided by this module, to be used in logging.
 
     """
-    module_type = 'genset', 'fixed'
+    module_type = 'genset', 'controllable'
     yaml_tag = f"!Genset"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
