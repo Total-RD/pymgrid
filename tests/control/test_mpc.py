@@ -20,8 +20,7 @@ class TestMPC(TestCase):
         pv_const = 50
         load_const = 60
         pv = RenewableModule(time_series=pv_const*np.ones(100))
-        load = LoadModule(time_series=load_const*np.ones(100),
-                          loss_load_cost=10)
+        load = LoadModule(time_series=load_const*np.ones(100))
 
         microgrid = get_modular_microgrid(remove_modules=["pv", "load", "genset"], additional_modules=[pv, load])
 
@@ -41,8 +40,7 @@ class TestMPC(TestCase):
         pv_const = 50
         load_const = 60
         pv = RenewableModule(time_series=pv_const*np.ones(100))
-        load = LoadModule(time_series=load_const*np.ones(100),
-                          loss_load_cost=10)
+        load = LoadModule(time_series=load_const*np.ones(100))
 
         microgrid = get_modular_microgrid(remove_modules=["pv", "load", "grid"], additional_modules=[pv, load])
 
@@ -62,8 +60,7 @@ class TestMPC(TestCase):
         pv_const = 50
         load_const = 60
         pv = RenewableModule(time_series=pv_const*np.ones(100))
-        load = LoadModule(time_series=load_const*np.ones(100),
-                          loss_load_cost=10)
+        load = LoadModule(time_series=load_const*np.ones(100))
 
         microgrid = get_modular_microgrid(remove_modules=["pv", "load", "grid"], additional_modules=[pv, load])
 
@@ -89,8 +86,7 @@ class TestMPC(TestCase):
         pv_const = 50
         load_const = 60
         pv = RenewableModule(time_series=pv_const*np.ones(100))
-        load = LoadModule(time_series=load_const*np.ones(100),
-                          loss_load_cost=10)
+        load = LoadModule(time_series=load_const*np.ones(100))
 
         microgrid = get_modular_microgrid(remove_modules=["pv", "load", "genset"],
                                           additional_modules=[("pv_with_name", pv), ("load_with_name", load)])
