@@ -182,7 +182,7 @@ class ModelPredictiveControl:
         battery_capacity = battery.max_capacity
         cost_battery_cycle = battery.battery_cost_cycle
 
-        cost_loss_load = self.microgrid.modules[self.microgrid_module_names["load"]].item().loss_load_cost
+        cost_loss_load = self.microgrid.modules[self.microgrid_module_names["unbalancedenergy"]].item().loss_load_cost
 
         if self.has_genset:
             genset = self.microgrid.modules[self.microgrid_module_names["genset"]].item()
