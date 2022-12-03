@@ -181,6 +181,10 @@ class Microgrid(yaml.YAMLObject):
         control_copy = control.copy()
         microgrid_step = MicrogridStep()
 
+        for name, modules in self.static.iterdict():
+            for module in modules:
+                microgrid_step.append(name, *module.step(0.0, normalized=False))
+
         for name, modules in self.fixed.iterdict():
             try:
                 module_controls = control_copy.pop(name)
