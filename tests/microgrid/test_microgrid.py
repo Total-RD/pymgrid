@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 from pymgrid import Microgrid
 from pymgrid.modules import LoadModule, RenewableModule
@@ -94,7 +95,39 @@ class TestMicrogridLoadPV(TestCase):
         self.assertEqual(self.microgrid.modules.renewable[0].current_renewable, self.pv_ts[0])
 
     def test_run_one_step(self):
-        pass
+        microgrid = deepcopy(self.microgrid)
+        control = self.microgrid.get_empty_action()
+        self.assertEqual(len(control), 0)
+
+        obs, reward, done, info = microgrid.run(control)
+        loss_load = self.load_ts[0]-self.pv_ts[0]
+        loss_load_cost = self.microgrid.modules.balancing[0].loss_load_cost * max(loss_load, 0)
+
+        self.assertEqual(loss_load_cost, -1*reward)
+
+        self.assertEqual(len(microgrid.log), 1)
+        self.assertTrue(all(module in microgrid.log for module in microgrid.modules.names()))
+
+        load_met = min(self.load_ts[0], self.pv_ts[0])
+        loss_load = max(self.load_ts[0] - load_met, 0)
+        pv_curtailment = max(self.pv_ts[0]-load_met, 0)
+
+        # Checking the log populated correctly.
+        self.assertEqual(microgrid.log['load', 0, 'load_current'], -1 * self.load_ts[0])
+        self.assertEqual(microgrid.log[('load', 0, 'load_met')], load_met)
+
+        self.assertEqual(microgrid.log[('renewable', 0, 'renewable_current')], load_met)
+        self.assertEqual(microgrid.log[('renewable', 0, 'renewable_used')], load_met)
+        self.assertEqual(microgrid.log[('renewable', 0, 'pv_curtailment')], pv_curtailment)
+
+        self.assertEqual(microgrid.log[('balancing', 0, 'loss_load')], loss_load)
+
+        self.assertEqual(microgrid.log[('balance', 0, 'reward')], 0.0)
+        self.assertEqual(microgrid.log[('balance', 0, 'overall_provided_to_microgrid')], load_met)
+        self.assertEqual(microgrid.log[('balance', 0, 'overall_absorbed_by_microgrid')], load_met)
+        self.assertEqual(microgrid.log[('balance', 0, 'fixed_provided_to_microgrid')], 0.0)
+        self.assertEqual(microgrid.log[('balance', 0, 'fixed_absorbed_by_microgrid')], 0.0)
+        self.assertEqual(microgrid.log[('balance', 0, 'static_absorbed_by_microgrid')], load_met)
 
     def test_run_n_steps(self):
         for step in range(len(self.load_ts)):
