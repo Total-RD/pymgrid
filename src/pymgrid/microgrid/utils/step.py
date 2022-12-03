@@ -21,7 +21,10 @@ class MicrogridStep:
                 self._info[key].append(value)
             except KeyError:
                 pass
-                # print(f'Ignoring key {key} in info dictionary')
+            try:
+                self._info[module_name].append((key, value))
+            except KeyError:
+                self._info[module_name] = [(key, value)]
 
     def balance(self):
         provided_energy = np.sum(self._info['provided_energy'])
@@ -29,7 +32,8 @@ class MicrogridStep:
         return provided_energy, absorbed_energy, self._reward
 
     def output(self):
-        return self._obs, self._reward, self._done, self._info
+        _info = {k: v for k, v in self._info.items() if k not in ('absorbed_energy', 'provided_energy')}
+        return self._obs, self._reward, self._done, _info
 
     @property
     def obs(self):
