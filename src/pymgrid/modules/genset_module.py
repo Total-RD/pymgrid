@@ -85,7 +85,7 @@ class GensetModule(BaseMicrogridModule):
         self.allow_abortion = allow_abortion
         self.init_start_up = init_start_up
 
-        self._current_status, self._goal_status = init_start_up, init_start_up
+        self._current_status, self._goal_status = int(init_start_up), int(init_start_up)
         self._steps_until_up, self._steps_until_down = self._reset_up_down_times()
         self.name = ('genset', None)
 
@@ -253,11 +253,11 @@ class GensetModule(BaseMicrogridModule):
 
     def _finish_in_progress_change(self):
         if self._steps_until_up == 0 and self._goal_status == 1:
-            self._current_status = True
+            self._current_status = 1
             self._reset_up_down_times()
             return True
         elif self._steps_until_down == 0 and self._goal_status == 0:
-            self._current_status = False
+            self._current_status = 0
             self._reset_up_down_times()
             return True
         return False
@@ -266,14 +266,14 @@ class GensetModule(BaseMicrogridModule):
         self._goal_status = 1
 
         if not self._current_status:
-            self._current_status = True
+            self._current_status = 1
             self._reset_up_down_times()
 
     def _instant_down(self):
         self._goal_status = 0
 
         if self._current_status:
-            self._current_status = False
+            self._current_status = 0
             self._reset_up_down_times()
 
     def _non_instantaneous_update(self, goal_status):
