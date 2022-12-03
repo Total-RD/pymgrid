@@ -84,7 +84,7 @@ def add_load_params(load_module, params_dict):
     _add_to_control_dict(params_dict, 'load')
     _add_to_df_actual_generation(params_dict, 'loss_load')
     _add_to_df_actions(params_dict, 'load')
-    _add_to_df_status(params_dict, load=round(load_module.current_load.item(),1))
+    _add_to_df_status(params_dict, load=round(load_module.current_load, 1))
 
 
 def add_pv_params(pv_module, params_dict):
