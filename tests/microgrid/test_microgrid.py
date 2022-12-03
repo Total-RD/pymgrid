@@ -118,7 +118,7 @@ class TestMicrogridLoadPV(TestCase):
 
         self.assertEqual(microgrid.log[('renewable', 0, 'renewable_current')], load_met)
         self.assertEqual(microgrid.log[('renewable', 0, 'renewable_used')], load_met)
-        self.assertEqual(microgrid.log[('renewable', 0, 'pv_curtailment')], pv_curtailment)
+        self.assertEqual(microgrid.log[('renewable', 0, 'curtailment')], pv_curtailment)
 
         self.assertEqual(microgrid.log[('balancing', 0, 'loss_load')], loss_load)
 
