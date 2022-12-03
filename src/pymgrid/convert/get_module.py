@@ -21,9 +21,7 @@ def get_module(component, nonmodular, raise_errors):
 
 def get_load_module(nonmodular, raise_errors):
     time_series = nonmodular._load_ts
-    loss_load_cost = nonmodular.parameters['cost_loss_load'].item()
     return LoadModule(time_series=time_series,
-                      loss_load_cost=loss_load_cost,
                       forecaster='oracle',
                       forecast_horizon=nonmodular.horizon-1,
                       raise_errors=raise_errors)

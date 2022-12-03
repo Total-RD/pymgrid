@@ -4,10 +4,10 @@ import logging
 import yaml
 import numpy as np
 
-from gym.spaces import Box
 from warnings import warn
 
 from pymgrid.utils.logger import ModularLogger
+from pymgrid.utils.space import ModuleSpace
 from pymgrid.modules.utils.normalize import Normalize, IdentityNormalize
 from pymgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
 
@@ -44,8 +44,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
         self._current_step = 0
         self._obs_normalizer = self._get_normalizer(normalize_pos, obs=True)
         self._act_normalizer = self._get_normalizer(normalize_pos, act=True)
-        self._action_spaces = self._get_action_spaces()
-        self._observation_spaces = self._get_observation_spaces()
+        self._action_space = self._get_action_spaces()
+        self._observation_space = self._get_observation_spaces()
         self.provided_energy_name, self.absorbed_energy_name = provided_energy_name, absorbed_energy_name
         self._logger = ModularLogger()
         self.name = (None, None) # set by ModularMicrogrid
@@ -93,20 +93,14 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def _get_action_spaces(self):
         unnormalized_low = self.min_act if isinstance(self.min_act, np.ndarray) else np.array([self.min_act])
         unnormalized_high = self.max_act if isinstance(self.max_act, np.ndarray) else np.array([self.max_act])
-        return self._get_spaces(unnormalized_low, unnormalized_high)
+        return ModuleSpace(unnormalized_low=unnormalized_low,
+                           unnormalized_high=unnormalized_high)
 
     def _get_observation_spaces(self):
         unnormalized_low = self.min_obs if isinstance(self.min_obs, np.ndarray) else np.array([self.min_obs])
         unnormalized_high = self.max_obs if isinstance(self.max_obs, np.ndarray) else np.array([self.max_obs])
-        return self._get_spaces(unnormalized_low, unnormalized_high)
-
-    def _get_spaces(self, unnormalized_low, unnormalized_high):
-        shape = unnormalized_low.shape
-        return dict(normalized=Box(low=0, high=1, shape=shape),
-                    unnormalized=Box(low=unnormalized_low.astype(np.float64),
-                                     high=unnormalized_high.astype(np.float64),
-                                     shape=shape,
-                                     dtype=np.float64))
+        return ModuleSpace(unnormalized_low=unnormalized_low,
+                           unnormalized_high=unnormalized_high)
 
     def reset(self):
         """
@@ -144,7 +138,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Parameters
         ----------
-        action : float or scalar array
+        action : float or np.ndarray, shape (1,)
             The amount of energy to draw or send.
 
             If ``normalized``, the action is assumed to be normalized and is un-normalized into the range
@@ -677,7 +671,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return NotImplemented
 
     @property
-    def action_spaces(self):
+    def action_space(self):
         """
         Action spaces of the module.
 
@@ -688,7 +682,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         dict[{'normalized', 'unnormalized'}, gym.spaces.Box]
             The observation spaces.
         """
-        return self._action_spaces
+        return self._action_space
 
     @property
     def observation_spaces(self):
@@ -702,7 +696,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         dict[{'normalized', 'unnormalized'}, gym.spaces.Box]
             The observation spaces.
         """
-        return self._observation_spaces
+        return self._observation_space
 
     @property
     def is_source(self):

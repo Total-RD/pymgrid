@@ -71,7 +71,7 @@ def add_params_from_module(module, params_dict):
     elif isinstance(module, GensetModule):
         add_genset_params(module, params_dict)
     elif isinstance(module, UnbalancedEnergyModule):
-        add_overgeneration_params(module, params_dict)
+        add_unbalanced_energy_params(module, params_dict)
     else:
         raise ValueError(f'Cannot parse module {module}.')
 
@@ -79,12 +79,11 @@ def add_params_from_module(module, params_dict):
 def add_load_params(load_module, params_dict):
     params_dict['load'] = pd.DataFrame(load_module.time_series)
     _add_to_parameters(params_dict,
-                       load=-1 * load_module.min_act,
-                       cost_loss_load=load_module.loss_load_cost)
+                       load=-1 * load_module.min_act)
     _add_to_control_dict(params_dict, 'load')
     _add_to_df_actual_generation(params_dict, 'loss_load')
     _add_to_df_actions(params_dict, 'load')
-    _add_to_df_status(params_dict, load=round(load_module.current_load.item(),1))
+    _add_to_df_status(params_dict, load=round(load_module.current_load, 1))
 
 
 def add_pv_params(pv_module, params_dict):
@@ -170,8 +169,11 @@ def add_genset_params(genset_module, params_dict):
     _add_cost_co2(params_dict, genset_module.cost_per_unit_co2)
 
 
-def add_overgeneration_params(unbalanced_energy_module, params_dict):
-    _add_to_parameters(params_dict, cost_overgeneration=unbalanced_energy_module.overgeneration_cost)
+def add_unbalanced_energy_params(unbalanced_energy_module, params_dict):
+    _add_to_parameters(params_dict,
+                       cost_overgeneration=unbalanced_energy_module.overgeneration_cost,
+                       cost_loss_load=unbalanced_energy_module.loss_load_cost
+                       )
     _add_to_df_actual_generation(params_dict, 'overgeneration')
     _add_to_df_cost(params_dict, 'overgeneration')
 

@@ -16,9 +16,6 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
     time_series : array-like, shape (n_steps, )
         Time series of load demand.
 
-    loss_load_cost : float, default 10.0
-        Cost per unit of loss load (unmet load).
-
     forecaster : callable, float, "oracle", or None, default None.
         Function that gives a forecast n-steps ahead.
 
@@ -51,14 +48,13 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         If False, actions are clipped to the limit possible.
 
     """
-    module_type = ('load', 'fixed')
+    module_type = ('load', 'static')
     yaml_tag = u"!LoadModule"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 
     def __init__(self,
                  time_series,
-                 loss_load_cost=10.0,
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
@@ -71,22 +67,21 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
                          provided_energy_name=None,
                          absorbed_energy_name='load_met')
 
-        self.loss_load_cost = loss_load_cost
         self.name = ('load', None)
+
+    def _get_bounds(self):
+        _min_obs, _max_obs, _, _ = super()._get_bounds()
+        return _min_obs, _max_obs, np.array([]), np.array([])
 
     def update(self, external_energy_change, as_source=False, as_sink=False):
         assert as_sink, f'Class {self.__class__.__name__} is a sink.'
 
-        loss_load, loss_load_cost = self._get_loss_load(external_energy_change)
-        info = {'absorbed_energy': external_energy_change, 'loss_load': loss_load}
+        info = {'absorbed_energy': self.current_load}
 
-        return loss_load_cost, self._done(), info
+        return 0.0, self._done(), info
 
-    def _get_loss_load(self, load_met):
-        loss_load = self.current_load - load_met
-        loss_load_cost = -1.0 * loss_load * self.loss_load_cost
-        assert loss_load >= 0
-        return loss_load.item(), loss_load_cost.item()
+    def sample_action(self, strict_bound=False):
+        return np.array([])
 
     @property
     def state_components(self):
@@ -107,7 +102,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
             Current load demand.
 
         """
-        return self._time_series[self._current_step]
+        return self._time_series[self._current_step].item()
 
     @property
     def is_sink(self):

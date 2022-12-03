@@ -55,13 +55,13 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
         :return:
         """
         # n_actions = 2**(self.modules.fixed.)
-        fixed_sources = [(module.name, module.action_spaces['unnormalized'].shape[0], n_actions)
-            for module in self.modules.fixed.sources.iterlist()
-            for n_actions in range(module.action_spaces['unnormalized'].shape[0])]
+        fixed_sources = [(module.name, module.action_space['unnormalized'].shape[0], n_actions)
+                         for module in self.modules.fixed.sources.iterlist()
+                         for n_actions in range(module.action_space['unnormalized'].shape[0])]
 
-        fixed_sources.extend([ (module.name, module.action_spaces['unnormalized'].shape[0], n_actions)
-            for module in self.modules.fixed.source_and_sinks.iterlist()
-            for n_actions in range(module.action_spaces['unnormalized'].shape[0])])
+        fixed_sources.extend([(module.name, module.action_space['unnormalized'].shape[0], n_actions)
+                              for module in self.modules.fixed.source_and_sinks.iterlist()
+                              for n_actions in range(module.action_space['unnormalized'].shape[0])])
 
         priority_lists = list(permutations(fixed_sources))
         n_actions = len(priority_lists)

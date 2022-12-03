@@ -174,21 +174,23 @@ def get_subcontainers(modules):
     """
 
     :return: List[Tuple]
-        3-element tuples of (fixed_or_flex, source_or_sink, container)
+        3-element tuples of (fixed_flex_static, source_or_sink, container)
 
     """
     source_sink_keys = ('sources' , 'sinks', 'source_and_sinks')
     fixed = {k: dict() for k in source_sink_keys}
     flex = {k: dict() for k in source_sink_keys}
+    static = {k: dict() for k in source_sink_keys}
+
     module_names = dict()
 
     for module in modules:
         try:  # module is a tuple
             module_name, module = module
-            fixed_or_flex = module.__class__.module_type[1]
+            fixed_flex_static = module.__class__.module_type[1]
         except TypeError:  # module is a module
             try:
-                module_name, fixed_or_flex = module.__class__.module_type
+                module_name, fixed_flex_static = module.__class__.module_type
             except TypeError:
                 raise NotImplementedError(
                     f'Must define the class attribute module_type for class {module.__class__.__name__}')
@@ -196,21 +198,22 @@ def get_subcontainers(modules):
         assert isinstance(module, BaseMicrogridModule), 'Module must inherit from BaseMicrogridModule.'
         assert module.is_sink or module.is_source, 'Module must be sink or source (or both).'
 
-
         source_sink_both = 'source_and_sinks' if module.is_sink and module.is_source else \
             'sources' if module.is_source else 'sinks'
 
-        if fixed_or_flex == 'fixed':
+        if fixed_flex_static == 'fixed':
             d = fixed
-        elif fixed_or_flex == 'flex':
+        elif fixed_flex_static == 'flex':
             d = flex
+        elif fixed_flex_static == 'static':
+            d = static
         else:
-            raise TypeError(f'Cannot parse fixed_or_flexed from module type {module.__class__.module_type}')
+            raise TypeError(f'Cannot parse fixed_flex_static from module type {module.__class__.module_type}')
 
         try:
-            module_names[module_name] = (fixed_or_flex, source_sink_both)
+            module_names[module_name] = (fixed_flex_static, source_sink_both)
         except KeyError:
-            raise NameError(f'Attempted to add module {module_name} of type {(fixed_or_flex, source_sink_both)}, '
+            raise NameError(f'Attempted to add module {module_name} of type {(fixed_flex_static, source_sink_both)}, '
                             f'but there is an identically named module of type {module_names[module_name]}.')
 
         try:
@@ -220,10 +223,11 @@ def get_subcontainers(modules):
         module.name = (module_name, len(d[source_sink_both][module_name]) - 1)
 
     modules_dict = dict(fixed=fixed,
-                        flex=flex)
+                        flex=flex,
+                        static=static)
 
-    containers = {(fixed_or_flex, source_sink_both): _ModuleSubContainer(modules_dict[fixed_or_flex][source_sink_both])
-                  for fixed_or_flex in ('fixed', 'flex')
+    containers = {(ffs, source_sink_both): _ModuleSubContainer(modules_dict[ffs][source_sink_both])
+                  for ffs in ('fixed', 'flex', 'static')
                   for source_sink_both in source_sink_keys}
 
     return containers

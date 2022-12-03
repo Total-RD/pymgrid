@@ -181,6 +181,10 @@ class Microgrid(yaml.YAMLObject):
         control_copy = control.copy()
         microgrid_step = MicrogridStep()
 
+        for name, modules in self.static.iterdict():
+            for module in modules:
+                microgrid_step.append(name, *module.step(0.0, normalized=False))
+
         for name, modules in self.fixed.iterdict():
             try:
                 module_controls = control_copy.pop(name)
@@ -193,7 +197,7 @@ class Microgrid(yaml.YAMLObject):
                     _zip = zip(modules, [module_controls])
 
             for module, _control in _zip:
-                module_step = module.step(_control, normalized=normalized) # obs, reward, done, info.
+                module_step = module.step(_control, normalized=normalized)  # obs, reward, done, info.
                 microgrid_step.append(name, *module_step)
 
         provided, consumed, _ = microgrid_step.balance()
@@ -275,7 +279,9 @@ class Microgrid(yaml.YAMLObject):
         """
 
         module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
-        return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list] for module_name, module_list in module_iterator.items()}
+        return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list]
+                for module_name, module_list in module_iterator.items()
+                if module_list[0].action_space.shape[0]}
 
     def get_empty_action(self, sample_flex_modules=False):
         """
@@ -298,7 +304,8 @@ class Microgrid(yaml.YAMLObject):
         """
         module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
 
-        return {module_name: [None]*len(module_list) for module_name, module_list in module_iterator.items()}
+        return {module_name: [None]*len(module_list) for module_name, module_list in module_iterator.items()
+                if module_list[0].action_space.shape[0]}
 
     def to_normalized(self, data_dict, act=False, obs=False):
         """

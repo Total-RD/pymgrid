@@ -18,8 +18,8 @@ class TestRenewableModuleNoForecasting(TestCase):
 
     def test_action_space(self):
         renewable_module = RenewableModule(self.time_series)
-        normalized_action_space = renewable_module.action_spaces["normalized"]
-        unnormalized_action_space = renewable_module.action_spaces["unnormalized"]
+        normalized_action_space = renewable_module.action_space["normalized"]
+        unnormalized_action_space = renewable_module.action_space["unnormalized"]
 
         self.assertEqual(normalized_action_space, Box(low=0, high=1, shape=(1,)))
         self.assertEqual(unnormalized_action_space, Box(low=0, high=self.time_series.max(), shape=(1,)))
@@ -65,8 +65,8 @@ class TestRenewableModuleForecasting(TestCase):
 
     def test_action_space(self):
         renewable_module = self.new_renewable_module()
-        normalized_action_space = renewable_module.action_spaces["normalized"]
-        unnormalized_action_space = renewable_module.action_spaces["unnormalized"]
+        normalized_action_space = renewable_module.action_space["normalized"]
+        unnormalized_action_space = renewable_module.action_space["unnormalized"]
 
         self.assertEqual(normalized_action_space, Box(low=0, high=1, shape=(1,)))
         self.assertEqual(unnormalized_action_space, Box(low=0, high=self.time_series.max(), shape=(1,)))
