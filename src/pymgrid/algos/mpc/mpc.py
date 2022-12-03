@@ -636,8 +636,6 @@ class ModelPredictiveControl:
         grid_import, grid_export = control_vals[0:2]
         grid_diff = grid_import - grid_export
 
-        load = load_vector[0]
-
         if battery_charge > 0 and battery_discharge > 0:
             warn(f"battery_charge={battery_charge} and battery_discharge={battery_discharge} are both nonzero. "
                  f"Flattening to the difference, leading to a {'discharge' if battery_diff > 0 else 'charge'} of {battery_diff}.")
@@ -649,8 +647,7 @@ class ModelPredictiveControl:
         if "grid" in self.microgrid_module_names.keys():
             control.update({self.microgrid_module_names["grid"]: grid_diff})
 
-        control.update({self.microgrid_module_names["battery"]: battery_diff,
-                        self.microgrid_module_names["load"]: -1.0 * load})
+        control.update({self.microgrid_module_names["battery"]: battery_diff})
 
         return control
 
