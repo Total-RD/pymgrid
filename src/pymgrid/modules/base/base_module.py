@@ -241,6 +241,9 @@ class BaseMicrogridModule(yaml.YAMLObject):
                                f'module is not a source and ' \
                                f'can only be called with negative energy.'
 
+        if self.module_type[-1] == 'fixed':
+            return self.update(None, as_source=True)
+
         if energy_demand > self.max_production:
             if self.raise_errors:
                 self._raise_error(energy_demand, self.max_production, as_source=True)
@@ -290,6 +293,9 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         assert energy_excess >= 0
 
+        if self.module_type[-1] == 'fixed':
+            return self.update(None, as_sink=True)
+
         if energy_excess > self.max_consumption:
             if self.raise_errors:
                 self._raise_error(energy_excess, self.max_consumption, as_sink=True)
@@ -324,7 +330,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Parameters
         ----------
-        external_energy_change : float
+        external_energy_change : float or None
             Amount of energy to provide or absorb.
         as_source : bool
             Whether the module is acting as a source.

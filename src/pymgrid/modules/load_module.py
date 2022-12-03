@@ -48,7 +48,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
         If False, actions are clipped to the limit possible.
 
     """
-    module_type = ('load', 'static')
+    module_type = ('load', 'fixed')
     yaml_tag = u"!LoadModule"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader

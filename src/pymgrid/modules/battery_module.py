@@ -58,7 +58,7 @@ class BatteryModule(BaseMicrogridModule):
         If False, actions are clipped to the limit possible.
 
     """
-    module_type = ('battery', 'fixed')
+    module_type = ('battery', 'controllable')
     yaml_tag = f"!BatteryModule"
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader

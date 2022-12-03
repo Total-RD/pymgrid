@@ -181,11 +181,11 @@ class Microgrid(yaml.YAMLObject):
         control_copy = control.copy()
         microgrid_step = MicrogridStep()
 
-        for name, modules in self.static.iterdict():
+        for name, modules in self.fixed.iterdict():
             for module in modules:
                 microgrid_step.append(name, *module.step(0.0, normalized=False))
 
-        for name, modules in self.fixed.iterdict():
+        for name, modules in self.controllable.iterdict():
             try:
                 module_controls = control_copy.pop(name)
             except KeyError:
@@ -278,7 +278,7 @@ class Microgrid(yaml.YAMLObject):
 
         """
 
-        module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
+        module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.controllable.module_dict()
         return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list]
                 for module_name, module_list in module_iterator.items()
                 if module_list[0].action_space.shape[0]}
@@ -302,7 +302,7 @@ class Microgrid(yaml.YAMLObject):
             Empty action.
 
         """
-        module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.fixed.module_dict()
+        module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.controllable.module_dict()
 
         return {module_name: [None]*len(module_list) for module_name, module_list in module_iterator.items()
                 if module_list[0].action_space.shape[0]}
@@ -483,6 +483,17 @@ class Microgrid(yaml.YAMLObject):
             The list of modules
         """
         return self._modules.flex
+
+    @property
+    def controllable(self):
+        """
+        List of all controllable modules in the microgrid.
+
+        Returns
+        -------
+        list of modules
+        """
+        return self._modules.controllable
 
     @property
     def module_list(self):

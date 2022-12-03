@@ -177,7 +177,7 @@ def get_subcontainers(modules):
         3-element tuples of (fixed_flex_controllable, source_or_sink, container)
 
     """
-    source_sink_keys = ('sources' , 'sinks', 'source_and_sinks')
+    source_sink_keys = ('sources', 'sinks', 'source_and_sinks')
     fixed = {k: dict() for k in source_sink_keys}
     flex = {k: dict() for k in source_sink_keys}
     controllable = {k: dict() for k in source_sink_keys}
