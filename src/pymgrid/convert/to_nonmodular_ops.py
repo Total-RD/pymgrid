@@ -91,7 +91,7 @@ def add_pv_params(pv_module, params_dict):
     _add_to_architecture(params_dict, 'PV')
     _add_to_parameters(params_dict, PV_rated_power=pv_module.max_act)
     _add_to_df_actions(params_dict, 'pv_consummed','pv_curtailed','pv')
-    _add_to_df_status(params_dict, pv=[pv_module.current_renewable.item()])
+    _add_to_df_status(params_dict, pv=[pv_module.current_renewable])
     _add_to_df_actual_generation(params_dict, 'pv_consummed','pv_curtailed')
     _add_to_control_dict(params_dict, 'pv_consummed', 'pv_curtailed', 'pv')
 
