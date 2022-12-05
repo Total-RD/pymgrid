@@ -7,9 +7,8 @@ class TestCase(unittest.TestCase):
     def assertEqual(self, first, second, msg=None) -> None:
         try:
             super().assertEqual(first, second, msg=msg)
-        except ValueError:
+        except (ValueError, AssertionError):
             try:
                 np.testing.assert_equal(first, second, err_msg=msg if msg else '')
-            except AssertionError as e:
-                np.testing.assert_allclose(first, second, err_msg=msg if msg else '')
-                warn(f"Arrays are close but not equal: {e.args[0]}")
+            except AssertionError:
+                np.testing.assert_allclose(first, second, rtol=1e-7, atol=1e-10, err_msg=msg if msg else '')
