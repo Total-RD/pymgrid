@@ -73,7 +73,8 @@ class TestMicrogrid(TestCase):
 class TestMicrogridLoadPV(TestCase):
     def setUp(self):
         self.load_ts, self.pv_ts = self.set_ts()
-        self.microgrid, self.n_modules = self.set_microgrid()
+        self.microgrid, self.n_loads, self.n_pvs = self.set_microgrid()
+        self.n_modules = 1 + self.n_loads + self.n_pvs
 
     def set_ts(self):
         ts = 10 * np.random.rand(100)
@@ -82,7 +83,7 @@ class TestMicrogridLoadPV(TestCase):
     def set_microgrid(self):
         load = LoadModule(time_series=self.load_ts, raise_errors=True)
         pv = RenewableModule(time_series=self.pv_ts, raise_errors=True)
-        return Microgrid([load, pv]), 3
+        return Microgrid([load, pv]), 1, 1
 
     def test_populated_correctly(self):
         self.assertTrue(hasattr(self.microgrid.modules, 'load'))
@@ -114,7 +115,35 @@ class TestMicrogridLoadPV(TestCase):
         self.assertEqual(len(sampled_action), 2)
         self.assertIn('renewable', sampled_action)
         self.assertIn('balancing', sampled_action)
-        self.assertEqual(len(sampled_action['renewable']), len(self.microgrid.modules.renewable))
+        self.assertEqual(len(sampled_action['renewable']), self.n_pvs)
+
+    def test_state_dict(self):
+        sd = self.microgrid.state_dict
+        self.assertIn('load', sd)
+        self.assertIn('renewable', sd)
+        self.assertIn('balancing', sd)
+        self.assertEqual(len(sd['load']), self.n_loads)
+        self.assertEqual(len(sd['balancing']), 1)
+
+    def test_state_series(self):
+        ss = self.microgrid.state_series
+        self.assertEqual({'load', 'renewable'}, set(ss.index.get_level_values(0)))
+        self.assertEqual(ss['load'].index.get_level_values(0).nunique(), self.n_loads)
+        self.assertEqual(ss['renewable'].index.get_level_values(0).nunique(), self.n_pvs)
+        self.assertEqual(ss['load'].index.get_level_values(0).nunique(), self.n_loads)
+
+    def test_to_nonmodular(self):
+        if self.n_pvs > 1 or self.n_loads > 1:
+            with self.assertRaises(ValueError) as e:
+                self.microgrid.to_nonmodular()
+                self.assertIn("Cannot convert modular microgrid with multiple modules of same type", e)
+
+        else:
+            nonmodular = self.microgrid.to_nonmodular()
+            self.assertTrue(nonmodular.architecture['PV'])
+            self.assertFalse(nonmodular.architecture['battery'])
+            self.assertFalse(nonmodular.architecture['grid'])
+            self.assertFalse(nonmodular.architecture['genset'])
 
     def check_step(self, microgrid, step_number=0):
 
@@ -140,7 +169,7 @@ class TestMicrogridLoadPV(TestCase):
         log_entry = lambda module, entry: log_row.loc[pd.IndexSlice[module, :, entry]].sum()
 
         # Check that there are log entries for all modules of each name
-        self.assertEqual(log_row['load'].index.get_level_values(0).nunique(), len(microgrid.modules.load))
+        self.assertEqual(log_row['load'].index.get_level_values(0).nunique(), self.n_loads)
 
         self.assertEqual(log_entry('load', 'load_current'), -1 * self.load_ts[step_number])
         self.assertEqual(log_entry('load', 'load_met'), self.load_ts[step_number])
@@ -173,7 +202,6 @@ class TestMicrogridLoadPV(TestCase):
         for step in range(len(self.load_ts)):
             with self.subTest(step=step):
                 microgrid = self.check_step(microgrid=microgrid, step_number=step)
-            break
 
 
 class TestMicrogridLoadExcessPV(TestMicrogridLoadPV):
@@ -203,7 +231,7 @@ class TestMicrogridTwoLoads(TestMicrogridLoadPV):
         load_1 = LoadModule(time_series=load_1_ts, raise_errors=True)
         load_2 = LoadModule(time_series=load_2_ts, raise_errors=True)
         pv = RenewableModule(time_series=self.pv_ts, raise_errors=True)
-        return Microgrid([load_1, load_2, pv]), 4
+        return Microgrid([load_1, load_2, pv]), 2, 1
 
 
 class TestMicrogridTwoPV(TestMicrogridLoadPV):
@@ -217,4 +245,4 @@ class TestMicrogridTwoPV(TestMicrogridLoadPV):
         load = LoadModule(time_series=self.load_ts, raise_errors=True)
         pv_1 = RenewableModule(time_series=pv_1_ts, raise_errors=True)
         pv_2 = RenewableModule(time_series=pv_2_ts)
-        return Microgrid([load, pv_1, pv_2]), 4
+        return Microgrid([load, pv_1, pv_2]), 1, 2
