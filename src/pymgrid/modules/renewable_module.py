@@ -99,7 +99,7 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
             Renewable production.
 
         """
-        return self._time_series[self._current_step]
+        return self._time_series[self._current_step].item()
 
     @property
     def is_source(self):
