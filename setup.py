@@ -16,6 +16,7 @@ EXTRAS = dict()
 EXTRAS["genset_mpc"] = ["Mosek", "cvxopt"]
 EXTRAS["dev"] = [
     "pytest",
+    "pytest-subtests",
     "flake8",
     "sphinx",
     "pydata_sphinx_theme",
