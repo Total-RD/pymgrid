@@ -1,5 +1,6 @@
 import numpy as np
-from copy import deepcopy
+import pandas as pd
+
 
 from pymgrid import Microgrid
 from pymgrid.modules import LoadModule, RenewableModule
@@ -72,7 +73,7 @@ class TestMicrogrid(TestCase):
 class TestMicrogridLoadPV(TestCase):
     def setUp(self):
         self.load_ts, self.pv_ts = self.set_ts()
-        self.microgrid = self.set_microgrid()
+        self.microgrid, self.n_modules = self.set_microgrid()
 
     def set_ts(self):
         ts = 10 * np.random.rand(100)
@@ -81,60 +82,99 @@ class TestMicrogridLoadPV(TestCase):
     def set_microgrid(self):
         load = LoadModule(time_series=self.load_ts, raise_errors=True)
         pv = RenewableModule(time_series=self.pv_ts, raise_errors=True)
-        return Microgrid([load, pv])
+        return Microgrid([load, pv]), 3
 
     def test_populated_correctly(self):
         self.assertTrue(hasattr(self.microgrid.modules, 'load'))
         self.assertTrue(hasattr(self.microgrid.modules, 'renewable'))
-        self.assertEqual(len(self.microgrid.modules), 3)  # load, pv, unbalanced
+        self.assertEqual(len(self.microgrid.modules), self.n_modules)  # load, pv, unbalanced
 
     def test_current_load_correct(self):
-        self.assertEqual(self.microgrid.modules.load[0].current_load, self.load_ts[0])
+        try:
+            current_load = self.microgrid.modules.load.item().current_load
+        except ValueError:
+            # More than one load module
+            current_load = sum(load.current_load for load in self.microgrid.modules.load)
+        self.assertEqual(current_load, self.load_ts[0])
 
     def test_current_pv_correct(self):
-        self.assertEqual(self.microgrid.modules.renewable[0].current_renewable, self.pv_ts[0])
+        try:
+            current_renewable = self.microgrid.modules.renewable.item().current_renewable
+        except ValueError:
+            # More than one load module
+            current_renewable = sum(renewable.current_renewable for renewable in self.microgrid.modules.renewable)
+        self.assertEqual(current_renewable, self.pv_ts[0])
 
-    def test_run_one_step(self):
-        microgrid = deepcopy(self.microgrid)
-        control = self.microgrid.get_empty_action()
+    def test_sample_action(self):
+        sampled_action = self.microgrid.sample_action()
+        self.assertEqual(len(sampled_action), 0)
+
+    def test_sample_action_with_flex(self):
+        sampled_action = self.microgrid.sample_action(sample_flex_modules=True)
+        self.assertEqual(len(sampled_action), 2)
+        self.assertIn('renewable', sampled_action)
+        self.assertIn('balancing', sampled_action)
+        self.assertEqual(len(sampled_action['renewable']), len(self.microgrid.modules.renewable))
+
+    def check_step(self, microgrid, step_number=0):
+
+        control = microgrid.get_empty_action()
         self.assertEqual(len(control), 0)
 
         obs, reward, done, info = microgrid.run(control)
-        loss_load = self.load_ts[0]-self.pv_ts[0]
+        loss_load = self.load_ts[step_number]-self.pv_ts[step_number]
         loss_load_cost = self.microgrid.modules.balancing[0].loss_load_cost * max(loss_load, 0)
 
         self.assertEqual(loss_load_cost, -1*reward)
 
-        self.assertEqual(len(microgrid.log), 1)
+        self.assertEqual(len(microgrid.log), step_number + 1)
         self.assertTrue(all(module in microgrid.log for module in microgrid.modules.names()))
 
-        load_met = min(self.load_ts[0], self.pv_ts[0])
-        loss_load = max(self.load_ts[0] - load_met, 0)
-        pv_curtailment = max(self.pv_ts[0]-load_met, 0)
+        load_met = min(self.load_ts[step_number], self.pv_ts[step_number])
+        loss_load = max(self.load_ts[step_number] - load_met, 0)
+        pv_curtailment = max(self.pv_ts[step_number]-load_met, 0)
 
         # Checking the log populated correctly.
-        self.assertEqual(microgrid.log['load', 0, 'load_current'], -1 * self.load_ts[0])
-        self.assertEqual(microgrid.log[('load', 0, 'load_met')], load_met)
 
-        self.assertEqual(microgrid.log[('renewable', 0, 'renewable_current')], load_met)
-        self.assertEqual(microgrid.log[('renewable', 0, 'renewable_used')], load_met)
-        self.assertEqual(microgrid.log[('renewable', 0, 'curtailment')], pv_curtailment)
+        log_row = microgrid.log.iloc[step_number]
+        log_entry = lambda module, entry: log_row.loc[pd.IndexSlice[module, :, entry]].sum()
 
-        self.assertEqual(microgrid.log[('balancing', 0, 'loss_load')], loss_load)
+        # Check that there are log entries for all modules of each name
+        self.assertEqual(log_row['load'].index.get_level_values(0).nunique(), len(microgrid.modules.load))
 
-        self.assertEqual(microgrid.log[('balance', 0, 'reward')], 0.0)
-        self.assertEqual(microgrid.log[('balance', 0, 'overall_provided_to_microgrid')], load_met)
-        self.assertEqual(microgrid.log[('balance', 0, 'overall_absorbed_from_microgrid')], load_met)
-        self.assertEqual(microgrid.log[('balance', 0, 'fixed_provided_to_microgrid')], 0.0)
-        self.assertEqual(microgrid.log[('balance', 0, 'fixed_absorbed_from_microgrid')], load_met)
-        self.assertEqual(microgrid.log[('balance', 0, 'controllable_absorbed_from_microgrid')], 0.0)
-        self.assertEqual(microgrid.log[('balance', 0, 'controllable_provided_to_microgrid')], 0.0)
+        self.assertEqual(log_entry('load', 'load_current'), -1 * self.load_ts[step_number])
+        self.assertEqual(log_entry('load', 'load_met'), self.load_ts[step_number])
 
+        if loss_load == 0:
+            self.assertEqual(log_entry('load', 'load_met'), load_met)
+
+        self.assertEqual(log_entry('renewable',  'renewable_current'), self.pv_ts[step_number])
+        self.assertEqual(log_entry('renewable', 'renewable_used'), load_met)
+        self.assertEqual(log_entry('renewable', 'curtailment'), pv_curtailment)
+
+        self.assertEqual(log_entry('balancing', 'loss_load'), loss_load)
+
+        self.assertEqual(log_entry('balance', 'reward'), -1 * loss_load_cost)
+        self.assertEqual(log_entry('balance', 'overall_provided_to_microgrid'), self.load_ts[step_number])
+        self.assertEqual(log_entry('balance', 'overall_absorbed_from_microgrid'), self.load_ts[step_number])
+        self.assertEqual(log_entry('balance', 'fixed_provided_to_microgrid'), 0.0)
+        self.assertEqual(log_entry('balance', 'fixed_absorbed_from_microgrid'), self.load_ts[step_number])
+        self.assertEqual(log_entry('balance', 'controllable_absorbed_from_microgrid'), 0.0)
+        self.assertEqual(log_entry('balance', 'controllable_provided_to_microgrid'), 0.0)
+
+        return microgrid
+
+    def test_run_one_step(self):
+        microgrid = self.microgrid
+        self.check_step(microgrid=microgrid, step_number=0)
 
     def test_run_n_steps(self):
+        microgrid = self.microgrid
         for step in range(len(self.load_ts)):
             with self.subTest(step=step):
-                pass
+                microgrid = self.check_step(microgrid=microgrid, step_number=step)
+            break
+
 
 class TestMicrogridLoadExcessPV(TestMicrogridLoadPV):
     #  Same as above but pv is greater than load.
@@ -142,14 +182,6 @@ class TestMicrogridLoadExcessPV(TestMicrogridLoadPV):
         load_ts = 10*np.random.rand(100)
         pv_ts = load_ts + 5*np.random.rand(100)
         return load_ts, pv_ts
-
-    def test_run_one_step(self):
-        pass
-
-    def test_run_n_steps(self):
-        for step in range(len(self.load_ts)):
-            with self.subTest(step=step):
-                pass
 
 
 class TestMicrogridPVExcessLoad(TestMicrogridLoadPV):
@@ -159,10 +191,30 @@ class TestMicrogridPVExcessLoad(TestMicrogridLoadPV):
         load_ts = pv_ts + 5 * np.random.rand(100)
         return load_ts, pv_ts
 
-    def test_run_one_step(self):
-        pass
 
-    def test_run_n_steps(self):
-        for step in range(len(self.load_ts)):
-            with self.subTest(step=step):
-                pass
+class TestMicrogridTwoLoads(TestMicrogridLoadPV):
+    def set_microgrid(self):
+        load_1_ts = self.load_ts*(1-np.random.rand(*self.load_ts.shape))
+        load_2_ts = self.load_ts - load_1_ts
+
+        assert all(load_1_ts > 0)
+        assert all(load_2_ts > 0)
+
+        load_1 = LoadModule(time_series=load_1_ts, raise_errors=True)
+        load_2 = LoadModule(time_series=load_2_ts, raise_errors=True)
+        pv = RenewableModule(time_series=self.pv_ts, raise_errors=True)
+        return Microgrid([load_1, load_2, pv]), 4
+
+
+class TestMicrogridTwoPV(TestMicrogridLoadPV):
+    def set_microgrid(self):
+        pv_1_ts = self.pv_ts*(1-np.random.rand(*self.pv_ts.shape))
+        pv_2_ts = self.pv_ts - pv_1_ts
+
+        assert all(pv_1_ts > 0)
+        assert all(pv_2_ts > 0)
+
+        load = LoadModule(time_series=self.load_ts, raise_errors=True)
+        pv_1 = RenewableModule(time_series=pv_1_ts, raise_errors=True)
+        pv_2 = RenewableModule(time_series=pv_2_ts)
+        return Microgrid([load, pv_1, pv_2]), 4
