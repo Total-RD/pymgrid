@@ -93,6 +93,7 @@ class Microgrid(yaml.YAMLObject):
                                                    overgeneration_cost)
 
         self._balance_logger = ModularLogger()
+        self._microgrid_logger = ModularLogger()  # log additional information.
 
     def _get_unbalanced_energy_module(self,
                                       loss_load_cost,
@@ -150,7 +151,8 @@ class Microgrid(yaml.YAMLObject):
         """
         return {
             **{name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()},
-            **{"balance": self._balance_logger.flush()}
+            **{"balance": self._balance_logger.flush(),
+               "other": self._microgrid_logger.flush()}
         }
 
     def run(self, control, normalized=True):
@@ -384,9 +386,8 @@ class Microgrid(yaml.YAMLObject):
         for key, value in self._balance_logger.to_dict().items():
             _log_dict[('balance', 0, key)] = value
 
-        if hasattr(self, 'log_dict'):
-            for key, value in self.log_dict.items():
-                _log_dict[(key, '', '')] = value
+        for key, value in self._microgrid_logger.items():
+            _log_dict[(key, 0, '')] = value
 
         col_names = ['module_name', 'module_number', 'field']
 
