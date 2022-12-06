@@ -391,19 +391,16 @@ class Microgrid(yaml.YAMLObject):
 
         col_names = ['module_name', 'module_number', 'field']
 
+        df = pd.DataFrame(_log_dict)
+        df.columns = pd.MultiIndex.from_tuples(df.columns.to_list(), names=col_names)
+
         if drop_singleton_key:
-            keys_arr = np.array(list(_log_dict.keys()))
-            module_counters = keys_arr[:, 1].astype(np.int64)
-            if module_counters.min() == module_counters.max():
-                _log_dict = {(key[0], key[2]): value for key, value in _log_dict.items()}
-                col_names.pop(1)
+            df.columns = df.columns.remove_unused_levels()
 
         if as_frame:
-            df = pd.DataFrame(_log_dict)
-            df.columns.set_names(col_names, inplace=True)
             return df
 
-        return _log_dict
+        return df.to_dict()
 
     def get_forecast_horizon(self):
         """
