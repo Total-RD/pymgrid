@@ -79,10 +79,6 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
 
         action = self.get_empty_action()
         loads, total_load = self._get_load()
-        for load_module, load in loads.items():
-            module_name, module_num = load_module
-            action[module_name][module_num] = -1.0 * load
-
         renewable = self._get_renewable()
         assert total_load >= 0 and renewable >= 0
 
