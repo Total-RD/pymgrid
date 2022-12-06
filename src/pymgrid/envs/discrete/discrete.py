@@ -43,7 +43,6 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
                          overgeneration_cost=overgeneration_cost)
 
         self.action_space, self.actions_list = self._get_action_space()
-        self.log_dict = ModularLogger()
 
     def _get_action_space(self):
         """
@@ -150,7 +149,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
         return action
 
     def step(self, action):
-        self.log_dict.log(action=action)
+        self._microgrid_logger.log(action=action)
         microgrid_action = self._get_action(action)
         return super().step(microgrid_action, normalized=False)
 
