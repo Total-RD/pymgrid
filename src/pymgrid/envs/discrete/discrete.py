@@ -142,6 +142,10 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
                 # If we have, e.g. a genset (with two actions)
                 action[module_name][element_number] = np.array(action[module_name][element_number])
 
+        bad_keys = [k for k, v in action.items() if v is None]
+        if len(bad_keys):
+            raise RuntimeError(f'None values found in action, corresponding to keys\n\t{bad_keys}')
+
         return action
 
     def step(self, action):
