@@ -54,19 +54,19 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
         :return:
         """
         # n_actions = 2**(self.modules.fixed.)
-        fixed_sources = [(module.name, module.action_space['unnormalized'].shape[0], n_actions)
-                         for module in self.modules.fixed.sources.iterlist()
-                         for n_actions in range(module.action_space['unnormalized'].shape[0])]
+        controllable_sources = [(module.name, module.action_space.shape[0], n_actions)
+                                for module in self.modules.controllable.sources.iterlist()
+                                for n_actions in range(module.action_space.shape[0])]
 
-        fixed_sources.extend([(module.name, module.action_space['unnormalized'].shape[0], n_actions)
-                              for module in self.modules.fixed.source_and_sinks.iterlist()
-                              for n_actions in range(module.action_space['unnormalized'].shape[0])])
+        controllable_sources.extend([(module.name, module.action_space.shape[0], n_actions)
+                                     for module in self.modules.controllable.source_and_sinks.iterlist()
+                                     for n_actions in range(module.action_space.shape[0])])
 
-        priority_lists = list(permutations(fixed_sources))
+        priority_lists = list(permutations(controllable_sources))
         n_actions = len(priority_lists)
 
         if n_actions > 1000:
-            warn(f'Microgrid with {len(fixed_sources)} fixed source modules defines large action space with '
+            warn(f'Microgrid with {len(controllable_sources)} fixed source modules defines large action space with '
                  f'{n_actions} elements.')
 
         space = Discrete(n_actions)
