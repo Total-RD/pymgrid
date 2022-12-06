@@ -157,7 +157,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
         loads = dict()
         total_load = 0.0
         for fixed_sink in self.fixed.sinks.iterlist():
-            loads[fixed_sink.name] = fixed_sink.max_consumption.item()
+            loads[fixed_sink.name] = fixed_sink.max_consumption
             total_load += fixed_sink.max_consumption
 
         return loads, total_load
