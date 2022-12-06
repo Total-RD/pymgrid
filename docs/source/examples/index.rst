@@ -14,3 +14,6 @@ the :code:`notebooks` directory.
    :maxdepth: 2
 
    quick-start
+   rbc-example
+   mpc-example
+   rl-example
