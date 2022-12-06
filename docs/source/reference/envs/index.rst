@@ -1,14 +1,14 @@
 .. _api.envs:
 
-Reinforcement Learning
+Reinforcement Learning (RL) Environments
 ======================
 
 .. currentmodule:: pymgrid.envs
 
 Environment classes using the `OpenAI Gym API <https://www.gymlibrary.dev//>`_ for reinforcement learning.
 
-Discrete Environment
---------------------
+Discrete
+--------
 
 Environment with a discrete action space.
 
@@ -18,8 +18,8 @@ Environment with a discrete action space.
 
     DiscreteMicrogridEnv
 
-Continuous Environment
-----------------------
+Continuous
+----------
 
 Environment with a discrete action space.
 
