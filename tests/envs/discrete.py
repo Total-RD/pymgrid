@@ -5,9 +5,6 @@ from tests.helpers.modular_microgrid import get_modular_microgrid
 
 from pymgrid.envs import DiscreteMicrogridEnv
 
-import warnings
-warnings.filterwarnings('error')
-
 
 class TestDiscreteEnv(TestCase):
 
