@@ -32,5 +32,5 @@ Reinforcement Learning
 ----------------------
 
 Algorithms that treat a microgrid as a Markov process, and train a black-box policy by repeated interactions with
-the environment. See :ref:`examples/rl-example` for an example of using reinforcement learning to train such an
+the environment. See :doc:`examples/rl-example` for an example of using reinforcement learning to train such an
 algorithm.
