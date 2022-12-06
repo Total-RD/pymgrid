@@ -246,3 +246,67 @@ class TestMicrogridTwoPV(TestMicrogridLoadPV):
         pv_1 = RenewableModule(time_series=pv_1_ts, raise_errors=True)
         pv_2 = RenewableModule(time_series=pv_2_ts)
         return Microgrid([load, pv_1, pv_2]), 1, 2
+
+
+class TestMicrogridTwoEach(TestMicrogridLoadPV):
+    def set_microgrid(self):
+        load_1_ts = self.load_ts*(1-np.random.rand(*self.load_ts.shape))
+        load_2_ts = self.load_ts - load_1_ts
+
+        pv_1_ts = self.pv_ts*(1-np.random.rand(*self.pv_ts.shape))
+        pv_2_ts = self.pv_ts - pv_1_ts
+
+        assert all(load_1_ts > 0)
+        assert all(load_2_ts > 0)
+        assert all(pv_1_ts > 0)
+        assert all(pv_2_ts > 0)
+
+        load_1 = LoadModule(time_series=load_1_ts, raise_errors=True)
+        load_2 = LoadModule(time_series=load_2_ts, raise_errors=True)
+        pv_1 = RenewableModule(time_series=pv_1_ts, raise_errors=True)
+        pv_2 = RenewableModule(time_series=pv_2_ts)
+
+        return Microgrid([load_1, load_2, pv_1, pv_2]), 2, 2
+
+
+class TestMicrogridManyEach(TestMicrogridLoadPV):
+    def set_microgrid(self):
+        n_loads = np.random.randint(3, 10)
+        n_pvs = np.random.randint(3, 10)
+
+        load_ts = [self.load_ts * (1 - np.random.rand(*self.load_ts.shape))]
+        pv_ts = [self.pv_ts * (1 - np.random.rand(*self.pv_ts.shape))]
+
+        for ts_list, ts_sum, n_modules in zip(
+                [load_ts, pv_ts],
+                [self.load_ts, self.pv_ts],
+                [n_loads, n_pvs]
+        ):
+            remaining = ts_sum-ts_list[0]
+
+            for j in range(1, n_modules-1):
+                ts_list.append(remaining*(1-np.random.rand(*ts_sum.shape)))
+                assert all(ts_list[-1] > 0)
+                remaining -= ts_list[-1]
+
+            assert all(remaining > 0)
+            ts_list.append(remaining)
+
+        load_modules = [LoadModule(time_series=ts) for ts in load_ts]
+        pv_modules = [RenewableModule(time_series=ts) for ts in pv_ts]
+
+        return Microgrid([*load_modules, *pv_modules]), n_loads, n_pvs
+
+
+class TestMicrogridManyEachExcessPV(TestMicrogridManyEach):
+    def set_ts(self):
+        load_ts = 10*np.random.rand(100)
+        pv_ts = load_ts + 5*np.random.rand(100)
+        return load_ts, pv_ts
+
+
+class TestMicrogridManyEachExcessLoad(TestMicrogridManyEach):
+    def set_ts(self):
+        pv_ts = 10*np.random.rand(100)
+        load_ts = pv_ts + 5*np.random.rand(100)
+        return load_ts, pv_ts
