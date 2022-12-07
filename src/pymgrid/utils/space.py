@@ -11,7 +11,14 @@ class ModuleSpace(Space):
                                  dtype=dtype)
 
         self._normalized = Box(low=0, high=1, shape=self._unnormalized.shape, dtype=dtype)
-        super().__init__(self._unnormalized.shape, self._unnormalized.dtype, seed)
+        try:
+            super().__init__(shape=self._unnormalized.shape, dtype=self._unnormalized.dtype, seed=seed)
+        except TypeError:
+            super().__init__(shape=self._unnormalized.shape, dtype=self._unnormalized.dtype)
+            import warnings
+            import gym
+            warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
+                          f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
 
     def contains(self, x):
         return x in self._unnormalized
