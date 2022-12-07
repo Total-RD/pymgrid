@@ -45,7 +45,7 @@ jobs:
     - name: Install garage dependencies
       run:  |
         cat garage_setup.py
-        python -m garage_setup.py egg_info
+        python -m garage_setup egg_info
         cat *.egg_info/requires.txt
         python -m pip install -r *.egg_info/requires.txt        
     - name: Lint with flake8
