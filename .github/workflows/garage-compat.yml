@@ -30,7 +30,15 @@ jobs:
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install -e .'[dev]'
-    - name: Get garage dependenceis
+    - name: Get garage VERSION
+      uses: wei/wget@v1
+      with:
+        args: -O VERSION https://raw.githubusercontent.com/rlworkgroup/garage/master/VERSION
+    - name: Get garage README.md
+      uses: wei/wget@v1
+      with:
+        args: -O README.md https://raw.githubusercontent.com/rlworkgroup/garage/master/README.md
+    - name: Get garage setup.py
       uses: wei/wget@v1
       with:
         args: -O garage_setup.py https://raw.githubusercontent.com/rlworkgroup/garage/master/setup.py
