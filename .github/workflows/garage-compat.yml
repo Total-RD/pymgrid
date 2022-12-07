@@ -46,8 +46,8 @@ jobs:
       run:  |
         cat garage_setup.py
         python -m garage_setup egg_info
-        cat *.egg_info/requires.txt
-        python -m pip install -r *.egg_info/requires.txt        
+        cat src/garage.egg-info/requires.txt
+        python -m pip install -r src/garage.egg-info/requires.txt        
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
