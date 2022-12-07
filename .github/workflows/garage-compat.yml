@@ -57,6 +57,7 @@ jobs:
         done < "src/garage.egg-info/requires.txt"
     - name: Install garage dependencies
       run:  |
+        apt install libopenmpi-dev
         cat src/garage.egg-info/requires_all.txt
         python -m pip install -r src/garage.egg-info/requires_all.txt        
     - name: Lint with flake8
