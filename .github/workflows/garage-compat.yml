@@ -44,6 +44,7 @@ jobs:
         args: -O garage_setup.py https://raw.githubusercontent.com/rlworkgroup/garage/master/setup.py
     - name: Extract garage dependencies
       run:  |
+        in_all=false
         while IFS= read -r line; do
           if [[ "$line" == *"[all]"* ]]; then
             in_all=true
