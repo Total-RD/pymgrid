@@ -36,6 +36,7 @@ jobs:
         args: -O garage_setup.py https://github.com/rlworkgroup/garage/blob/master/setup.py
     - name: Install garage dependencies
       run:  |
+        cat garage_setup.py
         python -m garage_setup.py garage_egg_info
         cat *.garage_egg_info/requires.txt
         python -m pip install -r *.garage_egg_info/requires.txt        
