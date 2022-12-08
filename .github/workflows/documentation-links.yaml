@@ -2,9 +2,10 @@
 
 name: Read the Docs Pull Request Preview
 on:
-  pull_request_target:
-    types:
-      - opened
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 permissions:
   pull-requests: write
