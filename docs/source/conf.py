@@ -42,17 +42,31 @@ templates_path = ['_templates']
 exclude_patterns = []
 
 
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'pydata_sphinx_theme'
 
 html_theme_options = {
-    "primary_sidebar_end": ["indices.html", "sidebar-ethical-ads.html"]
+    "primary_sidebar_end": ["indices.html", "sidebar-ethical-ads.html"],
+
+    "icon_links": [
+            {
+                "name": "GitHub",
+                "url": "https://github.com/Total-RD/pymgrid",
+                "icon": "fa-brands fa-github",
+            },
+            {
+                "name": "PyPI",
+                "url": "https://pypi.org/project/pymgrid/",
+                "icon": "fa-solid fa-box",
+            }
+    ]
 }
 
+
 html_static_path = ['_static']
+
 
 # These are attributes that don't have a __doc__ attribute to read ':meta private:' from.
 skip_members = ['yaml_flow_style',
