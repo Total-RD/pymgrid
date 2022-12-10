@@ -6,5 +6,5 @@ class TestContainer(TestCase):
     def test_container_init(self):
         microgrid = get_modular_microgrid()
         self.assertTrue(len(microgrid.controllable.sources))
-        self.assertTrue(len(microgrid.controllable.sinks))
+        self.assertTrue(len(microgrid.controllable.source_and_sinks))
         action = microgrid.sample_action()
