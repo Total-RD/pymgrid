@@ -45,7 +45,7 @@ class ModuleSpace(Space):
         raise KeyError(item)
 
     def __repr__(self):
-        return f'ModuleSpace{repr(self._unnormalized)[3:]}'
+        return f'ModuleSpace{repr(self._unnormalized).replace("Box", "")}'
 
     def __eq__(self, other):
         if type(self) != type(other):
