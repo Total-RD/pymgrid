@@ -36,6 +36,14 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                                                  forecast_horizon,
                                                                  self.time_series,
                                                                  increase_uncertainty=forecaster_increase_uncertainty)
+
+        self._state_dict_keys = {"current":  [f"{component}_current" for component in self.state_components],
+                                 "forecast": [
+                                     f"{component}_forecast_{j}"
+                                     for j in range(self._forecast_horizon) for component in self.state_components
+                                 ]
+                                 }
+
         super().__init__(raise_errors,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name,
@@ -183,9 +191,11 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     @property
     def state_dict(self):
         forecast = self.forecast()
-        state_dict = dict(zip(self.state_components + "_current", self.current_obs))
-        for j in range(0, self.forecast_horizon):
-            state_dict.update(dict(zip(self.state_components + f'_forecast_{j}', forecast[j, :])))
+
+        state_dict = dict(zip(self._state_dict_keys['current'], self.current_obs))
+        if forecast:
+            state_dict.update(zip(self._state_dict_keys['forecast'], forecast.reshape(-1)))
+
         return state_dict
 
     def serialize(self, dumper_stream):
