@@ -1,16 +1,13 @@
-import numpy as np
 import yaml
 
-from itertools import permutations
 from gym.spaces import Discrete
-from math import isclose
 from warnings import warn
 
+from pymgrid.algos.priority_list import PriorityListAlgo
 from pymgrid.envs.base import BaseMicrogridEnv
-from pymgrid.utils.logger import ModularLogger
 
 
-class DiscreteMicrogridEnv(BaseMicrogridEnv):
+class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
     """
     A discrete env that implements priority lists as actions on a microgrid.
 
@@ -54,20 +51,13 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
         If there are n fixed source modules, then there are 2^{n-1} actions.
         :return:
         """
-        # n_actions = 2**(self.modules.fixed.)
-        controllable_sources = [(module.name, module.action_space.shape[0], n_actions)
-                                for module in self.modules.controllable.sources.iterlist()
-                                for n_actions in range(module.action_space.shape[0])]
 
-        controllable_sources.extend([(module.name, module.action_space.shape[0], n_actions)
-                                     for module in self.modules.controllable.source_and_sinks.iterlist()
-                                     for n_actions in range(module.action_space.shape[0])])
+        priority_lists = self._get_priority_lists()
 
-        priority_lists = list(permutations(controllable_sources))
         n_actions = len(priority_lists)
 
         if n_actions > 1000:
-            warn(f'Microgrid with {len(controllable_sources)} fixed source modules defines large action space with '
+            warn(f'Microgrid with {len(priority_lists[0])} fixed source modules defines large action space with '
                  f'{n_actions} elements.')
 
         space = Discrete(n_actions)
@@ -78,93 +68,15 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv):
         if action_num not in self.action_space:
             raise ValueError(f" Action {action_num} not in action space {self.action_space}")
 
-        action = self.get_empty_action()
-        loads, total_load = self._get_load()
-        renewable = self._get_renewable()
-        assert total_load >= 0 and renewable >= 0
-
-        remaining_load = (total_load-renewable).item()
         priority_list = list(self.actions_list[action_num])
 
-        while priority_list:
-            (module_name, element_number), total_module_actions, module_action_number = priority_list.pop(0)
-            module_to_deploy = self.modules[module_name][element_number]
+        return self._populate_action(priority_list)
 
-            if total_module_actions > 1:
-                if action[module_name][element_number] is not None: # Already hit this module in the priority list (has multiple elements)
-                    continue
-                else:
-                    action[module_name][element_number] = [module_action_number]
-
-            if isclose(remaining_load, 0.0, abs_tol=1e-4): # Don't need to do anything
-                try:
-                    action[module_name][element_number].append(0.0)
-                except AttributeError:
-                    action[module_name][element_number] = 0.0
-
-            elif remaining_load > 0: # Need to produce
-                try:
-                    max_production = module_to_deploy.next_max_production(module_action_number)
-                    min_production = module_to_deploy.next_min_production(module_action_number)
-                except AttributeError:
-                    max_production, min_production = module_to_deploy.max_production, module_to_deploy.min_production
-                if min_production < remaining_load < max_production:
-                    # Module can meet demand
-                    module_production = remaining_load
-                elif remaining_load < min_production:          # Module production too much
-                    module_production = min_production
-                else:                                                           # Module production not enough
-                    module_production = max_production
-                remaining_load -= module_production
-
-                try:
-                    action[module_name][element_number].append(module_production)
-                except AttributeError:
-                    action[module_name][element_number] = module_production
-
-            else:                   # Need to consume. These are sources and sources_and_sinks, so need to only use sources_and_sinks.
-                if module_to_deploy.is_sink:
-                    if remaining_load < -1.0 * module_to_deploy.max_consumption: # Can't consume it all
-                        module_consumption = -1.0 * module_to_deploy.max_consumption
-                    else:                                           # Can consume
-                        module_consumption = remaining_load
-                    assert module_consumption <= 0
-                    # action[module_name][element_number] = module_consumption
-                else:                                           # Not a sink
-                    module_consumption = 0.0
-
-                remaining_load += module_consumption
-                try:
-                    action[module_name][element_number].append(module_consumption)
-                except AttributeError:
-                    action[module_name][element_number] = module_consumption
-
-            if total_module_actions > 1:
-                # If we have, e.g. a genset (with two actions)
-                action[module_name][element_number] = np.array(action[module_name][element_number])
-
-        bad_keys = [k for k, v in action.items() if v is None]
-        if len(bad_keys):
-            raise RuntimeError(f'None values found in action, corresponding to keys\n\t{bad_keys}')
-
-        return action
 
     def step(self, action):
         self._microgrid_logger.log(action=action)
         microgrid_action = self._get_action(action)
         return super().step(microgrid_action, normalized=False)
-
-    def _get_load(self):
-        loads = dict()
-        total_load = 0.0
-        for fixed_sink in self.fixed.sinks.iterlist():
-            loads[fixed_sink.name] = fixed_sink.max_consumption
-            total_load += fixed_sink.max_consumption
-
-        return loads, total_load
-
-    def _get_renewable(self):
-        return np.sum([flex_source.max_production for flex_source in self.flex.sources.iterlist()])
 
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         return self.action_space.sample()
