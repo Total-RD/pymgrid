@@ -7,6 +7,19 @@ from pymgrid.forecast.forecaster import get_forecaster
 
 
 class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
+
+    state_components = None
+    """
+    Labels of the components of each entry in the module's time series.
+
+    Column labels of self.time_series.
+
+    Returns
+    -------
+    state_components : np.ndarray[str], shape (self.time_series.shape[1], )
+        The state components.
+    """
+
     def __init__(self,
                  time_series,
                  raise_errors,
@@ -166,21 +179,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             return self.forecaster.increase_uncertainty
         except AttributeError:
             return False
-
-    @property
-    @abstractmethod
-    def state_components(self):
-        """
-        Labels of the components of each entry in the module's time series.
-
-        Column labels of self.time_series.
-
-        Returns
-        -------
-        state_components : np.ndarray[str], shape (self.time_series.shape[1], )
-            The state components.
-        """
-        pass
 
     @property
     def state_dict(self):

@@ -56,6 +56,8 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
     yaml_loader = yaml.SafeLoader
     yaml_dumper = yaml.SafeDumper
 
+    state_components = np.array(["renewable"], dtype=object)
+
     def __init__(self,
                  time_series,
                  raise_errors=False,
@@ -80,10 +82,6 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
                 'curtailment': self.current_renewable-external_energy_change}
 
         return 0.0, self._done(), info
-
-    @property
-    def state_components(self):
-        return np.array(["renewable"], dtype=object)
 
     @property
     def max_production(self):

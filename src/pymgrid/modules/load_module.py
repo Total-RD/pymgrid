@@ -53,6 +53,8 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 
+    state_components = np.array(["load"], dtype=object)
+
     def __init__(self,
                  time_series,
                  forecaster=None,
@@ -82,10 +84,6 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
 
     def sample_action(self, strict_bound=False):
         return np.array([])
-
-    @property
-    def state_components(self):
-        return np.array(["load"], dtype=object)
 
     @property
     def max_consumption(self):
