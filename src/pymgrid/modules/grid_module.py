@@ -68,6 +68,8 @@ class GridModule(BaseTimeSeriesMicrogridModule):
     yaml_loader = yaml.SafeLoader
     yaml_dumper = yaml.SafeDumper
 
+    state_components = np.array(['import_price', 'export_price', 'co2_per_kwh', 'grid_status'], dtype=object)
+
     def __init__(self,
                  max_import,
                  max_export,
@@ -300,10 +302,6 @@ class GridModule(BaseTimeSeriesMicrogridModule):
 
         """
         return self.grid_status[0]
-
-    @property
-    def state_components(self):
-        return np.array(['import_price', 'export_price', 'co2_per_kwh', 'grid_status'], dtype=object)
 
     @property
     def max_production(self):
