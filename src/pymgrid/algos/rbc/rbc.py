@@ -1,10 +1,18 @@
 from copy import deepcopy
 
 from pymgrid import Microgrid
+from pymgrid.algos.priority_list import PriorityListAlgo
 
 
-class RuleBasedControl:
+class RuleBasedControl(PriorityListAlgo):
+    """
+    Parameters
+    ----------
+    microgrid : pymgrid.Microgrid
+
+    """
     def __init__(self, microgrid):
+        super().__init__()
         self._microgrid = deepcopy(microgrid)
 
     def _get_priority_list(self):
@@ -40,6 +48,8 @@ class RuleBasedControl:
         """
         pass
 
+    def get_empty_action(self):
+        return self._microgrid.get_empty_action()
 
     @property
     def microgrid(self):
@@ -53,3 +63,15 @@ class RuleBasedControl:
 
         """
         return self._microgrid
+
+    @property
+    def fixed(self):
+        return self._microgrid.fixed
+
+    @property
+    def flex(self):
+        return self._microgrid.flex
+
+    @property
+    def modules(self):
+        return self._microgrid.modules
