@@ -23,7 +23,7 @@ def get_modular_microgrid(remove_modules=(), retain_only=None, additional_module
                               efficiency=1.0,
                               init_soc=0.5),
 
-        pv=RenewableModule(time_series=50*np.ones(100)),
+        renewable=RenewableModule(time_series=50*np.ones(100)),
 
         load=LoadModule(time_series=60*np.ones(100)),
 
