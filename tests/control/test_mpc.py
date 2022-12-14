@@ -22,7 +22,7 @@ class TestMPC(TestCase):
         pv = RenewableModule(time_series=pv_const*np.ones(100))
         load = LoadModule(time_series=load_const*np.ones(100))
 
-        microgrid = get_modular_microgrid(remove_modules=["pv", "load", "genset"], additional_modules=[pv, load])
+        microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "genset"], additional_modules=[pv, load])
 
         mpc = ModelPredictiveControl(microgrid)
         mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
@@ -42,7 +42,7 @@ class TestMPC(TestCase):
         pv = RenewableModule(time_series=pv_const*np.ones(100))
         load = LoadModule(time_series=load_const*np.ones(100))
 
-        microgrid = get_modular_microgrid(remove_modules=["pv", "load", "grid"], additional_modules=[pv, load])
+        microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "grid"], additional_modules=[pv, load])
 
         mpc = ModelPredictiveControl(microgrid)
         mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
@@ -62,7 +62,7 @@ class TestMPC(TestCase):
         pv = RenewableModule(time_series=pv_const*np.ones(100))
         load = LoadModule(time_series=load_const*np.ones(100))
 
-        microgrid = get_modular_microgrid(remove_modules=["pv", "load", "grid"], additional_modules=[pv, load])
+        microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "grid"], additional_modules=[pv, load])
 
         mpc = ModelPredictiveControl(microgrid)
         mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
@@ -88,7 +88,7 @@ class TestMPC(TestCase):
         pv = RenewableModule(time_series=pv_const*np.ones(100))
         load = LoadModule(time_series=load_const*np.ones(100))
 
-        microgrid = get_modular_microgrid(remove_modules=["pv", "load", "genset"],
+        microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "genset"],
                                           additional_modules=[("pv_with_name", pv), ("load_with_name", load)])
 
         mpc = ModelPredictiveControl(microgrid)
