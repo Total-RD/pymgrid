@@ -193,7 +193,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         forecast = self.forecast()
 
         state_dict = dict(zip(self._state_dict_keys['current'], self.current_obs))
-        if forecast:
+        if forecast is not None:
             state_dict.update(zip(self._state_dict_keys['forecast'], forecast.reshape(-1)))
 
         return state_dict
