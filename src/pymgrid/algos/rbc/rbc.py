@@ -82,14 +82,17 @@ class RuleBasedControl(PriorityListAlgo):
 
     @property
     def fixed(self):
+        """:meta private:"""
         return self._microgrid.fixed
 
     @property
     def flex(self):
+        """:meta private:"""
         return self._microgrid.flex
 
     @property
     def modules(self):
+        """:meta private:"""
         return self._microgrid.modules
 
     @property
