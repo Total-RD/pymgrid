@@ -1,15 +1,26 @@
 from copy import deepcopy
 from tqdm import tqdm
 
-from pymgrid import Microgrid
 from pymgrid.algos.priority_list import PriorityListAlgo
 
 
 class RuleBasedControl(PriorityListAlgo):
     """
+
+    Run a rule-based (heuristic) control algorithm on a microgrid.
+
+    In rule-based control, modules are deployed in a preset order. You can either define this order by passing a
+    priority list or the order will be defined automatically from the module with the lowest marginal cost to the
+    highest.
+
     Parameters
     ----------
-    microgrid : pymgrid.Microgrid
+    microgrid : :class:`pymgrid.Microgrid`
+        Microgrid on which to run rule-based control.
+
+    priority_list : list of :class:`.PriorityListElement` or None, default None.
+        Priority list to use. If None, the order will be defined automatically from the module with the lowest marginal
+        cost to the highest.
 
     """
     def __init__(self, microgrid, priority_list=None):
@@ -20,9 +31,6 @@ class RuleBasedControl(PriorityListAlgo):
     def _get_priority_list(self, priority_list):
         """
         Given a microgrid, return the optimal order of module deployment.
-        Returns
-        -------
-
         """
         priority_lists = self.get_priority_lists()
 
@@ -38,13 +46,19 @@ class RuleBasedControl(PriorityListAlgo):
     def _get_action(self):
         """
         Given the priority list, define an action.
-        Returns
-        -------
-
         """
         return self._populate_action(self._priority_list)
 
     def reset(self):
+        """
+        Reset the underlying microgrid.
+
+        Returns
+        -------
+        obs : dict[str, list[float]]
+            Observations from resetting the modules as well as the flushed balance log.
+
+        """
         return self._microgrid.reset()
 
     def run(self, max_steps=None):
@@ -58,6 +72,8 @@ class RuleBasedControl(PriorityListAlgo):
 
         Returns
         -------
+        log : pd.DataFrame
+            Results of running the rule-based control algorithm.
 
         """
         if max_steps is None:
@@ -74,6 +90,9 @@ class RuleBasedControl(PriorityListAlgo):
         return self._microgrid.get_log(as_frame=True)
 
     def get_empty_action(self):
+        """
+        :meta private:
+        """
         return self._microgrid.get_empty_action()
 
     @property
@@ -106,4 +125,13 @@ class RuleBasedControl(PriorityListAlgo):
 
     @property
     def priority_list(self):
+        """
+        Order in which to deploy controllable modules.
+
+        Returns
+        -------
+        priority_list: list of :class:`.PriorityListElement`
+            Priority list.
+
+        """
         return self._priority_list
