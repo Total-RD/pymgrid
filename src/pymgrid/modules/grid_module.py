@@ -312,6 +312,10 @@ class GridModule(BaseTimeSeriesMicrogridModule):
         return self.max_export * self.current_status
 
     @property
+    def marginal_cost(self):
+        return self.import_price.mean()
+
+    @property
     def is_source(self):
         return True
 

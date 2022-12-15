@@ -337,6 +337,10 @@ class BatteryModule(BaseMicrogridModule):
         return self.max_charge * self.efficiency
 
     @property
+    def marginal_cost(self):
+        return self.battery_cost_cycle
+
+    @property
     def is_source(self):
         return True
 
