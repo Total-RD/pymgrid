@@ -32,7 +32,7 @@ class RuleBasedControl(PriorityListAlgo):
         -------
 
         """
-        pass
+        return self._populate_action(self._priority_list)
 
     def run(self, max_steps=None):
         """
