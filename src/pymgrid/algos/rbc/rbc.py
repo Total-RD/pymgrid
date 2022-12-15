@@ -14,6 +14,7 @@ class RuleBasedControl(PriorityListAlgo):
     def __init__(self, microgrid):
         super().__init__()
         self._microgrid = deepcopy(microgrid)
+        self._priority_list = self._get_priority_list()
 
     def _get_priority_list(self):
         """
@@ -22,7 +23,7 @@ class RuleBasedControl(PriorityListAlgo):
         -------
 
         """
-        pass
+        return sorted(self._get_priority_lists()[0])
 
     def _get_action(self):
         """
@@ -75,3 +76,7 @@ class RuleBasedControl(PriorityListAlgo):
     @property
     def modules(self):
         return self._microgrid.modules
+
+    @property
+    def priority_list(self):
+        return self._priority_list
