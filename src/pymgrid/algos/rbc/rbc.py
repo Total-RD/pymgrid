@@ -12,19 +12,28 @@ class RuleBasedControl(PriorityListAlgo):
     microgrid : pymgrid.Microgrid
 
     """
-    def __init__(self, microgrid):
+    def __init__(self, microgrid, priority_list=None):
         super().__init__()
         self._microgrid = deepcopy(microgrid)
-        self._priority_list = self._get_priority_list()
+        self._priority_list = self._get_priority_list(priority_list)
 
-    def _get_priority_list(self):
+    def _get_priority_list(self, priority_list):
         """
         Given a microgrid, return the optimal order of module deployment.
         Returns
         -------
 
         """
-        return sorted(self._get_priority_lists()[0])
+        priority_lists = self.get_priority_lists()
+
+        if priority_list is None:
+            return sorted(priority_lists[0])
+
+        if priority_list not in priority_lists:
+            raise ValueError('Invalid priority list. Use RuleBasedControl.get_priority_lists to view all '
+                             'valid priority lists.')
+
+        return priority_list
 
     def _get_action(self):
         """
