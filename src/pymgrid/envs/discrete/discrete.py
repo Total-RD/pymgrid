@@ -52,7 +52,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
         :return:
         """
 
-        priority_lists = self._get_priority_lists()
+        priority_lists = self.get_priority_lists()
 
         n_actions = len(priority_lists)
 
