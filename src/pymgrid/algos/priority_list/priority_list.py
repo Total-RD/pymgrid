@@ -100,7 +100,7 @@ class PriorityListAlgo:
             min_production = module_to_deploy.next_min_production(module_action_number)
         except AttributeError:
             max_production, min_production = module_to_deploy.max_production, module_to_deploy.min_production
-        if min_production < remaining_load < max_production:
+        if min_production <= remaining_load <= max_production:
             # Module can meet demand
             module_production = remaining_load
         elif remaining_load < min_production:
