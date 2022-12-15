@@ -17,6 +17,7 @@ Heuristic Algorithm that deploys modules via a priority list.
 
     RuleBasedControl
 
+
 Model Predictive Control
 ------------------------
 
@@ -28,9 +29,17 @@ Algorithm that depends on a future forecast as well as a model of state transiti
 
     ModelPredictiveControl
 
+
 Reinforcement Learning
 ----------------------
 
 Algorithms that treat a microgrid as a Markov process, and train a black-box policy by repeated interactions with
 the environment. See :doc:`examples/rl-example` for an example of using reinforcement learning to train such an
 algorithm.
+
+..
+   HACK -- the point here is that we don't want this to appear in the output, but the autosummary should still generate the pages.
+   Copied from pandas docs.
+   .. autosummary::
+      :toctree: ../api/algos/priority_list/
+      priority_list.PriorityListElement
