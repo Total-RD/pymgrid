@@ -34,6 +34,9 @@ class RuleBasedControl(PriorityListAlgo):
         """
         return self._populate_action(self._priority_list)
 
+    def reset(self):
+        return self._microgrid.reset()
+
     def run(self, max_steps=None):
         """
         Get the priority list and then deploy on the microgrid for some number of steps.
