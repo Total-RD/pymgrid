@@ -8,6 +8,14 @@ class TestCase(unittest.TestCase):
         try:
             super().assertEqual(first, second, msg=msg)
         except (ValueError, AssertionError):
+            # array-like or pandas obj
+            try:
+                # convert pandas obj
+                first, second = first.values, second.values
+            except AttributeError:
+                # not a pandas obj
+                pass
+
             try:
                 np.testing.assert_equal(first, second, err_msg=msg if msg else '')
             except AssertionError as e:
