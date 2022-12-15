@@ -1,4 +1,5 @@
 from copy import deepcopy
+from tqdm import tqdm
 
 from pymgrid import Microgrid
 from pymgrid.algos.priority_list import PriorityListAlgo
@@ -50,7 +51,18 @@ class RuleBasedControl(PriorityListAlgo):
         -------
 
         """
-        pass
+        if max_steps is None:
+            max_steps = len(self.microgrid)
+
+        self.reset()
+
+        for _ in tqdm(range(max_steps)):
+            action = self._get_action()
+            _, _, done, _ = self._microgrid.run(action, normalized=False)
+            if done:
+                break
+
+        return self._microgrid.get_log(as_frame=True)
 
     def get_empty_action(self):
         return self._microgrid.get_empty_action()
