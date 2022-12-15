@@ -12,7 +12,18 @@ from pymgrid.algos.priority_list import PriorityListElement as Element
 
 class PriorityListAlgo:
 
-    def _get_priority_lists(self):
+    def get_priority_lists(self):
+        """
+        Get all of the priority lists for the microgrid.
+
+        A priority list is an order in which to deploy all of the controllable modules of the microgrid.
+
+        Returns
+        -------
+        priority_lists : list of list of :class:`.PriorityListElement`
+            List of all priority lists.
+
+        """
         controllable_sources = [Element(module.name, module.action_space.shape[0], n_actions, module.marginal_cost)
                                 for module in self.modules.controllable.sources.iterlist()
                                 for n_actions in range(module.action_space.shape[0])]
