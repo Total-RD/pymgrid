@@ -13,11 +13,11 @@ from pymgrid.algos.priority_list import PriorityListElement as Element
 class PriorityListAlgo:
 
     def _get_priority_lists(self):
-        controllable_sources = [Element(module.name, module.action_space.shape[0], n_actions)
+        controllable_sources = [Element(module.name, module.action_space.shape[0], n_actions, module.marginal_cost)
                                 for module in self.modules.controllable.sources.iterlist()
                                 for n_actions in range(module.action_space.shape[0])]
 
-        controllable_sources.extend([Element(module.name, module.action_space.shape[0], n_actions)
+        controllable_sources.extend([Element(module.name, module.action_space.shape[0], n_actions, module.marginal_cost)
                                      for module in self.modules.controllable.source_and_sinks.iterlist()
                                      for n_actions in range(module.action_space.shape[0])])
 

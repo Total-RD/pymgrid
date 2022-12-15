@@ -677,6 +677,19 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return NotImplemented
 
     @property
+    def marginal_cost(self):
+        """
+        Average marginal cost of producing with the module.
+
+        Returns
+        -------
+        marginal_cost : float
+            Average marginal cost.
+
+        """
+        return NotImplemented
+
+    @property
     def action_space(self):
         """
         Action spaces of the module.

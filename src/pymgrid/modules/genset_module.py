@@ -470,5 +470,9 @@ class GensetModule(BaseMicrogridModule):
         return np.array([1, self.running_max_production])
 
     @property
+    def marginal_cost(self):
+        return self.get_cost(1.0)
+
+    @property
     def is_source(self):
         return True
