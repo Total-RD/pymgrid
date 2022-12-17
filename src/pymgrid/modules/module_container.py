@@ -212,8 +212,9 @@ def get_subcontainers(modules):
         try:
             module_names[module_name] = (fixed_flex_controllable, source_sink_both)
         except KeyError:
-            raise NameError(f'Attempted to add module {module_name} of type {(fixed_flex_controllable, source_sink_both)}, '
-                            f'but there is an identically named module of type {module_names[module_name]}.')
+            raise NameError(
+                f'Attempted to add module {module_name} of type {(fixed_flex_controllable, source_sink_both)}, '
+                f'but there is an identically named module of type {module_names[module_name]}.')
 
         try:
             d[source_sink_both][module_name].append(module)
