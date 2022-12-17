@@ -500,7 +500,7 @@ class ModelPredictiveControl:
             Whether to display progress bar
         """
         if self.is_modular:
-            return self.run_mpc_on_modular(forecast_steps=forecast_steps, verbose=verbose)
+            return self._run_mpc_on_modular(forecast_steps=forecast_steps, verbose=verbose)
         else:
             return self.run_mpc_on_nonmodular(forecast_steps=forecast_steps, verbose=verbose)
 
@@ -521,7 +521,7 @@ class ModelPredictiveControl:
         sample = sample.reset_index(drop=True)
         return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
 
-    def run_mpc_on_modular(self, forecast_steps=None, verbose=False):
+    def _run_mpc_on_modular(self, forecast_steps=None, verbose=False):
 
         if forecast_steps is None:
             num_iter = len(self.microgrid) - self.horizon
