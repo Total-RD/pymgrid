@@ -490,7 +490,7 @@ class ModelPredictiveControl:
         if np.isnan(self.costs.value).any():
             raise RuntimeError('There are still nan values in self.costs.value, something is wrong')
 
-    def run(self, forecast_steps=None, verbose=False):
+    def run(self, max_steps=None, verbose=False):
         """
         Function that allows MPC to be run on self.microgrid by first parsing its data
 
@@ -500,9 +500,9 @@ class ModelPredictiveControl:
             Whether to display progress bar
         """
         if self.is_modular:
-            return self._run_mpc_on_modular(forecast_steps=forecast_steps, verbose=verbose)
+            return self._run_mpc_on_modular(forecast_steps=max_steps, verbose=verbose)
         else:
-            return self._run_mpc_on_nonmodular(forecast_steps=forecast_steps, verbose=verbose)
+            return self._run_mpc_on_nonmodular(forecast_steps=max_steps, verbose=verbose)
 
     def _run_mpc_on_nonmodular(self, forecast_steps=None, verbose=False):
         """
