@@ -225,77 +225,11 @@ def get_subcontainers(modules):
                         flex=flex,
                         controllable=controllable)
 
-    containers = {(ffs, source_sink_both): _ModuleSubContainer(modules_dict[ffs][source_sink_both])
+    containers = {(ffs, source_sink_both): Container(modules_dict[ffs][source_sink_both])
                   for ffs in ('fixed', 'flex', 'controllable')
                   for source_sink_both in source_sink_keys}
 
     return containers
-
-
-class _ModuleSubContainer(UserDict):
-    """
-    One of these for fixed sources, flex sources, etc.
-    Do not initialize this directly
-    """
-    def __init__(self, modules_dict):
-        fixed_or_flex, source_or_sink = self._check_modules(modules_dict)
-        # self._set_module_attrs(modules_dict)
-        super().__init__(**modules_dict)
-        self._fixed_or_flex = fixed_or_flex
-        self._source_or_sink = source_or_sink
-
-    def _check_modules(self, modules_dict):
-        fixed_or_flex = None
-        source_or_sink = None
-
-        def _get_source_sink(module):
-            if module.is_source:
-                if module.is_sink:
-                    return 'source_and_sink'
-                return 'source'
-            assert module.is_sink
-            return 'sink'
-
-        for name, module_list in modules_dict.items():
-            for module in module_list:
-                if fixed_or_flex is not None and module.__class__.module_type[1] != fixed_or_flex:
-                    raise ValueError('Subcontainer must only contain fixed or flex modules, not both.'
-                                     f'Module {name} of type {module.__class__.module_type[1]} conflicts with previous modules'
-                                     f'of type {fixed_or_flex}')
-                if source_or_sink is not None and _get_source_sink(module) != source_or_sink:
-                    raise ValueError('Subcontainer must be one of sources, sinks, or sources and sinks, but not combinations.'
-                                     f'Module {name} of type {_get_source_sink(module)} conflicts with previous modules'
-                                     f'of type {source_or_sink}')
-
-                fixed_or_flex = module.__class__.module_type[1]
-                source_or_sink = _get_source_sink(module)
-
-        return fixed_or_flex, source_or_sink
-
-    def module_list(self):
-        l = []
-        for _, values in self.data.items():
-            l.extend(values)
-        return l
-
-    def iterlist(self):
-        for module in self.module_list():
-            yield module
-
-    def iterdict(self):
-        for name, modules in self.items():
-            yield name, modules
-
-    def __len__(self):
-        return sum([len(v) for k, v in self.items()])
-
-    def __getattr__(self, item):
-        if item == 'data':
-            raise AttributeError(item)
-        try:
-            return self.__getitem__(item)
-        except KeyError:
-            raise AttributeError(item)
 
 
 class ModuleList(UserList):
