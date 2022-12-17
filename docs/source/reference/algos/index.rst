@@ -34,8 +34,10 @@ Reinforcement Learning
 ----------------------
 
 Algorithms that treat a microgrid as a Markov process, and train a black-box policy by repeated interactions with
-the environment. See :doc:`../../examples/rl-example` for an example of using reinforcement learning to train such an
-algorithm.
+the environment. See :doc:`here <../../examples/rl-example>` for an example of using
+reinforcement learning to train such an algorithm.
+
+
 
 ..
    HACK -- the point here is that we don't want this to appear in the output, but the autosummary should still generate the pages.
