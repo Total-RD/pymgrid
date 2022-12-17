@@ -61,7 +61,7 @@ class RuleBasedControl(PriorityListAlgo):
         """
         return self._microgrid.reset()
 
-    def run(self, max_steps=None):
+    def run(self, max_steps=None, verbose=False):
         """
         Get the priority list and then deploy on the microgrid for some number of steps.
 
@@ -69,6 +69,9 @@ class RuleBasedControl(PriorityListAlgo):
         ---------
         max_steps : int or None, default None
             Maximum number of RBC steps. If None, run until the microgrid terminates.
+
+        verbose : bool, default False
+            Whether to display a progress bar.
 
         Returns
         -------
@@ -81,7 +84,7 @@ class RuleBasedControl(PriorityListAlgo):
 
         self.reset()
 
-        for _ in tqdm(range(max_steps)):
+        for _ in tqdm(range(max_steps), desc="RBC Progress", disable=(not verbose)):
             action = self._get_action()
             _, _, done, _ = self._microgrid.run(action, normalized=False)
             if done:
