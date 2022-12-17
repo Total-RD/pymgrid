@@ -238,3 +238,6 @@ class ModuleList(UserList):
         if len(self) != 1:
             raise ValueError("Can only convert a ModuleList of length one to a scalar")
         return self[0]
+
+    def module_list(self):
+        return self
