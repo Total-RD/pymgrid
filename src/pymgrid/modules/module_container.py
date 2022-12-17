@@ -19,18 +19,45 @@ class Container(UserDict):
         return self
 
     def to_list(self):
+        """
+        Get the modules as a list.
+
+        Returns
+        -------
+        l : list of modules
+            List of modules
+
+        """
         l = []
         for _, raw_container in self.containers.items():
             l.extend(raw_container.to_list())
         return l
 
     def to_dict(self):
+        """
+        Get the modules as a dictionary.
+
+        Returns
+        -------
+        d : dict[str, module]
+            Dictionary with module names as keys, modules as tuples.
+
+        """
         d = dict()
         for k, raw_container in self.containers.items():
             d.update(raw_container)
         return d
 
     def to_tuples(self):
+        """
+        Get the modules in (name, module) pairs.
+
+        Returns
+        -------
+        tups : list of tuples: (name, module)
+            Module names and modules.
+
+        """
         l = []
         for name, modules in self.iterdict():
             tups = list(zip([name] * len(modules), modules))
@@ -38,14 +65,35 @@ class Container(UserDict):
         return l
 
     def iterlist(self):
+        """
+        Iterable of the container's modules as a list.
+
+        Returns
+        -------
+        iter : generator
+            Iterator of modules.
+
+        """
         for module in self.to_list():
             yield module
 
     def iterdict(self):
+        """
+        Iterable of the container's modules as a dict.
+
+        Returns
+        -------
+        iter : generator
+            Iterator of (name, module) pairs.
+
+        """
         for name, modules in self.to_dict().items():
             yield name, modules
 
     def dir_additions(self):
+        """
+        :meta private:
+        """
         additions = set(self.keys())
         for x in self.values():
             try:
@@ -126,7 +174,6 @@ class ModuleContainer(Container):
         Each level can be iterated on, both by calling .items() or by iterating through the modules directly with .iterlist()
         For example, container.sinks.iterlist() returns an iterator of all the sinks, without their names.
 
-
     """
     def __init__(self, modules):
         """
@@ -170,20 +217,37 @@ class ModuleContainer(Container):
 
 class ModuleList(UserList):
     def item(self):
+        """
+        Get the value of a singleton list.
+
+        Returns
+        -------
+        module : BaseMicrogridModule
+            Item in a singleton list.
+
+        Raises
+        ------
+        ValueError :
+            If there is more than one item in the list.
+
+        """
         if len(self) != 1:
             raise ValueError("Can only convert a ModuleList of length one to a scalar")
         return self[0]
 
     def to_list(self):
+        """
+        :meta private:
+
+        Function to be compatible with Container API.
+
+        """
         return self
 
 
 def get_subcontainers(modules):
     """
-
-    :return: List[Tuple]
-        3-element tuples of (fixed_flex_controllable, source_or_sink, container)
-
+    :meta private:
     """
     source_sink_keys = ('sources', 'sinks', 'source_and_sinks')
     fixed = {k: dict() for k in source_sink_keys}
