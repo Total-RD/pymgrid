@@ -11,3 +11,4 @@ This page contains an overview of all public *pymgrid* objects and functions.
    forecast/index
    envs/index
    algos/index
+   general/index
