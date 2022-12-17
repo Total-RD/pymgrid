@@ -19,46 +19,48 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+"""
+Attributes:
+--------------
+microgrid: Union[Microgrid.Microgrid, modular_microgrid.ModularMicrogrid]
+    The underlying microgrid
+
+horizon: int
+    The forecast horizon being used in MPC
+
+has_genset: bool
+    Whether the microgrid has a genset or not
+
+p_vars: cvxpy.Variable, shape ((7+self.has_genset)*horizon,)
+    Vector of all of the controls, at all timesteps. See P in pymgrid paper for details.
+
+u_genset: None or cvxpy.Variable, shape (self.horizon,)
+    Boolean vector variable denoting the status of the genset (on or off) at each timestep if
+    the genset exists. If not genset, u_genset = None.
+
+costs: cvxpy.Parameter, shape ((7+self.has_genset)*self.horizon,)
+    Parameter vector of all of the respective costs, at all timesteps. See C in pymgrid paper for details.
+
+equality_rhs: cvxpy.Parameter, shape (2 * self.horizon,)
+    Parameter vector contraining the RHS of the equality constraint equation. See b in pymgrid paper for details.
+
+inequality_rhs: cvxpy.Parameter, shape (8 * self.horizon,)
+    Parameter vector contraining the RHS of the inequality constraint equation. See d in pymgrid paper for details.
+
+problem: cvxpy.problems.problem.Problem
+    The constraint optimization problem to solve
+"""
+
 
 class ModelPredictiveControl:
     """
-    A class to run Model Predictive Control using the model outlined in the pymgrid paper
+    Run a model predictive control algorithm on a microgrid.
+
+
 
     Parameters:
         microgrid : pymgrid.Microgrid
             The underlying microgrid on which MPC will be run
-
-    Attributes:
-    --------------
-    microgrid: Union[Microgrid.Microgrid, modular_microgrid.ModularMicrogrid]
-        The underlying microgrid
-
-    horizon: int
-        The forecast horizon being used in MPC
-
-    has_genset: bool
-        Whether the microgrid has a genset or not
-
-    p_vars: cvxpy.Variable, shape ((7+self.has_genset)*horizon,)
-        Vector of all of the controls, at all timesteps. See P in pymgrid paper for details.
-
-    u_genset: None or cvxpy.Variable, shape (self.horizon,)
-        Boolean vector variable denoting the status of the genset (on or off) at each timestep if
-        the genset exists. If not genset, u_genset = None.
-
-    costs: cvxpy.Parameter, shape ((7+self.has_genset)*self.horizon,)
-        Parameter vector of all of the respective costs, at all timesteps. See C in pymgrid paper for details.
-
-    equality_rhs: cvxpy.Parameter, shape (2 * self.horizon,)
-        Parameter vector contraining the RHS of the equality constraint equation. See b in pymgrid paper for details.
-
-    inequality_rhs: cvxpy.Parameter, shape (8 * self.horizon,)
-        Parameter vector contraining the RHS of the inequality constraint equation. See d in pymgrid paper for details.
-
-    problem: cvxpy.problems.problem.Problem
-        The constraint optimization problem to solve
-
-
     """
     def __init__(self, microgrid, solver=None):
         self.microgrid, self.is_modular, self.microgrid_module_names = self._verify_microgrid(microgrid)
@@ -205,7 +207,6 @@ class ModelPredictiveControl:
             cost_co2,
             genset_co2
         )
-
 
     def _create_problem(self, eta, battery_capacity, fuel_cost, cost_battery_cycle, cost_loss_load,
                         p_genset_min, p_genset_max, cost_co2, genset_co2):
