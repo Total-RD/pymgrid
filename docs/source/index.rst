@@ -8,6 +8,7 @@ pymgrid documentation
 *********************
 
 **Version**: |version|
+
 **Maintainer**: Avishai Halev
 
 *pymgrid* is a Python library to simulate tertiary control of electrical microgrids. *pymgrid* allows
