@@ -82,7 +82,6 @@ class Container(UserDict):
         except TypeError:
             return super().__repr__()
 
-
     def __dir__(self):
         rv = set(super().__dir__())
         rv = rv | self.dir_additions()
