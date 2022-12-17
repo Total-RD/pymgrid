@@ -625,7 +625,7 @@ class Microgrid(yaml.YAMLObject):
         """
         :meta private:
         """
-        data = {"modules": self._modules.module_tuples(),
+        data = {"modules": self._modules.to_tuples(),
                 "balance_log": self._balance_logger.serialize()}
         return dump_data(data, dumper_stream, self.yaml_tag)
 
@@ -702,7 +702,7 @@ class Microgrid(yaml.YAMLObject):
             return cls.load(f)
 
     def __getnewargs__(self):
-        return (self.module_tuples(), )
+        return (self.modules.to_tuples(), )
 
     def __len__(self):
         """
