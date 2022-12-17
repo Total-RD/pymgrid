@@ -492,7 +492,7 @@ class ModelPredictiveControl:
 
     def run(self, max_steps=None, verbose=False):
         """
-        Get the priority list and then deploy on the microgrid for some number of steps.
+        Run the model prediction control algorithm.
 
         Parameters
         ---------
