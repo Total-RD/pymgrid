@@ -56,11 +56,27 @@ class ModelPredictiveControl:
     """
     Run a model predictive control algorithm on a microgrid.
 
+    In model predictive control, a model of the microgrid is used to predict the microgrid's response to taking
+    certain actions. Armed with this prediction model, we can predict the microgrid's response to simulating forward
+    a certain number of steps (the forecast "horizon"). This results in an objective function -- with the objective
+    being the cost of running the microgrid over the entire horizon.
 
+    Given the solution of this optimization problem, we apply the control we found at the current step (ignoring the
+    rest) and then repeat.
 
-    Parameters:
-        microgrid : pymgrid.Microgrid
-            The underlying microgrid on which MPC will be run
+    The specifics of the model implementation can be seen in the accompanying paper.
+
+    .. warning::
+       This implementation of model predictive control does not support arbitrary microgrid components. One each
+       of load, renewable, battery, grid, and genset are allowed. Microgrids are not required to have both grid and
+       genset but they must have one; they also must have one each of load, renewable, and battery.
+
+    Parameters
+    ----------
+
+    microgrid : :class:`pymgrid.Microgrid`
+        Microgrid on which to run model predictive control.
+
     """
     def __init__(self, microgrid, solver=None):
         self.microgrid, self.is_modular, self.microgrid_module_names = self._verify_microgrid(microgrid)
