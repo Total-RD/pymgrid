@@ -30,7 +30,7 @@ class Container(UserDict):
             d.update(raw_container)
         return d
 
-    def module_tuples(self):
+    def to_tuples(self):
         l = []
         for name, modules in self.iterdict():
             tups = list(zip([name] * len(modules), modules))
