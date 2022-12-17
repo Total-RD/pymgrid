@@ -419,7 +419,7 @@ class Microgrid(yaml.YAMLObject):
 
         """
         horizons = []
-        for module in self.iterlist():
+        for module in self._modules.iterlist():
             try:
                 horizons.append(module.forecast_horizon)
             except AttributeError:
