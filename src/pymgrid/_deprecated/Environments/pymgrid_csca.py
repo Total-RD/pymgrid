@@ -406,7 +406,7 @@ class ContinuousMicrogridEnv(MicrogridEnv):
             old_horizon = self.microgrid.horizon
             self.microgrid.horizon = 24
             MPC = ModelPredictiveControl(self.microgrid)
-            mpc_output = MPC.run_mpc_on_microgrid(forecast_steps=1000)
+            mpc_output = MPC.run(forecast_steps=1000)
             self.microgrid.horizon = old_horizon
             if self.has_genset:
 

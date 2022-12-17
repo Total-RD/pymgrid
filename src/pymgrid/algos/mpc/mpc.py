@@ -490,7 +490,7 @@ class ModelPredictiveControl:
         if np.isnan(self.costs.value).any():
             raise RuntimeError('There are still nan values in self.costs.value, something is wrong')
 
-    def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False, **kwargs):
+    def run(self, forecast_steps=None, verbose=False):
         """
         Function that allows MPC to be run on self.microgrid by first parsing its data
 
