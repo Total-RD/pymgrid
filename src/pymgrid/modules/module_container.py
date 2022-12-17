@@ -136,17 +136,17 @@ class ModuleContainer(Container):
             and second element is the module.
 
         """
-        self._raw_containers = get_subcontainers(modules)
+        self._containers = get_subcontainers(modules)
         midlevels = self._set_midlevel()
         self._types_by_name = self._get_types_by_name()
         super().__init__(**midlevels)
 
     def _get_types_by_name(self):
-        return {name: container_type for container_type, container in self._raw_containers.items() for name in container}
+        return {name: container_type for container_type, container in self._containers.items() for name in container}
 
     def _set_midlevel(self):
         midlevels = dict()
-        for key, subcontainer in self._raw_containers.items():
+        for key, subcontainer in self._containers.items():
             fixed_or_flex, source_sink_both = key
 
             if fixed_or_flex in midlevels:
@@ -158,107 +158,15 @@ class ModuleContainer(Container):
                 midlevels[source_sink_both][fixed_or_flex] = subcontainer
             else:
                 midlevels[source_sink_both] = {fixed_or_flex: subcontainer}
-        midlevels = {k: _ModulePointer(**v) for k, v in midlevels.items()}
+        midlevels = {k: Container(**v) for k, v in midlevels.items()}
         return midlevels
-
-    def module_list(self):
-        l = []
-        for _, raw_container in self._raw_containers.items():
-            l.extend(raw_container.module_list())
-        return l
-
-    def module_dict(self):
-        d = dict()
-        for k, raw_container in self._raw_containers.items():
-            d.update(raw_container)
-        return d
-
-    def module_tuples(self):
-        l = []
-        for name, modules in self.iterdict():
-            tups = list(zip([name]*len(modules), modules))
-            l.extend(tups)
-        return l
-
-    def iterlist(self):
-        for module in self.module_list():
-            yield module
-
-    def iterdict(self):
-        for name, modules in self.module_dict().items():
-            yield name, modules
 
     def names(self):
         return list(self._types_by_name.keys())
 
-    def __getitem__(self, item):
-        if item == 'data':
-            raise KeyError
-        try:
-            return super().__getitem__(item)
-        except KeyError:
-            try:
-                return self._raw_containers[self._types_by_name[item]][item]
-            except KeyError:
-                return self._raw_containers[item]
-
-    def __getattr__(self, item):
-        try:
-            return self.__getitem__(item)
-        except KeyError:
-            raise AttributeError(item)
-
-    def __len__(self):
-        return sum(len(v) for k, v in self._raw_containers.items())
-
-
-class _ModulePointer(UserDict):
-    """
-    Points to fixed, flex, source, sink, etc.
-    Do not initialize this directly
-    """
-    def __getattr__(self, item):
-        if item.startswith("__"):
-            raise AttributeError(item)
-        try:
-            return self.__getitem__(item)
-        except KeyError:
-            raise AttributeError(item)
-
-    def module_list(self):
-        l = []
-        for _, raw_container in self.data.items():
-            l.extend(raw_container.module_list())
-        return l
-
-    def module_dict(self):
-        d = dict()
-        for k, raw_container in self.items():
-            d.update(raw_container)
-        return d
-
-    def iterdict(self):
-        for name, modules in self.module_dict().items():
-            yield name, modules
-
-    def iterlist(self):
-        for module in self.module_list():
-            yield module
-
-    def __getitem__(self, item):
-        try:
-            return self.data[item]
-        except KeyError:
-            try:
-                return self.module_dict()[item]
-            except KeyError:
-                raise KeyError(item)
-
-    def __len__(self):
-        return sum(len(v) for k, v in self.items())
-
-    def __repr__(self):
-        return json.dumps(self.module_dict(), indent=2, default=str)
+    @property
+    def containers(self):
+        return self._containers
 
 
 def get_subcontainers(modules):
