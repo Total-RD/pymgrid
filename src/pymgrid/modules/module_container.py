@@ -1,12 +1,103 @@
 import json
+
 from collections import UserDict, UserList
 from pymgrid.modules.base import BaseMicrogridModule
 
 
-class ModuleContainer(UserDict):
+class Container(UserDict):
+
+    @property
+    def containers(self):
+        """
+        View of this container's containers.
+
+        Returns
+        -------
+        containers : dict-like
+            View of containers.
+        """
+        return self
+
+    def module_list(self):
+        l = []
+        for _, raw_container in self.containers.items():
+            l.extend(raw_container.module_list())
+        return l
+
+    def module_dict(self):
+        d = dict()
+        for k, raw_container in self.containers.items():
+            d.update(raw_container)
+        return d
+
+    def module_tuples(self):
+        l = []
+        for name, modules in self.iterdict():
+            tups = list(zip([name] * len(modules), modules))
+            l.extend(tups)
+        return l
+
+    def iterlist(self):
+        for module in self.module_list():
+            yield module
+
+    def iterdict(self):
+        for name, modules in self.module_dict().items():
+            yield name, modules
+
+    def dir_additions(self):
+        additions = set(self.keys())
+        for x in self.values():
+            try:
+                additions.update(x.dir_additions())
+            except AttributeError:
+                pass
+        return additions
+
+    def __getitem__(self, item):
+        if item == 'data' or item == 'module_dict':
+            raise KeyError(item)
+        try:
+            return self.data[item]
+        except KeyError:
+            try:
+                return self.module_dict()[item]
+            except KeyError:
+                raise KeyError(item)
+
+    def __getattr__(self, item):
+        if item == 'data' or item.startswith('__') or item not in dir(self):
+            raise AttributeError(item)
+        try:
+            return self[item]
+        except KeyError:
+            raise AttributeError(item)
+
+    def __len__(self):
+        return sum(len(v) for k, v in self.containers.items())
+
+    def __repr__(self):
+        try:
+            return json.dumps(self.module_dict(), indent=2, default=str)
+        except TypeError:
+            return super().__repr__()
+
+
+    def __dir__(self):
+        rv = set(super().__dir__())
+        rv = rv | self.dir_additions()
+        return sorted(rv)
+
+
+class ModuleContainer(Container):
+    """
+    Container of modules.
+
+    Allows for indexing and viewing of a microgrids module's in various ways.
+    """
     """
     Container of modules. Allows for indexing/getting of the modules in various ways.
-    Modules are stored at the lowest level: self._raw_containers[('fixed', 'source')] = [Genset, Grid], for example.
+    Modules are stored at the lowest level: self._containers[('fixed', 'source')] = [Genset, Grid], for example.
     These modules, however, can be accessed in many different ways:
 
         container.fixed
