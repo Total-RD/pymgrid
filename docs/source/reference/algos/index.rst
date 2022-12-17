@@ -40,6 +40,9 @@ algorithm.
 ..
    HACK -- the point here is that we don't want this to appear in the output, but the autosummary should still generate the pages.
    Copied from pandas docs.
+
+   .. currentmodule:: pymgrid.algos.priority_list
+
    .. autosummary::
       :toctree: ../api/algos/priority_list/
-      priority_list.PriorityListElement
+      PriorityListElement
