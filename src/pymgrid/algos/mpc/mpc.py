@@ -490,186 +490,6 @@ class ModelPredictiveControl:
         if np.isnan(self.costs.value).any():
             raise RuntimeError('There are still nan values in self.costs.value, something is wrong')
 
-    def set_and_solve(self,
-                      load_vector,
-                      pv_vector,
-                      grid_vector,
-                      import_price,
-                      export_price,
-                      e_max,
-                      e_min,
-                      p_max_charge,
-                      p_max_discharge,
-                      p_max_import,
-                      p_max_export,
-                      soc_0,
-                      p_genset_max,
-                      cost_co2,
-                      grid_co2,
-                      genset_co2,
-                      iteration=None,
-                      total_iterations=None,
-                      return_steps=0):
-        """
-        Sets the parameters in the problem and then solves the problem.
-            Specifically, sets the right-hand sides b and d from the paper of the
-            equality and inequality equations, respectively, and the costs vector by calling _set_parameters, then
-            solves the problem and returns a control dictionary
-
-
-        :param load_vector: np.ndarray, shape (self.horizon,)
-            load values over the horizon
-        :param pv_vector: np.ndarray, shape (self.horizon,)
-            pv values over the horizon
-        :param grid_vector: np.ndarray, shape (self.horizon,)
-            grid values (boolean) over the horizon
-        :param import_price: np.ndarray, shape (self.horizon,)
-            import prices over the horizon
-        :param export_price: np.ndarray, shape (self.horizon,)
-            export prices over the horizon
-        :param e_max: float
-            maximum state of charge of the battery
-        :param e_min: float
-            minimum state of charge of the battery
-        :param p_max_charge: float
-            maximum amount of power the battery can charge in one timestep
-        :param p_max_discharge: float
-            maximum amount of power the battery can discharge in one timestep
-        :param p_max_import: float
-            maximum amount of power that can be imported in one timestep
-        :param p_max_export: float
-            maximum amount of power that can be exported in one timestep
-        :param soc_0: float
-            state of charge of the battery at the timestep just preceding the current horizon
-        :param p_genset_max: float
-            maximum amount of production of the genset
-        :param iteration: int
-            Current iteration, used for verbosity
-        :param total_iterations:
-            Total iterations, used for verbosity
-        :return:
-            control_dict, dict
-            dictionary of the controls of the first timestep, as MPC does.
-        """
-
-        self._set_parameters(load_vector, pv_vector, grid_vector, import_price, export_price,
-                             e_max, e_min, p_max_charge, p_max_discharge,
-                             p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
-
-        if mosek is not None:
-            try:
-                self.problem.solve(warm_start=True, solver=self._solver)
-            except mosek.Error as e:
-                self._solver = self._get_solver(mosek_failure=e)
-                self.problem.solve(warm_start=True, solver=self._solver)
-        else:
-            self.problem.solve(warm_start=True, solver=self._solver)
-
-        if self.problem.status == 'infeasible':
-            warn("Infeasible problem")
-
-        if self.is_modular:
-            return self._extract_modular_control(load_vector)
-        else:
-            return self._extract_control_dict(return_steps, pv_vector, load_vector)
-
-    def _extract_control_dict(self, return_steps, pv_vector, load_vector):
-        if return_steps == 0:
-            if self.has_genset:
-                control_dict = {'battery_charge': self.p_vars.value[3],
-                                'battery_discharge': self.p_vars.value[4],
-                                'genset': self.p_vars.value[0],
-                                'grid_import': self.p_vars.value[1],
-                                'grid_export': self.p_vars.value[2],
-                                'loss_load': self.p_vars.value[6],
-                                'pv_consummed': pv_vector[0] - self.p_vars.value[5],
-                                'pv_curtailed': self.p_vars.value[5],
-                                'load': load_vector[0],
-                                'pv': pv_vector[0]}
-            else:
-                control_dict = {'battery_charge': self.p_vars.value[2],
-                                'battery_discharge': self.p_vars.value[3],
-                                'grid_import': self.p_vars.value[0],
-                                'grid_export': self.p_vars.value[1],
-                                'loss_load': self.p_vars.value[5],
-                                'pv_consummed': pv_vector[0] - self.p_vars.value[4],
-                                'pv_curtailed': self.p_vars.value[4],
-                                'load': load_vector[0],
-                                'pv': pv_vector[0]}
-
-            return control_dict
-
-        else:
-            if return_steps > self.horizon:
-                raise ValueError('return_steps cannot be greater than horizon')
-
-            control_dicts = []
-
-            if self.has_genset:
-                for j in range(return_steps):
-                    start_index = j*8
-
-                    control_dict = {'battery_charge': self.p_vars.value[start_index+3],
-                                    'battery_discharge': self.p_vars.value[start_index+4],
-                                    'genset': self.p_vars.value[start_index],
-                                    'grid_import': self.p_vars.value[start_index+1],
-                                    'grid_export': self.p_vars.value[start_index+2],
-                                    'loss_load': self.p_vars.value[start_index+6],
-                                    'pv_consummed': pv_vector[j] - self.p_vars.value[start_index+5],
-                                    'pv_curtailed': self.p_vars.value[start_index+5],
-                                    'load': load_vector[j],
-                                    'pv': pv_vector[j]}
-
-                    control_dicts.append(control_dict)
-
-            else:
-                for j in range(return_steps):
-                    start_index = j * 7
-
-                    control_dict = {'battery_charge': self.p_vars.value[start_index + 2],
-                                    'battery_discharge': self.p_vars.value[start_index + 3],
-                                    'grid_import': self.p_vars.value[start_index],
-                                    'grid_export': self.p_vars.value[start_index + 1],
-                                    'loss_load': self.p_vars.value[start_index + 5],
-                                    'pv_consummed': pv_vector[j] - self.p_vars.value[start_index + 4],
-                                    'pv_curtailed': self.p_vars.value[start_index + 4],
-                                    'load': load_vector[j],
-                                    'pv': pv_vector[j]}
-
-                    control_dicts.append(control_dict)
-
-            return control_dicts
-
-    def _extract_modular_control(self, load_vector):
-        control = dict()
-        control_vals = list(self.p_vars.value)
-
-        if self.has_genset:
-            genset = control_vals.pop(0)
-            genset_status = self.u_genset.value[0]
-            control[self.microgrid_module_names["genset"]] = [np.array([genset_status, genset])]
-
-        battery_charge, battery_discharge = control_vals[2:4]
-        battery_diff = battery_discharge - battery_charge
-
-        grid_import, grid_export = control_vals[0:2]
-        grid_diff = grid_import - grid_export
-
-        if battery_charge > 0 and battery_discharge > 0:
-            warn(f"battery_charge={battery_charge} and battery_discharge={battery_discharge} are both nonzero. "
-                 f"Flattening to the difference, leading to a {'discharge' if battery_diff > 0 else 'charge'} of {battery_diff}.")
-
-        if grid_import > 0 and grid_export > 0:
-            warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
-                 f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
-
-        if "grid" in self.microgrid_module_names.keys():
-            control.update({self.microgrid_module_names["grid"]: grid_diff})
-
-        control.update({self.microgrid_module_names["battery"]: battery_diff})
-
-        return control
-
     def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False, **kwargs):
         """
         Function that allows MPC to be run on self.microgrid by first parsing its data
@@ -871,6 +691,186 @@ class ModelPredictiveControl:
             print('Total time: {} minutes'.format(round((time.time()-t0)/60, 2)))
 
         return ControlOutput(names, dfs, 'mpc')
+
+    def set_and_solve(self,
+                      load_vector,
+                      pv_vector,
+                      grid_vector,
+                      import_price,
+                      export_price,
+                      e_max,
+                      e_min,
+                      p_max_charge,
+                      p_max_discharge,
+                      p_max_import,
+                      p_max_export,
+                      soc_0,
+                      p_genset_max,
+                      cost_co2,
+                      grid_co2,
+                      genset_co2,
+                      iteration=None,
+                      total_iterations=None,
+                      return_steps=0):
+        """
+        Sets the parameters in the problem and then solves the problem.
+            Specifically, sets the right-hand sides b and d from the paper of the
+            equality and inequality equations, respectively, and the costs vector by calling _set_parameters, then
+            solves the problem and returns a control dictionary
+
+
+        :param load_vector: np.ndarray, shape (self.horizon,)
+            load values over the horizon
+        :param pv_vector: np.ndarray, shape (self.horizon,)
+            pv values over the horizon
+        :param grid_vector: np.ndarray, shape (self.horizon,)
+            grid values (boolean) over the horizon
+        :param import_price: np.ndarray, shape (self.horizon,)
+            import prices over the horizon
+        :param export_price: np.ndarray, shape (self.horizon,)
+            export prices over the horizon
+        :param e_max: float
+            maximum state of charge of the battery
+        :param e_min: float
+            minimum state of charge of the battery
+        :param p_max_charge: float
+            maximum amount of power the battery can charge in one timestep
+        :param p_max_discharge: float
+            maximum amount of power the battery can discharge in one timestep
+        :param p_max_import: float
+            maximum amount of power that can be imported in one timestep
+        :param p_max_export: float
+            maximum amount of power that can be exported in one timestep
+        :param soc_0: float
+            state of charge of the battery at the timestep just preceding the current horizon
+        :param p_genset_max: float
+            maximum amount of production of the genset
+        :param iteration: int
+            Current iteration, used for verbosity
+        :param total_iterations:
+            Total iterations, used for verbosity
+        :return:
+            control_dict, dict
+            dictionary of the controls of the first timestep, as MPC does.
+        """
+
+        self._set_parameters(load_vector, pv_vector, grid_vector, import_price, export_price,
+                             e_max, e_min, p_max_charge, p_max_discharge,
+                             p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
+
+        if mosek is not None:
+            try:
+                self.problem.solve(warm_start=True, solver=self._solver)
+            except mosek.Error as e:
+                self._solver = self._get_solver(mosek_failure=e)
+                self.problem.solve(warm_start=True, solver=self._solver)
+        else:
+            self.problem.solve(warm_start=True, solver=self._solver)
+
+        if self.problem.status == 'infeasible':
+            warn("Infeasible problem")
+
+        if self.is_modular:
+            return self._extract_modular_control(load_vector)
+        else:
+            return self._extract_control_dict(return_steps, pv_vector, load_vector)
+
+    def _extract_control_dict(self, return_steps, pv_vector, load_vector):
+        if return_steps == 0:
+            if self.has_genset:
+                control_dict = {'battery_charge': self.p_vars.value[3],
+                                'battery_discharge': self.p_vars.value[4],
+                                'genset': self.p_vars.value[0],
+                                'grid_import': self.p_vars.value[1],
+                                'grid_export': self.p_vars.value[2],
+                                'loss_load': self.p_vars.value[6],
+                                'pv_consummed': pv_vector[0] - self.p_vars.value[5],
+                                'pv_curtailed': self.p_vars.value[5],
+                                'load': load_vector[0],
+                                'pv': pv_vector[0]}
+            else:
+                control_dict = {'battery_charge': self.p_vars.value[2],
+                                'battery_discharge': self.p_vars.value[3],
+                                'grid_import': self.p_vars.value[0],
+                                'grid_export': self.p_vars.value[1],
+                                'loss_load': self.p_vars.value[5],
+                                'pv_consummed': pv_vector[0] - self.p_vars.value[4],
+                                'pv_curtailed': self.p_vars.value[4],
+                                'load': load_vector[0],
+                                'pv': pv_vector[0]}
+
+            return control_dict
+
+        else:
+            if return_steps > self.horizon:
+                raise ValueError('return_steps cannot be greater than horizon')
+
+            control_dicts = []
+
+            if self.has_genset:
+                for j in range(return_steps):
+                    start_index = j*8
+
+                    control_dict = {'battery_charge': self.p_vars.value[start_index+3],
+                                    'battery_discharge': self.p_vars.value[start_index+4],
+                                    'genset': self.p_vars.value[start_index],
+                                    'grid_import': self.p_vars.value[start_index+1],
+                                    'grid_export': self.p_vars.value[start_index+2],
+                                    'loss_load': self.p_vars.value[start_index+6],
+                                    'pv_consummed': pv_vector[j] - self.p_vars.value[start_index+5],
+                                    'pv_curtailed': self.p_vars.value[start_index+5],
+                                    'load': load_vector[j],
+                                    'pv': pv_vector[j]}
+
+                    control_dicts.append(control_dict)
+
+            else:
+                for j in range(return_steps):
+                    start_index = j * 7
+
+                    control_dict = {'battery_charge': self.p_vars.value[start_index + 2],
+                                    'battery_discharge': self.p_vars.value[start_index + 3],
+                                    'grid_import': self.p_vars.value[start_index],
+                                    'grid_export': self.p_vars.value[start_index + 1],
+                                    'loss_load': self.p_vars.value[start_index + 5],
+                                    'pv_consummed': pv_vector[j] - self.p_vars.value[start_index + 4],
+                                    'pv_curtailed': self.p_vars.value[start_index + 4],
+                                    'load': load_vector[j],
+                                    'pv': pv_vector[j]}
+
+                    control_dicts.append(control_dict)
+
+            return control_dicts
+
+    def _extract_modular_control(self, load_vector):
+        control = dict()
+        control_vals = list(self.p_vars.value)
+
+        if self.has_genset:
+            genset = control_vals.pop(0)
+            genset_status = self.u_genset.value[0]
+            control[self.microgrid_module_names["genset"]] = [np.array([genset_status, genset])]
+
+        battery_charge, battery_discharge = control_vals[2:4]
+        battery_diff = battery_discharge - battery_charge
+
+        grid_import, grid_export = control_vals[0:2]
+        grid_diff = grid_import - grid_export
+
+        if battery_charge > 0 and battery_discharge > 0:
+            warn(f"battery_charge={battery_charge} and battery_discharge={battery_discharge} are both nonzero. "
+                 f"Flattening to the difference, leading to a {'discharge' if battery_diff > 0 else 'charge'} of {battery_diff}.")
+
+        if grid_import > 0 and grid_export > 0:
+            warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
+                 f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
+
+        if "grid" in self.microgrid_module_names.keys():
+            control.update({self.microgrid_module_names["grid"]: grid_diff})
+
+        control.update({self.microgrid_module_names["battery"]: battery_diff})
+
+        return control
 
     def _get_modular_state_values(self):
 
