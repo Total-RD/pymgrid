@@ -617,6 +617,13 @@ class Microgrid(yaml.YAMLObject):
         """
         add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
+
+        if 'scenario' in mapping:
+            microgrid_number = mapping.pop('scenario')
+            if len(mapping):
+                warn(f'Ignoring keys {mapping.keys()} when loading from scenario.')
+            return cls.from_scenario(microgrid_number)
+
         instance = cls(mapping["modules"], add_unbalanced_module=False)
         instance._balance_logger = instance._balance_logger.from_raw(mapping.get("balance_log"))
         return instance
