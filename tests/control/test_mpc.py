@@ -25,7 +25,7 @@ class TestMPC(TestCase):
         microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "genset"], additional_modules=[pv, load])
 
         mpc = ModelPredictiveControl(microgrid)
-        mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
+        mpc_output = mpc.run(forecast_steps=forecast_steps)
         self.assertEqual(mpc_output.shape[0], forecast_steps)
         self.assertEqual(mpc_output[("grid", 0, "grid_import")].values +
                         mpc_output[("battery", 0, "discharge_amount")].values +
@@ -45,7 +45,7 @@ class TestMPC(TestCase):
         microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "grid"], additional_modules=[pv, load])
 
         mpc = ModelPredictiveControl(microgrid)
-        mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
+        mpc_output = mpc.run(forecast_steps=forecast_steps)
         self.assertEqual(mpc_output.shape[0], forecast_steps)
 
         self.assertEqual(mpc_output[("load", 0, "load_met")].values, [60.]*mpc_output.shape[0])
@@ -65,7 +65,7 @@ class TestMPC(TestCase):
         microgrid = get_modular_microgrid(remove_modules=["renewable", "load", "grid"], additional_modules=[pv, load])
 
         mpc = ModelPredictiveControl(microgrid)
-        mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
+        mpc_output = mpc.run(forecast_steps=forecast_steps)
 
         self.assertEqual(mpc_output.shape[0], forecast_steps)
         self.assertEqual(mpc_output[("load", 0, "load_met")].values, [60.] * mpc_output.shape[0])
@@ -73,7 +73,7 @@ class TestMPC(TestCase):
                             mpc_output[("battery", 0, "discharge_amount")].values,
                          [10.] * mpc_output.shape[0])
 
-        mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
+        mpc_output = mpc.run(forecast_steps=forecast_steps)
 
         self.assertEqual(mpc_output.shape[0], forecast_steps)
         self.assertEqual(mpc_output[("load", 0, "load_met")].values, [60.] * mpc_output.shape[0])
@@ -92,7 +92,7 @@ class TestMPC(TestCase):
                                           additional_modules=[("pv_with_name", pv), ("load_with_name", load)])
 
         mpc = ModelPredictiveControl(microgrid)
-        mpc_output = mpc.run_mpc_on_microgrid(forecast_steps=forecast_steps)
+        mpc_output = mpc.run(forecast_steps=forecast_steps)
         self.assertEqual(mpc_output.shape[0], forecast_steps)
         self.assertEqual(mpc_output[("load_with_name", 0, "load_met")].values, [load_const]*mpc_output.shape[0])
         self.assertEqual(mpc_output[("grid", 0, "grid_import")].values +
