@@ -285,7 +285,7 @@ class Microgrid(yaml.YAMLObject):
 
         """
 
-        module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.controllable.module_dict()
+        module_iterator = self._modules.to_dict() if sample_flex_modules else self._modules.controllable.to_dict()
         return {module_name: [module.sample_action(strict_bound=strict_bound) for module in module_list]
                 for module_name, module_list in module_iterator.items()
                 if module_list[0].action_space.shape[0]}
@@ -309,7 +309,7 @@ class Microgrid(yaml.YAMLObject):
             Empty action.
 
         """
-        module_iterator = self._modules.module_dict() if sample_flex_modules else self._modules.controllable.module_dict()
+        module_iterator = self._modules.to_dict() if sample_flex_modules else self._modules.controllable.to_dict()
 
         return {module_name: [None]*len(module_list) for module_name, module_list in module_iterator.items()
                 if module_list[0].action_space.shape[0]}
