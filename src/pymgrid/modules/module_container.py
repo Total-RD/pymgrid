@@ -24,7 +24,7 @@ class Container(UserDict):
             l.extend(raw_container.to_list())
         return l
 
-    def module_dict(self):
+    def to_dict(self):
         d = dict()
         for k, raw_container in self.containers.items():
             d.update(raw_container)
@@ -42,7 +42,7 @@ class Container(UserDict):
             yield module
 
     def iterdict(self):
-        for name, modules in self.module_dict().items():
+        for name, modules in self.to_dict().items():
             yield name, modules
 
     def dir_additions(self):
@@ -61,7 +61,7 @@ class Container(UserDict):
             return self.data[item]
         except KeyError:
             try:
-                return self.module_dict()[item]
+                return self.to_dict()[item]
             except KeyError:
                 raise KeyError(item)
 
@@ -78,7 +78,7 @@ class Container(UserDict):
 
     def __repr__(self):
         try:
-            return json.dumps(self.module_dict(), indent=2, default=str)
+            return json.dumps(self.to_dict(), indent=2, default=str)
         except TypeError:
             return super().__repr__()
 
