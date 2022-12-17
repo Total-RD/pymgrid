@@ -169,6 +169,16 @@ class ModuleContainer(Container):
         return self._containers
 
 
+class ModuleList(UserList):
+    def item(self):
+        if len(self) != 1:
+            raise ValueError("Can only convert a ModuleList of length one to a scalar")
+        return self[0]
+
+    def module_list(self):
+        return self
+
+
 def get_subcontainers(modules):
     """
 
@@ -231,13 +241,3 @@ def get_subcontainers(modules):
                   for source_sink_both in source_sink_keys}
 
     return containers
-
-
-class ModuleList(UserList):
-    def item(self):
-        if len(self) != 1:
-            raise ValueError("Can only convert a ModuleList of length one to a scalar")
-        return self[0]
-
-    def module_list(self):
-        return self
