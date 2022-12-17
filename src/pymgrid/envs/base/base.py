@@ -184,10 +184,12 @@ class BaseMicrogridEnv(Microgrid, Env):
 
         """
         try:
-            return cls(microgrid.module_tuples(), add_unbalanced_module=False)
+            modules = microgrid.modules
         except AttributeError:
             assert isinstance(microgrid, NonModularMicrogrid)
             return cls.from_nonmodular(microgrid)
+        else:
+            return cls(modules.to_tuples(), add_unbalanced_module=False)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
