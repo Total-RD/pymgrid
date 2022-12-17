@@ -402,7 +402,7 @@ class ModelPredictiveControl:
                         p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,):
 
         """
-        Protected, called by set_and_solve.
+        Protected, called by _set_and_solve.
         Sets the time-varying (and some static) parameters in the optimization problem at any given timestep.
 
         :param load_vector: np.ndarray, shape (self.horizon,)
@@ -541,7 +541,7 @@ class ModelPredictiveControl:
         self.microgrid.reset()
 
         for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
-            control = self.set_and_solve(*self._get_modular_state_values(),
+            control = self._set_and_solve(*self._get_modular_state_values(),
                                          iteration=i,
                                          total_iterations=num_iter)
 
@@ -628,7 +628,7 @@ class ModelPredictiveControl:
                 genset_co2 = None
 
             # Solve one step of MPC
-            control_dict = self.set_and_solve(sample.loc[i:i + horizon - 1, 'load'].values,
+            control_dict = self._set_and_solve(sample.loc[i:i + horizon - 1, 'load'].values,
                                               sample.loc[i:i + horizon - 1, 'pv'].values, temp_grid, price_import,
                                               price_export, e_max, e_min, p_max_charge, p_max_discharge, p_max_import,
                                               p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2, iteration = i, total_iterations = num_iter)
@@ -701,7 +701,7 @@ class ModelPredictiveControl:
 
         return ControlOutput(names, dfs, 'mpc')
 
-    def set_and_solve(self,
+    def _set_and_solve(self,
                       load_vector,
                       pv_vector,
                       grid_vector,
@@ -1005,7 +1005,7 @@ class ModelPredictiveControl:
             genset_co2 = 0
 
         # Solve one step of MPC
-        control_dicts = self.set_and_solve(sample.loc[current_step:current_step + horizon - 1, 'load'].values,
+        control_dicts = self._set_and_solve(sample.loc[current_step:current_step + horizon - 1, 'load'].values,
                                           sample.loc[current_step:current_step + horizon - 1, 'pv'].values, temp_grid, price_import,
                                           price_export, e_max, e_min, p_max_charge, p_max_discharge, p_max_import,
                                           p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2, iteration=current_step, return_steps=self.microgrid.horizon)
