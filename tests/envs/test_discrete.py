@@ -13,20 +13,20 @@ class TestDiscreteEnv(TestCase):
         env = DiscreteMicrogridEnv(microgrid)
 
         self.assertEqual(env.modules, microgrid.modules)
-        self.assertIsNot(env.modules.module_tuples(), microgrid.modules.module_tuples())
+        self.assertIsNot(env.modules.to_tuples(), microgrid.modules.to_tuples())
 
-        n_obs = sum([x.observation_spaces['normalized'].shape[0] for x in microgrid.modules.module_list()])
+        n_obs = sum([x.observation_spaces['normalized'].shape[0] for x in microgrid.modules.to_list()])
 
         self.assertEqual(env.observation_space.shape, (n_obs,))
 
     def test_init_from_modules(self):
         microgrid = get_modular_microgrid()
-        env = DiscreteMicrogridEnv(microgrid.modules.module_tuples(), add_unbalanced_module=False)
+        env = DiscreteMicrogridEnv(microgrid.modules.to_tuples(), add_unbalanced_module=False)
 
         self.assertEqual(env.modules, microgrid.modules)
-        self.assertIsNot(env.modules.module_tuples(), microgrid.modules.module_tuples())
+        self.assertIsNot(env.modules.to_tuples(), microgrid.modules.to_tuples())
 
-        n_obs = sum([x.observation_spaces['normalized'].shape[0] for x in microgrid.modules.module_list()])
+        n_obs = sum([x.observation_spaces['normalized'].shape[0] for x in microgrid.modules.to_list()])
 
         self.assertEqual(env.observation_space.shape, (n_obs,))
 
