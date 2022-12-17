@@ -814,7 +814,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls.deserialize_instance(mapping["cls_params"])
-        instance.logger = instance.logger.from_raw(mapping["log"])
+        instance.logger = instance.logger.from_raw(mapping.get("log"))
         instance.name = tuple(mapping["name"])
         return instance.deserialize(mapping["state"])
 
@@ -862,9 +862,9 @@ class BaseMicrogridModule(yaml.YAMLObject):
         """
         data = {
             "name": self.name,
-            "log": self._logger.serialize(),
             "cls_params": self._serialize_cls_params(),
-            "state": self._serialize_state_attributes()
+            "state": self._serialize_state_attributes(),
+            **self._logger.serialize("log")
         }
 
         return dump_data(data, dumper_stream, self.yaml_tag)

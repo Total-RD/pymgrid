@@ -618,15 +618,17 @@ class Microgrid(yaml.YAMLObject):
         add_numpy_pandas_constructors()
         mapping = loader.construct_mapping(node, deep=True)
         instance = cls(mapping["modules"], add_unbalanced_module=False)
-        instance._balance_logger = instance._balance_logger.from_raw(mapping["balance_log"])
+        instance._balance_logger = instance._balance_logger.from_raw(mapping.get("balance_log"))
         return instance
 
     def serialize(self, dumper_stream):
         """
         :meta private:
         """
-        data = {"modules": self._modules.to_tuples(),
-                "balance_log": self._balance_logger.serialize()}
+        data = {
+            "modules": self._modules.to_tuples(),
+            **self._balance_logger.serialize("balance_log")
+        }
         return dump_data(data, dumper_stream, self.yaml_tag)
 
     @classmethod
