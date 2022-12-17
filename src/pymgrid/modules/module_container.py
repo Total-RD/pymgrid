@@ -18,10 +18,10 @@ class Container(UserDict):
         """
         return self
 
-    def module_list(self):
+    def to_list(self):
         l = []
         for _, raw_container in self.containers.items():
-            l.extend(raw_container.module_list())
+            l.extend(raw_container.to_list())
         return l
 
     def module_dict(self):
@@ -38,7 +38,7 @@ class Container(UserDict):
         return l
 
     def iterlist(self):
-        for module in self.module_list():
+        for module in self.to_list():
             yield module
 
     def iterdict(self):
@@ -175,7 +175,7 @@ class ModuleList(UserList):
             raise ValueError("Can only convert a ModuleList of length one to a scalar")
         return self[0]
 
-    def module_list(self):
+    def to_list(self):
         return self
 
 

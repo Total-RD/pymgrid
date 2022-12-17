@@ -543,7 +543,7 @@ class Microgrid(yaml.YAMLObject):
             The list of modules
 
         """
-        return self._modules.module_list()
+        return self._modules.to_list()
 
     @property
     def n_modules(self):
