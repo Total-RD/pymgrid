@@ -492,12 +492,21 @@ class ModelPredictiveControl:
 
     def run(self, max_steps=None, verbose=False):
         """
-        Function that allows MPC to be run on self.microgrid by first parsing its data
+        Get the priority list and then deploy on the microgrid for some number of steps.
 
-        :param forecast_steps: int, default None
-            Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
-        :param verbose: bool
-            Whether to display progress bar
+        Parameters
+        ---------
+        max_steps : int or None, default None
+            Maximum number of MPC steps. If None, run until the microgrid terminates.
+
+        verbose : bool, default False
+            Whether to display a progress bar.
+
+        Returns
+        -------
+        log : pd.DataFrame
+            Results of running the rule-based control algorithm.
+
         """
         if self.is_modular:
             return self._run_mpc_on_modular(forecast_steps=max_steps, verbose=verbose)
