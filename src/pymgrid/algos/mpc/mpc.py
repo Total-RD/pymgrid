@@ -104,6 +104,9 @@ class ModelPredictiveControl:
 
     @property
     def has_genset(self):
+        """
+        :meta private:
+        """
         if self.is_modular:
             return "genset" in self.microgrid_module_names.keys()
         else:
@@ -937,6 +940,19 @@ class ModelPredictiveControl:
         )
 
     def mpc_single_step(self, sample, previous_output, current_step):
+        """
+        :meta private:
+
+        Parameters
+        ----------
+        sample
+        previous_output
+        current_step
+
+        Returns
+        -------
+
+        """
 
         if not isinstance(previous_output, ControlOutput):
             raise TypeError('previous_output must be ControlOutput, unless first_step is True')
