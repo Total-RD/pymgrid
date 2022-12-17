@@ -670,6 +670,56 @@ class ModelPredictiveControl:
 
         return control
 
+    def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False, **kwargs):
+        """
+        Function that allows MPC to be run on self.microgrid by first parsing its data
+
+        :param forecast_steps: int, default None
+            Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
+        :param verbose: bool
+            Whether to display progress bar
+        """
+        if self.is_modular:
+            return self.run_mpc_on_modular(forecast_steps=forecast_steps, verbose=verbose)
+        else:
+            return self.run_mpc_on_nonmodular(forecast_steps=forecast_steps, verbose=verbose)
+
+    def run_mpc_on_nonmodular(self, forecast_steps=None, verbose=False):
+        """
+        Function that allows MPC to be run on self.microgrid by first parsing its data
+
+        :param forecast_steps: int, default None
+            Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
+        :param verbose: bool
+            Whether to discuss progress
+        :return:
+            output, ControlOutput
+                dict-like containing the DataFrames ('action', 'status', 'production', 'cost'),
+                but with an ordering defined via comparing the costs.
+        """
+        sample = return_underlying_data(self.microgrid)
+        sample = sample.reset_index(drop=True)
+        return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
+
+    def run_mpc_on_modular(self, forecast_steps=None, verbose=False):
+
+        if forecast_steps is None:
+            num_iter = len(self.microgrid) - self.horizon
+        else:
+            assert forecast_steps <= len(self.microgrid) - self.horizon, 'forecast steps can\'t look past horizon'
+            num_iter = forecast_steps
+
+        self.microgrid.reset()
+
+        for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
+            control = self.set_and_solve(*self._get_modular_state_values(),
+                                         iteration=i,
+                                         total_iterations=num_iter)
+
+            self.microgrid.run(control, normalized=False)
+
+        return self.microgrid.get_log()
+
     def run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
         """
         Runs MPC on a sample over a number of iterations
@@ -821,56 +871,6 @@ class ModelPredictiveControl:
             print('Total time: {} minutes'.format(round((time.time()-t0)/60, 2)))
 
         return ControlOutput(names, dfs, 'mpc')
-
-    def run_mpc_on_microgrid(self, forecast_steps=None, verbose=False, **kwargs):
-        """
-        Function that allows MPC to be run on self.microgrid by first parsing its data
-
-        :param forecast_steps: int, default None
-            Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
-        :param verbose: bool
-            Whether to display progress bar
-        """
-        if self.is_modular:
-            return self.run_mpc_on_modular(forecast_steps=forecast_steps, verbose=verbose)
-        else:
-            return self.run_mpc_on_nonmodular(forecast_steps=forecast_steps, verbose=verbose)
-
-    def run_mpc_on_nonmodular(self, forecast_steps=None, verbose=False):
-        """
-        Function that allows MPC to be run on self.microgrid by first parsing its data
-
-        :param forecast_steps: int, default None
-            Number of steps to run MPC on. If None, runs over 8760-self.horizon steps
-        :param verbose: bool
-            Whether to discuss progress
-        :return:
-            output, ControlOutput
-                dict-like containing the DataFrames ('action', 'status', 'production', 'cost'),
-                but with an ordering defined via comparing the costs.
-        """
-        sample = return_underlying_data(self.microgrid)
-        sample = sample.reset_index(drop=True)
-        return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
-
-    def run_mpc_on_modular(self, forecast_steps=None, verbose=False):
-
-        if forecast_steps is None:
-            num_iter = len(self.microgrid) - self.horizon
-        else:
-            assert forecast_steps <= len(self.microgrid) - self.horizon, 'forecast steps can\'t look past horizon'
-            num_iter = forecast_steps
-
-        self.microgrid.reset()
-
-        for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
-            control = self.set_and_solve(*self._get_modular_state_values(),
-                                         iteration=i,
-                                         total_iterations=num_iter)
-
-            self.microgrid.run(control, normalized=False)
-
-        return self.microgrid.get_log()
 
     def _get_modular_state_values(self):
 
