@@ -1,6 +1,43 @@
 !Microgrid
-balance_log: null
 modules:
+- - load
+  - !LoadModule
+    cls_params:
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      raise_errors: false
+      time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv.gz'
+    name:
+    - load
+    - 0
+    state:
+      _current_step: 0
+- - pv
+  - !RenewableModule
+    cls_params:
+      forecast_horizon: 23
+      forecaster: oracle
+      forecaster_increase_uncertainty: false
+      provided_energy_name: renewable_used
+      raise_errors: false
+      time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv.gz'
+    name:
+    - pv
+    - 0
+    state:
+      _current_step: 0
+- - unbalanced_energy
+  - !UnbalancedEnergyModule
+    cls_params:
+      loss_load_cost: 10
+      overgeneration_cost: 1
+      raise_errors: false
+    name:
+    - unbalanced_energy
+    - 0
+    state:
+      _current_step: 0
 - - genset
   - !Genset
     cls_params:
@@ -15,7 +52,6 @@ modules:
       running_min_production: 1912.15
       start_up_time: 0
       wind_down_time: 0
-    log: null
     name:
     - genset
     - 0
@@ -25,21 +61,6 @@ modules:
       _goal_status: true
       _steps_until_down: 0
       _steps_until_up: 0
-- - load
-  - !LoadModule
-    cls_params:
-      forecast_horizon: 23
-      forecaster: oracle
-      forecaster_increase_uncertainty: false
-      loss_load_cost: 10
-      raise_errors: false
-      time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv.gz'
-    log: null
-    name:
-    - load
-    - 0
-    state:
-      _current_step: 0
 - - battery
   - !BatteryModule
     cls_params:
@@ -53,7 +74,6 @@ modules:
       max_discharge: 20520
       min_capacity: 16416.0
       raise_errors: false
-    log: null
     name:
     - battery
     - 0
@@ -72,36 +92,8 @@ modules:
       max_import: 68836
       raise_errors: false
       time_series: !NDArray 'data/cls_params/GridModule/time_series.csv.gz'
-    log: null
     name:
     - grid
-    - 0
-    state:
-      _current_step: 0
-- - pv
-  - !RenewableModule
-    cls_params:
-      forecast_horizon: 23
-      forecaster: oracle
-      forecaster_increase_uncertainty: false
-      provided_energy_name: renewable_used
-      raise_errors: false
-      time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv.gz'
-    log: null
-    name:
-    - pv
-    - 0
-    state:
-      _current_step: 0
-- - unbalanced_energy
-  - !UnbalancedEnergyModule
-    cls_params:
-      loss_load_cost: 10
-      overgeneration_cost: 1
-      raise_errors: false
-    log: null
-    name:
-    - unbalanced_energy
     - 0
     state:
       _current_step: 0
