@@ -528,7 +528,7 @@ class ModelPredictiveControl:
         """
         sample = return_underlying_data(self.microgrid)
         sample = sample.reset_index(drop=True)
-        return self.run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
+        return self._run_mpc_on_sample(sample, forecast_steps=forecast_steps, verbose=verbose)
 
     def _run_mpc_on_modular(self, forecast_steps=None, verbose=False):
 
@@ -549,7 +549,7 @@ class ModelPredictiveControl:
 
         return self.microgrid.get_log()
 
-    def run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
+    def _run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
         """
         Runs MPC on a sample over a number of iterations
 
