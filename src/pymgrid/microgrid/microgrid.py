@@ -710,6 +710,17 @@ class Microgrid(yaml.YAMLObject):
         with open(PROJECT_PATH / f"data/scenario/pymgrid25/microgrid_{n}/microgrid_{n}.yaml", "r") as f:
             return cls.load(f)
 
+    def _dir_additions(self):
+        return {
+            x for x in dir(self._modules) if
+            not x.startswith('_') and not callable(getattr(self._modules, x))
+        }
+
+    def __dir__(self):
+        rv = set(super().__dir__())
+        rv = rv | self._dir_additions()
+        return sorted(rv)
+
     def __getnewargs__(self):
         return (self.modules.to_tuples(), )
 
