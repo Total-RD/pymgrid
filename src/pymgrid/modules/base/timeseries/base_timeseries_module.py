@@ -131,11 +131,13 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @property
     def min_obs(self):
-        return np.repeat([self._min_obs], 1+self._forecast_horizon)
+        # TODO find a better solution
+        return np.repeat(np.array(self._min_obs).reshape((-1, 1)), 1+self._forecast_horizon, axis=1).T.reshape(-1)
 
     @property
     def max_obs(self):
-        return np.repeat([self._max_obs], 1+self._forecast_horizon)
+        # TODO find a better solution
+        return np.repeat(np.array(self._max_obs).reshape((-1, 1)), 1+self._forecast_horizon, axis=1).T.reshape(-1)
 
     @property
     def min_act(self):
