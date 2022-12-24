@@ -33,6 +33,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
     Tag used for yaml serialization.
     """
 
+    _energy_pos = 0
+
     def __init__(self,
                  raise_errors,
                  provided_energy_name='provided_energy',
@@ -174,17 +176,16 @@ class BaseMicrogridModule(yaml.YAMLObject):
             this module provided to or absorbed from the microgrid.
 
         """
+
+        denormalized_action = self._action_space.denormalize(action) if normalized else action
+
         try:
-            action = action.item()
-        except AttributeError:
-            pass
-        finally:
-            if not isinstance(action, (float, int)):
-                raise TypeError('action must be a float or singleton Numpy array.')
+            denormalized_action = denormalized_action[self._energy_pos]
+        except (IndexError, TypeError):
+            assert isinstance(denormalized_action, (float, int))
 
         state_dict = self.state_dict
-        unnormalized_action = self._act_normalizer.from_normalized(action) if normalized else action
-        reward, done, info = self._unnormalized_step(unnormalized_action)
+        reward, done, info = self._unnormalized_step(denormalized_action)
         self._log(state_dict, reward=reward, **info)
         self._current_step += 1
 
@@ -373,12 +374,12 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         if strict_bound:
             if self.is_sink:
-                min_bound = self._act_normalizer.to_normalized(-1 * self.max_consumption)
+                min_bound = self._action_space.normalize(-1 * self.max_consumption)
                 if np.isnan(min_bound):
                     min_bound = 0
 
             if self.is_source:
-                max_bound = self._act_normalizer.to_normalized(self.max_production)
+                max_bound = self._action_space.normalize(self.max_production)
                 if np.isnan(max_bound):
                     max_bound = 0
         return np.random.rand()*(max_bound-min_bound) + min_bound
@@ -404,9 +405,9 @@ class BaseMicrogridModule(yaml.YAMLObject):
         """
         assert act + obs == 1, 'One of act or obs must be True but not both.'
         if act:
-            return self._act_normalizer.to_normalized(value)
+            return self._action_space.normalize(value)
         else:
-            return self._obs_normalizer.to_normalized(value)
+            return self._observation_space.normalize(value)
 
     def from_normalized(self, value, act=False, obs=False):
         """
@@ -429,9 +430,9 @@ class BaseMicrogridModule(yaml.YAMLObject):
         """
         assert act + obs == 1, 'One of act or obs must be True but not both.'
         if act:
-            return self._act_normalizer.from_normalized(value)
+            return self._action_space.denormalize(value)
         if obs:
-            return self._obs_normalizer.from_normalized(value)
+            return self._observation_space.denormalize(value)
 
     def log_dict(self):
         """
