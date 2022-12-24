@@ -87,9 +87,7 @@ class BatteryModule(BaseMicrogridModule):
         self.init_charge, self.init_soc = init_charge, init_soc
         self._current_charge, self._soc = self._init_battery(init_charge, init_soc)
         self.name = ('battery', None)
-        super().__init__(raise_errors,
-                         provided_energy_name='discharge_amount',
-                         absorbed_energy_name='charge_amount')
+        super().__init__(raise_errors, provided_energy_name='discharge_amount', absorbed_energy_name='charge_amount')
 
     def _init_battery(self, init_charge, init_soc):
         if init_charge is not None:

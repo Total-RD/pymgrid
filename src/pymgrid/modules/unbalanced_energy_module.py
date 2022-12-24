@@ -16,9 +16,7 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
                  overgeneration_cost=2.0
                  ):
 
-        super().__init__(raise_errors,
-                         provided_energy_name='loss_load',
-                         absorbed_energy_name='overgeneration')
+        super().__init__(raise_errors, provided_energy_name='loss_load', absorbed_energy_name='overgeneration')
         self.loss_load_cost, self.overgeneration_cost = loss_load_cost, overgeneration_cost
         self.name = ('unbalanced_energy', None)
 

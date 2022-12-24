@@ -91,10 +91,7 @@ class GensetModule(BaseMicrogridModule):
         self._steps_until_up, self._steps_until_down = self._reset_up_down_times()
         self.name = ('genset', None)
 
-        super().__init__(raise_errors,
-                         provided_energy_name=provided_energy_name,
-                         absorbed_energy_name=None,
-                         normalize_pos=dict(obs=..., act=-1))
+        super().__init__(raise_errors, provided_energy_name=provided_energy_name, absorbed_energy_name=None)
 
     def step(self, action, normalized=True):
         goal_status = action[0]
