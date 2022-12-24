@@ -56,6 +56,8 @@ class GensetModule(BaseMicrogridModule):
     yaml_dumper = yaml.SafeDumper
     yaml_loader = yaml.SafeLoader
 
+    _energy_pos = 1
+
     def __init__(self,
                  running_min_production,
                  running_max_production,
@@ -98,7 +100,7 @@ class GensetModule(BaseMicrogridModule):
         goal_status = action[0]
         assert 0 <= goal_status <= 1
         self.update_status(goal_status)
-        return super().step(action[1:], normalized=normalized)
+        return super().step(action, normalized=normalized)
 
     def get_co2(self, production):
         """
