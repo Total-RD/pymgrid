@@ -72,7 +72,6 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
 
         return self._populate_action(priority_list)
 
-
     def step(self, action):
         self._microgrid_logger.log(action=action)
         microgrid_action = self._get_action(action)
