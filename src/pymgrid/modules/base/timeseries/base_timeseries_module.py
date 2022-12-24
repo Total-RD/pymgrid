@@ -44,10 +44,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                  ]
                                  }
 
-        super().__init__(raise_errors,
-                         provided_energy_name=provided_energy_name,
-                         absorbed_energy_name=absorbed_energy_name,
-                         normalize_pos=normalize_pos)
+        super().__init__(raise_errors, provided_energy_name=provided_energy_name,
+                         absorbed_energy_name=absorbed_energy_name)
 
     def _set_time_series(self, time_series):
         _time_series = np.array(time_series)

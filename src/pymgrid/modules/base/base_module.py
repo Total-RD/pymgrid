@@ -8,7 +8,6 @@ from warnings import warn
 
 from pymgrid.utils.logger import ModularLogger
 from pymgrid.utils.space import ModuleSpace
-from pymgrid.modules.utils.normalize import Normalize, IdentityNormalize
 from pymgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
 
 
@@ -38,59 +37,16 @@ class BaseMicrogridModule(yaml.YAMLObject):
     def __init__(self,
                  raise_errors,
                  provided_energy_name='provided_energy',
-                 absorbed_energy_name='absorbed_energy',
-                 normalize_pos=...
+                 absorbed_energy_name='absorbed_energy'
                  ):
 
         self.raise_errors = raise_errors
         self._current_step = 0
-        self._obs_normalizer = self._get_normalizer(normalize_pos, obs=True)
-        self._act_normalizer = self._get_normalizer(normalize_pos, act=True)
         self._action_space = self._get_action_spaces()
         self._observation_space = self._get_observation_spaces()
         self.provided_energy_name, self.absorbed_energy_name = provided_energy_name, absorbed_energy_name
         self._logger = ModularLogger()
-        self.name = (None, None) # set by ModularMicrogrid
-
-    def _get_normalizer(self, normalize_pos, obs=False, act=False):
-        assert obs+act == 1, 'Must be initiating normalizer for obs or act but not both or neither.'
-        _str = 'obs' if obs else 'act'
-        try:
-            if obs:
-                val_min, val_max = self.min_obs, self.max_obs
-            else:
-                val_min, val_max = self.min_act, self.max_act
-
-        except AttributeError:
-            script_logger.debug(f'min_{_str} and max_{_str} attributes not found for module {self.__class__.__name__}. '
-                                f'Returning identity normalizer')
-
-            return IdentityNormalize()
-
-        try:
-            normalize_position = normalize_pos['obs' if obs else 'act']
-            val_min, val_max = val_min[normalize_position], val_max[normalize_position]
-        except TypeError:
-            pass
-
-        if val_min is None or np.isnan(val_min).any() or val_max is None or np.isnan(val_max).any():
-            script_logger.debug(f'One of min_{_str} or max_{_str} attributes is None or NaN for module {self.__class__.__name__}. Returni'
-                          f'ng identity normalizer')
-            return IdentityNormalize()
-
-        elif np.isinf(np.array(val_min)).any() or np.isinf(np.array(val_max)).any():
-            script_logger.debug(f'One of min_{_str} or max_{_str} attributes is Infinity for module {self.__class__.__name__}. Returni'
-                  f'ng identity normalizer')
-            return IdentityNormalize()
-        elif isinstance(val_min, np.ndarray) and isinstance(val_max, np.ndarray) and len(val_min) == 0 and len(val_max) == 0:
-            return IdentityNormalize()
-
-        try:
-            assert val_max >= val_min, f'max_{_str} must be greater than min_{_str}'
-        except ValueError:
-            assert (val_max >= val_min).all(), f'max_{_str} must be greater than min_{_str}'
-
-        return Normalize(val_min, val_max)
+        self.name = (None, None)  # set by ModularMicrogrid
 
     def _get_action_spaces(self):
         unnormalized_low = self.min_act if isinstance(self.min_act, np.ndarray) else np.array([self.min_act])
@@ -536,30 +492,6 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         """
         return self._current_step
-
-    @property
-    def act_normalizer(self):
-        """
-        Module's action normalizer.
-
-        Returns
-        -------
-        Normalize
-
-        """
-        return self._act_normalizer
-
-    @property
-    def obs_normalizer(self):
-        """
-        Module's observation normalizer.
-
-        Returns
-        -------
-        Normalize
-
-        """
-        return self._obs_normalizer
 
     @property
     @abstractmethod
