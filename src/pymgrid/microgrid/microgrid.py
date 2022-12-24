@@ -738,14 +738,12 @@ class Microgrid(yaml.YAMLObject):
         return f'Microgrid([{module_str}])'
 
     def __getattr__(self, item):
-        if item.startswith("__"):
+        if item.startswith("__") or item == "_modules":
             raise AttributeError
-        elif item == "_modules":
-            raise RuntimeError
 
         try:
             return getattr(self._modules, item)
         except AttributeError:
-            names = ", ".join([f'"{x}"' for x in self.modules.names()])
-            raise AttributeError(f'ModularMicrogrid has no attribute "{item}". '
-                                 f'Did you mean one of the modules {names}?').with_traceback(None)
+            pass
+
+        return object.__getattribute__(self, item)

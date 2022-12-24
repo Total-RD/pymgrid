@@ -132,7 +132,8 @@ class ModelPredictiveControl:
             if suf and s.endswith(suf):
                 return s[:-len(suf)]
             return s
-        return {remove_suffix(module.item().__class__.__name__, "Module").lower(): name for name, module in modular_microgrid.iterdict()}
+        return {remove_suffix(module.item().__class__.__name__, "Module").lower(): name
+                for name, module in modular_microgrid.modules.iterdict()}
 
     def _get_horizon(self):
         if self.is_modular:
