@@ -5,6 +5,34 @@ from gym.spaces import Box, Space
 
 
 class ModuleSpace(Space):
+    """
+    A space with both normalized and unnormalized versions.
+
+    Both normalized and unormalized versions are of type :class:`gym:gym.spaces.Box`.
+
+    This object also handles conversion of values from normalized to unnormalized and vice-versa.
+
+    Parameters
+    ----------
+    unnormalized_low : float or array-like
+        Lower bound of the space.
+
+    unnormalized_high : float or array-like
+        Upper bound of the space.
+
+    shape : tuple or None, default None
+        Shape of the space. If None, shape is inferred from `unnormalized_low` and `unnormalized_high`.
+
+    dtype : np.dtype, default np.float64
+        dtype of the action space.
+
+    seed : int or None, default None
+        Random seed.
+
+        .. warning::
+            This parameter will be ignored if earlier versions of `gym` are installed.
+
+    """
     def __init__(self, unnormalized_low, unnormalized_high, shape=None, dtype=np.float64, seed=None):
 
         low = np.float64(unnormalized_low) if np.isscalar(unnormalized_low) else unnormalized_low.astype(np.float64)
@@ -29,6 +57,24 @@ class ModuleSpace(Space):
         self._spread[self._spread == 0] = 1
 
     def contains(self, x):
+        """
+        Check if `x` is a valid member of the space.
+
+        .. note::
+            This method checks if `x` is a valid member of the space. Use :meth:`.ModuleSpace.normalized.contains` to
+            check if a value is a member of the normalized space.
+
+        Parameters
+        ----------
+        x : scalar or array-like
+            Value to check membership.
+
+        Returns
+        -------
+        containment : bool
+            Whether `x` is a valid member of the space.
+
+        """
         return x in self._unnormalized
 
     def sample(self, normalized=False):
