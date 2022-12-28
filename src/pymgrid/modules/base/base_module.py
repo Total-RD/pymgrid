@@ -631,8 +631,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Returns
         -------
-        dict[{'normalized', 'unnormalized'}, gym.spaces.Box]
-            The observation spaces.
+        action_space : :class:`ModuleSpace <pymgrid.utils.space.ModuleSpace>`
+            The action space.
         """
         return self._action_space
 
@@ -645,8 +645,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         Returns
         -------
-        dict[{'normalized', 'unnormalized'}, gym.spaces.Box]
-            The observation spaces.
+        observation_space : :class:`ModuleSpace <pymgrid.utils.space.ModuleSpace>`
+            The observation space.
         """
         return self._observation_space
 
