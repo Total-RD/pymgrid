@@ -2,6 +2,8 @@ import numpy as np
 from gym.spaces import Box
 
 from pymgrid.modules import RenewableModule
+from pymgrid.utils.space import ModuleSpace
+
 from tests.helpers.test_case import TestCase
 
 
@@ -92,3 +94,20 @@ class TestRenewableModuleForecasting(TestCase):
         self.assertFalse(done)
         self.assertEqual(info["provided_energy"], unnormalized_action)
         self.assertEqual(info["curtailment"], 0)
+
+    def test_observations_in_observation_space(self):
+        renewable_module = self.new_renewable_module()
+
+        observation_space = ModuleSpace(
+            unnormalized_low=0,
+            unnormalized_high=self.time_series.max(),
+            shape=(1+renewable_module.forecast_horizon, )
+        )
+
+        self.assertEqual(renewable_module.observation_spaces, observation_space)
+
+        done = False
+        while not done:
+            obs, reward, done, info = renewable_module.step(renewable_module.action_space.sample(), normalized=False)
+            self.assertIn(obs, observation_space['normalized'])
+            self.assertIn(renewable_module.state, observation_space['unnormalized'])
