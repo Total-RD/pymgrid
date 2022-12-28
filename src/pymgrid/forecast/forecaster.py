@@ -3,7 +3,7 @@ from pandas.api.types import is_number, is_numeric_dtype
 from abc import abstractmethod
 
 
-def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_uncertainty=False):
+def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
 
@@ -25,7 +25,12 @@ def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_unce
 
         If None, no forecast.
 
-    forecast_horizon: int. Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+    forecast_horizon: int
+        Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+
+    observation_space: :class:`.ModuleSpace`
+        Observation space; used to determine values to pad missing forecasts when we are forecasting past the
+        end of the time series.
 
     time_series: ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
@@ -36,26 +41,34 @@ def get_forecaster(forecaster, forecast_horizon, time_series=None, increase_unce
 
     Returns
     -------
-    forecast, callable[float, float, int].
+    forecaster : callable[float, float, int]
         The forecasting function.
 
     """
 
     if forecaster is None:
-        return NoForecaster(), 0
+        return NoForecaster(observation_space)
     elif isinstance(forecaster, (UserDefinedForecaster, OracleForecaster, GaussianNoiseForecaster)):
-        return forecaster, forecast_horizon
+        return forecaster
     elif callable(forecaster):
-        return UserDefinedForecaster(forecaster, time_series), forecast_horizon
+        return UserDefinedForecaster(forecaster, observation_space, time_series)
     elif forecaster == "oracle":
-        return OracleForecaster(), forecast_horizon
+        return OracleForecaster(observation_space)
     elif is_number(forecaster):
-        return GaussianNoiseForecaster(forecaster, increase_uncertainty=increase_uncertainty), forecast_horizon
+        return GaussianNoiseForecaster(
+            forecaster,
+            observation_space,
+            increase_uncertainty=increase_uncertainty
+        )
     else:
         raise ValueError(f"Unable to parse forecaster of type {type(forecaster)}")
 
 
 class Forecaster:
+    def __init__(self, observation_space):
+        self._observation_space = observation_space
+        self._fill_arr = (self._observation_space.unnormalized.high - self._observation_space.unnormalized.low) / 2
+
     @abstractmethod
     def _forecast(self, val_c, val_c_n, n):
         pass
@@ -64,14 +77,16 @@ class Forecaster:
         if forecast.shape[0] == n:
             return forecast
         else:
-            pad_amount = n-forecast.shape[0]
-            return np.pad(forecast, ((0, pad_amount), (0, 0)), constant_values=0)
+            pad_amount = n - forecast.shape[0]
+            pad = self._fill_arr.reshape((-1, forecast.shape[1]))[-pad_amount:]
+            return np.concatenate((forecast, pad))
 
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplemented
 
-        return self.__dict__ == other.__dict__
+        return (self._fill_arr == other._fill_arr).all() and \
+               all(v == other.__dict__[k] for k, v in self.__dict__.items() if k != '_fill_arr')
 
     def __call__(self, val_c, val_c_n, n):
         if len(val_c_n.shape) == 1:
@@ -90,7 +105,7 @@ class Forecaster:
 
 
 class UserDefinedForecaster(Forecaster):
-    def __init__(self, forecaster_function, time_series):
+    def __init__(self, forecaster_function, observation_space, time_series):
         self.is_vectorized_forecaster, self.cast_to_arr = \
             _validate_callable_forecaster(forecaster_function, time_series)
 
@@ -98,6 +113,8 @@ class UserDefinedForecaster(Forecaster):
             forecaster_function = vectorize_scalar_forecaster(forecaster_function)
 
         self._forecaster = forecaster_function
+
+        super().__init__(observation_space)
 
     def _cast_to_arr(self, forecast, val_c_n):
         if self.cast_to_arr:
@@ -115,15 +132,17 @@ class OracleForecaster(Forecaster):
 
 
 class GaussianNoiseForecaster(Forecaster):
-    def __init__(self, noise_std, increase_uncertainty=False):
+    def __init__(self, noise_std, observation_space, increase_uncertainty=False):
         self.input_noise_std = noise_std
         self.increase_uncertainty = increase_uncertainty
         self._noise_size = None
         self._noise_std = None
 
+        super().__init__(observation_space)
+
     def _get_noise_std(self):
         if self.increase_uncertainty:
-            return self.input_noise_std*(1+np.log(1+np.arange(self._noise_size)))
+            return self.input_noise_std * (1 + np.log(1 + np.arange(self._noise_size)))
         else:
             return self.input_noise_std
 
@@ -142,7 +161,7 @@ class GaussianNoiseForecaster(Forecaster):
 
     def _forecast(self, val_c, val_c_n, n):
         forecast = val_c_n + self._get_noise(len(val_c_n)).reshape(val_c_n.shape)
-        forecast[(forecast*val_c_n) < 0] = 0
+        forecast[(forecast * val_c_n) < 0] = 0
         return forecast
 
     def __repr__(self):
@@ -176,8 +195,8 @@ def _validate_vectorized_forecaster(forecaster, val_c, vector_true_forecast, n):
         vectorized_forecast = forecaster(val_c, vector_true_forecast, n)
     except Exception as e:
         raise NotImplementedError("Unable to call forecaster with vector inputs. "
-                         f"\nFunc call forecaster(val_c={val_c}, val_c_n={vector_true_forecast}, n={n})"
-                         f"\nraised {type(e).__name__}: {e}") from e
+                                  f"\nFunc call forecaster(val_c={val_c}, val_c_n={vector_true_forecast}, n={n})"
+                                  f"\nraised {type(e).__name__}: {e}") from e
     else:
         # vectorized function call succeeded
         if not hasattr(vectorized_forecast, 'size'):
@@ -217,7 +236,7 @@ def _validate_scalar_forecaster(forecaster, val_c, scalar_true_forecast, n):
                 scalar_forecast_item = scalar_forecast.item()
             except (ValueError, AttributeError):
                 raise ValueError("Unable to validate forecaster. Forecaster must return scalar output with scalar "
-                                f"input but returned {scalar_forecast}")
+                                 f"input but returned {scalar_forecast}")
 
         _validate_forecasted_value(scalar_forecast_item, scalar_true_forecast, val_c, n)
 
@@ -244,4 +263,5 @@ def vectorize_scalar_forecaster(forecaster):
         except IndexError:
             shape = (-1, 1)
         return vectorized_output.reshape(shape)
+
     return vectorized
