@@ -752,9 +752,7 @@ class Microgrid(yaml.YAMLObject):
         if item.startswith("__") or item == "_modules":
             raise AttributeError
 
-        try:
-            return getattr(self._modules, item)
-        except AttributeError:
-            pass
+        if item in self._modules:
+            return self._modules[item]
 
         return object.__getattribute__(self, item)
