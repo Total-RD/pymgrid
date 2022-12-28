@@ -7,8 +7,11 @@ from gym.spaces import Box, Space
 class ModuleSpace(Space):
     def __init__(self, unnormalized_low, unnormalized_high, shape=None, dtype=np.float64, seed=None):
 
-        self._unnormalized = Box(low=unnormalized_low.astype(np.float64),
-                                 high=unnormalized_high.astype(np.float64),
+        low = np.float64(unnormalized_low) if np.isscalar(unnormalized_low) else unnormalized_low.astype(np.float64)
+        high = np.float64(unnormalized_high) if np.isscalar(unnormalized_high) else unnormalized_high.astype(np.float64)
+
+        self._unnormalized = Box(low=low,
+                                 high=high,
                                  shape=shape,
                                  dtype=dtype)
 
