@@ -12,11 +12,15 @@ def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=
     forecaster: callable, float, "oracle", or None, default None.
         Function that gives a forecast n-steps ahead.
         If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
-            val_c is the current value in the time series: self.time_series[self.current_step],
-            val_{c+n} is the value in the time series n steps in the future,
-            n is the number of steps in the future at which we are forecasting.
-            The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
-            as the inputs val_c and val_{c+n}.
+
+           * val_c is the current value in the time series: self.time_series[self.current_step],
+
+           * val_{c+n} is the value in the time series n steps in the future,
+
+           * n is the number of steps in the future at which we are forecasting.
+
+        The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
+        as the inputs val_c and val_{c+n}.
 
         If float, serves as a standard deviation for a mean-zero gaussian noise function
             that is added to the true value.
@@ -25,18 +29,18 @@ def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=
 
         If None, no forecast.
 
-    forecast_horizon: int
+    forecast_horizon : int
         Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
-    observation_space: :class:`.ModuleSpace`
+    observation_space : :class:`.ModuleSpace`
         Observation space; used to determine values to pad missing forecasts when we are forecasting past the
         end of the time series.
 
-    time_series: ndarray[float] or None, default None.
+    time_series : ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
 
-    increase_uncertainty: bool, default False. Whether to increase uncertainty for farther-out dates if using
+    increase_uncertainty : bool, default False. Whether to increase uncertainty for farther-out dates if using
         a GaussianNoiseForecaster. Ignored otherwise.
 
     Returns
