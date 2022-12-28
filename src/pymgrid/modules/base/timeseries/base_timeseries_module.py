@@ -29,13 +29,19 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  provided_energy_name='provided_energy',
                  absorbed_energy_name='absorbed_energy',
                  normalize_pos=...):
+
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self._get_bounds()
+
         self._forecast_param = forecaster
-        self.forecaster, self._forecast_horizon = get_forecaster(forecaster,
-                                                                 forecast_horizon,
-                                                                 self.time_series,
-                                                                 increase_uncertainty=forecaster_increase_uncertainty)
+        self._forecast_horizon = forecast_horizon * (forecaster is not None)
+        self.forecaster = get_forecaster(
+            forecaster,
+            forecast_horizon,
+            self._get_observation_spaces(),
+            self.time_series,
+            increase_uncertainty=forecaster_increase_uncertainty
+        )
 
         self._state_dict_keys = {"current":  [f"{component}_current" for component in self.state_components],
                                  "forecast": [
