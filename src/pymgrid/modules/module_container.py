@@ -135,6 +135,9 @@ class Container(UserDict):
         rv = rv | self.dir_additions()
         return sorted(rv)
 
+    def __contains__(self, item):
+        return item in self.data.keys() or item in self.dir_additions()
+
 
 class ModuleContainer(Container):
     """
