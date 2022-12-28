@@ -9,30 +9,31 @@ def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=
 
     Parameters
     ----------
-    forecaster: callable, float, "oracle", or None, default None.
+    forecaster : callable, float, "oracle", or None, default None.
         Function that gives a forecast n-steps ahead.
-        If callable, must take as arguments (val_c: float, val_{c+n}: float, n: int), where:
 
-           * val_c is the current value in the time series: self.time_series[self.current_step],
+        * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
 
-           * val_{c+n} is the value in the time series n steps in the future,
+          * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
 
-           * n is the number of steps in the future at which we are forecasting.
+          * ``val_{c+n}`` is the value in the time series n steps in the future
 
-        The output forecast = forecaster(val_c, val_{c+n}, n) must have the same sign
-        as the inputs val_c and val_{c+n}.
+          * n is the number of steps in the future at which we are forecasting.
 
-        If float, serves as a standard deviation for a mean-zero gaussian noise function
-            that is added to the true value.
+          The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+          as the inputs ``val_c`` and ``val_{c+n}``.
 
-        If "oracle", gives a perfect forecast.
+        * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+          that is added to the true value.
 
-        If None, no forecast.
+        * If ``"oracle"``, gives a perfect forecast.
+
+        * If ``None``, no forecast.
 
     forecast_horizon : int
-        Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
+       Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
-    observation_space : :class:`.ModuleSpace`
+    observation_space : :class:`ModuleSpace <pymgrid.utils.space.ModuleSpace>`
         Observation space; used to determine values to pad missing forecasts when we are forecasting past the
         end of the time series.
 
@@ -40,8 +41,9 @@ def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
 
-    increase_uncertainty : bool, default False. Whether to increase uncertainty for farther-out dates if using
-        a GaussianNoiseForecaster. Ignored otherwise.
+    increase_uncertainty : bool, default False.
+       Whether to increase uncertainty for farther-out dates if using
+       a GaussianNoiseForecaster. Ignored otherwise.
 
     Returns
     -------
