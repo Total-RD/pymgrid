@@ -33,6 +33,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.linkcode',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.mathjax',
     'nbsphinx',
     'nbsphinx_link',
     'IPython.sphinxext.ipython_console_highlighting'
