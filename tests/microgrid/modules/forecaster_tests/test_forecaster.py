@@ -224,30 +224,26 @@ class TestGetForecaster(TestCase):
 
     def test_user_defined_forecaster(self):
         user_defined_forecaster = lambda val_c, val_c_n, n: val_c_n
-        forecaster = get_forecaster(user_defined_forecaster,
-                                                        self.forecaster_horizon,
-                                                        OBSERVATION_SPACE,
-                                                        self.simple_time_series)
+        forecaster = get_forecaster(user_defined_forecaster, OBSERVATION_SPACE, self.simple_time_series)
         self.assertIsInstance(forecaster, UserDefinedForecaster)
 
     def test_oracle_forecaster(self):
-        forecaster = get_forecaster("oracle", self.forecaster_horizon, OBSERVATION_SPACE)
+        forecaster = get_forecaster("oracle", OBSERVATION_SPACE)
         self.assertIsInstance(forecaster, OracleForecaster)
 
     def test_no_forecaster(self):
-        forecaster = get_forecaster(None, self.forecaster_horizon, OBSERVATION_SPACE)
+        forecaster = get_forecaster(None, OBSERVATION_SPACE)
         self.assertIsInstance(forecaster, NoForecaster)
 
     def test_gaussian_noise_forecaster(self):
         noise_std = 0.5
-        forecaster = get_forecaster(noise_std, self.forecaster_horizon, OBSERVATION_SPACE)
+        forecaster = get_forecaster(noise_std, OBSERVATION_SPACE)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
 
     def test_gaussian_noise_forecaster_increase_uncertainty(self):
         noise_std = 0.5
-        forecaster = get_forecaster(noise_std, self.forecaster_horizon, OBSERVATION_SPACE,
-                                                        increase_uncertainty=True)
+        forecaster = get_forecaster(noise_std, OBSERVATION_SPACE, increase_uncertainty=True)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
 
