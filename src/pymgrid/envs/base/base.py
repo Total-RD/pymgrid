@@ -88,7 +88,7 @@ class BaseMicrogridEnv(Microgrid, Env):
 
     def _get_observation_space(self):
         obs_space = Dict({name:
-                         Tuple([module.observation_spaces['normalized'] for module in modules_list]) for
+                         Tuple([module.observation_space['normalized'] for module in modules_list]) for
                      name, modules_list in self.modules.iterdict()})
 
         return (flatten_space(obs_space) if self._flat_spaces else obs_space), obs_space

@@ -637,9 +637,9 @@ class BaseMicrogridModule(yaml.YAMLObject):
         return self._action_space
 
     @property
-    def observation_spaces(self):
+    def observation_space(self):
         """
-        Observation spaces of the module.
+        Observation space of the module.
 
         Contains both normalized and un-normalized observation spaces.
 

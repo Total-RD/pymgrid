@@ -28,8 +28,8 @@ class TestRenewableModuleNoForecasting(TestCase):
 
     def test_observation_space(self):
         renewable_module = RenewableModule(self.time_series)
-        normalized_obs_space = renewable_module.observation_spaces["normalized"]
-        unnormalized_obs_space = renewable_module.observation_spaces["unnormalized"]
+        normalized_obs_space = renewable_module.observation_space["normalized"]
+        unnormalized_obs_space = renewable_module.observation_space["unnormalized"]
 
         self.assertEqual(normalized_obs_space, Box(low=0, high=1, shape=(1,)))
         self.assertEqual(unnormalized_obs_space, Box(low=0, high=self.time_series.max(), shape=(1,)))
@@ -75,8 +75,8 @@ class TestRenewableModuleForecasting(TestCase):
 
     def test_observation_space(self):
         renewable_module = self.new_renewable_module()
-        normalized_obs_space = renewable_module.observation_spaces["normalized"]
-        unnormalized_obs_space = renewable_module.observation_spaces["unnormalized"]
+        normalized_obs_space = renewable_module.observation_space["normalized"]
+        unnormalized_obs_space = renewable_module.observation_space["unnormalized"]
 
         self.assertEqual(normalized_obs_space, Box(low=0, high=1, shape=(1+renewable_module.forecast_horizon,)))
         self.assertEqual(unnormalized_obs_space, Box(low=0, high=self.time_series.max(), shape=(1+renewable_module.forecast_horizon,)))
@@ -104,7 +104,7 @@ class TestRenewableModuleForecasting(TestCase):
             shape=(1+renewable_module.forecast_horizon, )
         )
 
-        self.assertEqual(renewable_module.observation_spaces, observation_space)
+        self.assertEqual(renewable_module.observation_space, observation_space)
 
         done = False
         while not done:
