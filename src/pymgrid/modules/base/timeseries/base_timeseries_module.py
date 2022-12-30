@@ -177,7 +177,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     @property
     def forecaster_increase_uncertainty(self):
         """
-        View of ``self.forecaster.increase_uncertainty``.
+        View of :class:`pymgrid.forecast.GaussianNoiseForecaster``.increase_uncertainty`.
 
         Required for serialization as a mirror to the class parameter.
         Will only ever be True if ``self.forecaster`` is a ``GaussianNoiseForecaster``.
