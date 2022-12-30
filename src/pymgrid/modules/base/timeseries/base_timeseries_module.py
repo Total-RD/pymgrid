@@ -37,7 +37,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         self._forecast_horizon = forecast_horizon * (forecaster is not None)
         self.forecaster = get_forecaster(
             forecaster,
-            forecast_horizon,
             self._get_observation_spaces(),
             self.time_series,
             increase_uncertainty=forecaster_increase_uncertainty

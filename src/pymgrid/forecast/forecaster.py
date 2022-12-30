@@ -3,7 +3,7 @@ from pandas.api.types import is_number, is_numeric_dtype
 from abc import abstractmethod
 
 
-def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=None, increase_uncertainty=False):
+def get_forecaster(forecaster, observation_space, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
 
@@ -29,9 +29,6 @@ def get_forecaster(forecaster, forecast_horizon, observation_space, time_series=
         * If ``"oracle"``, gives a perfect forecast.
 
         * If ``None``, no forecast.
-
-    forecast_horizon : int
-       Number of steps in the future to forecast. If forecaster is None, ignored and 0 is returned.
 
     observation_space : :class:`ModuleSpace <pymgrid.utils.space.ModuleSpace>`
         Observation space; used to determine values to pad missing forecasts when we are forecasting past the
