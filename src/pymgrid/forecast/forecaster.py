@@ -44,7 +44,7 @@ def get_forecaster(forecaster, observation_space, time_series=None, increase_unc
 
     Returns
     -------
-    forecaster : callable[float, float, int]
+    forecaster : callable
         The forecasting function.
 
     """
