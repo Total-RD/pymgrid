@@ -627,7 +627,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         """
         Action spaces of the module.
 
-        Contains both normalized and un-normalized action spaces.
+        Contains both normalized and un-normalized action space.
 
         Returns
         -------
