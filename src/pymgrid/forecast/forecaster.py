@@ -70,7 +70,7 @@ def get_forecaster(forecaster, observation_space, time_series=None, increase_unc
 class Forecaster:
     def __init__(self, observation_space):
         self._observation_space = observation_space
-        self._fill_arr = (self._observation_space.unnormalized.high - self._observation_space.unnormalized.low) / 2
+        self._fill_arr = (self._observation_space.unnormalized.high + self._observation_space.unnormalized.low) / 2
 
     @abstractmethod
     def _forecast(self, val_c, val_c_n, n):
