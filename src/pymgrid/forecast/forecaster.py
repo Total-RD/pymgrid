@@ -94,6 +94,10 @@ class Forecaster:
             pad = self._fill_arr.reshape((-1, forecast.shape[1]))[-pad_amount:]
             return np.concatenate((forecast, pad))
 
+    def full_pad(self, shape, forecast_horizon):
+        empty_forecast = np.array([]).reshape((0, shape[1]))
+        return self._pad(empty_forecast, forecast_horizon)
+
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplemented
@@ -184,6 +188,9 @@ class GaussianNoiseForecaster(Forecaster):
 
 class NoForecaster(Forecaster):
     def _forecast(self, val_c, val_c_n, n):
+        return None
+
+    def full_pad(self, shape, forecast_horizon):
         return None
 
 

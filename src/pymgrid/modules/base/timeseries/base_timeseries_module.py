@@ -88,11 +88,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         try:
             val_c = self.time_series[self.current_step, :]
         except IndexError:
-            return np.zeros((self._forecast_horizon, len(self.state_components)))
+            forecast = self.forecaster.full_pad(self.time_series.shape, self._forecast_horizon)
+        else:
+            forecast = self.forecaster(val_c=val_c,
+                                       val_c_n=val_c_n,
+                                       n=self.forecast_horizon)
 
-        forecast = self.forecaster(val_c=val_c,
-                                   val_c_n=val_c_n,
-                                   n=self.forecast_horizon)
         return None if forecast is None else factor * forecast
 
     def _done(self):
