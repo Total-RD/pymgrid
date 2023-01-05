@@ -34,14 +34,10 @@ def get_forecaster(forecaster, observation_space, sink_only, time_series=None, i
         Observation space; used to determine values to pad missing forecasts when we are forecasting past the
         end of the time series.
 
-<<<<<<< HEAD
-    time_series : ndarray[float] or None, default None.
-=======
     sink_only : bool
         Whether the module is a sink and is not a source.
 
     time_series: ndarray[float] or None, default None.
->>>>>>> check for sink only when filling forecasts
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
 
