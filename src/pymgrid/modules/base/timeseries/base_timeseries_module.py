@@ -113,7 +113,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         try:
             return factor * self.time_series[self.current_step, :]
         except IndexError:
-            return np.zeros(self.time_series.shape[1])
+            return factor * self.forecaster.full_pad(self.time_series.shape, 1).reshape(-1)
 
     @property
     def time_series(self):
