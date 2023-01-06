@@ -19,7 +19,7 @@ def get_test_inputs(n=None, negative=False):
 
 class TestOracleForecaster(TestCase):
     def setUp(self) -> None:
-        self.forecaster = OracleForecaster(observation_space=OBSERVATION_SPACE)
+        self.forecaster = OracleForecaster(observation_space=OBSERVATION_SPACE, sink_only=False)
 
     def test_positive_inputs(self):
         val_c, val_c_n, n = get_test_inputs()
@@ -35,7 +35,10 @@ class TestOracleForecaster(TestCase):
 class TestGaussianNoiseForecaster(TestCase):
     def test_single_forecast_positive(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         val_c, val_c_n, n = get_test_inputs()
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(noise_std, forecaster.noise_std)
@@ -43,7 +46,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_single_forecast_positive_high_std(self):
         noise_std = 100
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         val_c, val_c_n, n = get_test_inputs()
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(noise_std, forecaster.noise_std)
@@ -51,7 +57,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_single_forecast_negative(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         val_c, val_c_n, n = get_test_inputs(negative=True)
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(noise_std, forecaster.noise_std)
@@ -59,7 +68,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_single_forecast_negative_high_std(self):
         noise_std = 100
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         val_c, val_c_n, n = get_test_inputs(negative=True)
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(noise_std, forecaster.noise_std)
@@ -67,7 +79,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_multiple_forecast_positive(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         n = None
         for _ in range(2):
             val_c, val_c_n, n = get_test_inputs(n=n)
@@ -77,7 +92,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_multiple_forecast_positive_high_std(self):
         noise_std = 100
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         n = None
         for _ in range(2):
             val_c, val_c_n, n = get_test_inputs(n=n)
@@ -87,7 +105,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_multiple_forecast_negative(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         n = None
         for _ in range(2):
             val_c, val_c_n, n = get_test_inputs(n=n, negative=True)
@@ -97,7 +118,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_multiple_forecast_negative_high_std(self):
         noise_std = 100
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std, 
+                                             increase_uncertainty=False, 
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         n = None
         for _ in range(2):
             val_c, val_c_n, n = get_test_inputs(n=n, negative=True)
@@ -107,7 +131,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_increasing_uncertainty_positive(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=True, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std, 
+                                             increase_uncertainty=True, 
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         val_c, val_c_n, n = get_test_inputs()
         forecast = forecaster(val_c, val_c_n, n)
         self.assertTrue((noise_std != forecaster.noise_std).any())
@@ -116,7 +143,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_increasing_uncertainty_negative(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=True, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=True,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         val_c, val_c_n, n = get_test_inputs(negative=True)
         forecast = forecaster(val_c, val_c_n, n)
         self.assertTrue((noise_std != forecaster.noise_std).any())
@@ -125,7 +155,10 @@ class TestGaussianNoiseForecaster(TestCase):
 
     def test_bad_shape(self):
         noise_std = 1
-        forecaster = GaussianNoiseForecaster(noise_std=noise_std, increase_uncertainty=False, observation_space=OBSERVATION_SPACE)
+        forecaster = GaussianNoiseForecaster(noise_std=noise_std,
+                                             increase_uncertainty=False,
+                                             observation_space=OBSERVATION_SPACE,
+                                             sink_only=False)
         n_vals = [5, 10]
         val_c, val_c_n, n = get_test_inputs(n=n_vals[0])
         _ = forecaster(val_c, val_c_n, n)
@@ -137,7 +170,7 @@ class TestGaussianNoiseForecaster(TestCase):
 
 class TestUserDefinedForecaster(TestCase):
     def setUp(self) -> None:
-        self.oracle_forecaster = OracleForecaster(observation_space=OBSERVATION_SPACE)
+        self.oracle_forecaster = OracleForecaster(observation_space=OBSERVATION_SPACE, sink_only=False)
         self.simple_time_series = np.arange(10).reshape((-1, 1))
 
     @staticmethod
@@ -147,7 +180,7 @@ class TestUserDefinedForecaster(TestCase):
     def test_user_defined_oracle_positive(self):
         forecaster = UserDefinedForecaster(forecaster_function=self.oracle_forecaster,
                                            time_series=self.simple_time_series,
-                                           observation_space=OBSERVATION_SPACE)
+                                           observation_space=OBSERVATION_SPACE, sink_only=False)
         val_c, val_c_n, n = get_test_inputs()
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(forecast, val_c_n)
@@ -155,7 +188,7 @@ class TestUserDefinedForecaster(TestCase):
     def test_user_defined_oracle_negative(self):
         forecaster = UserDefinedForecaster(forecaster_function=self.oracle_forecaster,
                                            time_series=self.simple_time_series,
-                                           observation_space=OBSERVATION_SPACE)
+                                           observation_space=OBSERVATION_SPACE, sink_only=False)
         val_c, val_c_n, n = get_test_inputs(negative=True)
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(forecast, val_c_n)
@@ -163,7 +196,7 @@ class TestUserDefinedForecaster(TestCase):
     def test_scalar_forecaster(self):
         forecaster = UserDefinedForecaster(forecaster_function=self.oracle_scalar_forecaster,
                                            time_series=self.simple_time_series,
-                                           observation_space=OBSERVATION_SPACE)
+                                           observation_space=OBSERVATION_SPACE, sink_only=False)
         val_c, val_c_n, n = get_test_inputs(negative=True)
         forecast = forecaster(val_c, val_c_n, n)
         self.assertEqual(forecast, val_c_n)
@@ -174,7 +207,7 @@ class TestUserDefinedForecaster(TestCase):
                                                 "cannot be casted to necessary forecast shape (.*, 1)"):
             _ = UserDefinedForecaster(forecaster_function=bad_output_shape_forecaster,
                                       time_series=self.simple_time_series,
-                                      observation_space=OBSERVATION_SPACE)
+                                      observation_space=OBSERVATION_SPACE, sink_only=False)
 
     def test_vectorized_forecaster_bad_output_type(self):
         bad_output_type_forecaster = lambda val_c, val_c_n, n: np.array([str(x) for x in val_c_n]).reshape((-1, 1))
@@ -182,7 +215,7 @@ class TestUserDefinedForecaster(TestCase):
                                                "output of type"):
             _ = UserDefinedForecaster(forecaster_function=bad_output_type_forecaster,
                                       time_series=self.simple_time_series,
-                                      observation_space=OBSERVATION_SPACE)
+                                      observation_space=OBSERVATION_SPACE, sink_only=False)
 
     def test_vectorized_forecaster_bad_output_signs(self):
         def bad_output_type_forecaster(val_c, val_c_n, n):
@@ -195,7 +228,7 @@ class TestUserDefinedForecaster(TestCase):
                                                 "sign \(or zero\) as input but returned output"):
             _ = UserDefinedForecaster(forecaster_function=bad_output_type_forecaster,
                                       time_series=self.simple_time_series,
-                                      observation_space=OBSERVATION_SPACE)
+                                      observation_space=OBSERVATION_SPACE, sink_only=False)
 
     def test_bad_forecaster(self):
         bad_forecaster = lambda val_c, val_c_n, n: 0/0
@@ -203,7 +236,7 @@ class TestUserDefinedForecaster(TestCase):
         with self.assertRaisesRegex(ValueError, "Unable to call forecaster with scalar inputs."):
             _ = UserDefinedForecaster(forecaster_function=bad_forecaster,
                                       time_series=self.simple_time_series,
-                                      observation_space=OBSERVATION_SPACE)
+                                      observation_space=OBSERVATION_SPACE, sink_only=False)
 
     def test_scalar_forecaster_bad_output_shape(self):
         def bad_output_shape_forecaster(val_c, val_c_n, n):
@@ -214,7 +247,7 @@ class TestUserDefinedForecaster(TestCase):
         with self.assertRaisesRegex(ValueError, "Forecaster must return scalar output with scalar input but returned."):
             _ = UserDefinedForecaster(forecaster_function=bad_output_shape_forecaster,
                                       time_series=self.simple_time_series,
-                                      observation_space=OBSERVATION_SPACE)
+                                      observation_space=OBSERVATION_SPACE, sink_only=False)
 
 
 class TestGetForecaster(TestCase):
