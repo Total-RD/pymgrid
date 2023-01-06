@@ -47,7 +47,7 @@ def get_forecaster(forecaster, observation_space, sink_only=False, time_series=N
 
     Returns
     -------
-    forecaster : callable
+    forecaster : :class:`.Forecaster`
         The forecasting function.
 
     """
