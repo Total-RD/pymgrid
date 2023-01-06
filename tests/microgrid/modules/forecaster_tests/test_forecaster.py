@@ -257,7 +257,7 @@ class TestGetForecaster(TestCase):
 
     def test_user_defined_forecaster(self):
         user_defined_forecaster = lambda val_c, val_c_n, n: val_c_n
-        forecaster = get_forecaster(user_defined_forecaster, OBSERVATION_SPACE, self.simple_time_series)
+        forecaster = get_forecaster(user_defined_forecaster, OBSERVATION_SPACE, time_series=self.simple_time_series)
         self.assertIsInstance(forecaster, UserDefinedForecaster)
 
     def test_oracle_forecaster(self):
