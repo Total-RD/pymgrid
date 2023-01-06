@@ -433,6 +433,13 @@ class Microgrid(yaml.YAMLObject):
 
         return horizons[0]
 
+    def set_forecast_horizon(self, value):
+        for module in self._modules.iterlist():
+            try:
+                module.forecast_horizon = value
+            except AttributeError:
+                pass
+
     @property
     def modules(self):
         """
