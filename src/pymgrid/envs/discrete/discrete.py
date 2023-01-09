@@ -44,7 +44,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
 
     def _get_action_space(self):
         """
-        An action here is a priority list - in what order to deploy fixed source modules.
+        An action here is a priority list - in what order to deploy controllable source modules.
         Compute the total expected load
         It exhausts the entire production of the 0th source module before moving on to the second and the third, etc.
 
