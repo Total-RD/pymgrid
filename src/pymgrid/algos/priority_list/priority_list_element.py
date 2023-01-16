@@ -17,6 +17,9 @@ class PriorityListElement:
     In :class:`.DiscreteMicrogridEnv`, each action in the environment's action space corresponds to a distinct priority
     list.
 
+    See :attr:`.PriorityListElement.module_actions` and :attr:`.PriorityListElement.action` for further details
+    of how these elements are incorporated in algorithms.
+
     """
 
     module: Tuple[str, int]
@@ -32,15 +35,21 @@ class PriorityListElement:
     
     * If greater than one, actions generated this element will be a length-2 array. The first element
       is the action number (defined by `action`) and the second is a float corresponding to the scalar case.
+      
+      See :attr:`.PriorityListElement.action` for additional details.
 
     """
 
     action: int
     """
-    Action number.
+    Action number in {0, ..., :attr:`.PriorityListElement.module_actions`-1}.
+
+    This is most relevant to :class:`GensetModule<pymgrid.modules.GensetModule>` and other elements with an action space
+    with more than one dimension.
     
-    Value is in {0, ..., `module_actions`-1}.
-    
+    Specifically, :class:`GensetModules<pymgrid.modules.GensetModule>` have a two-dimensional action space: 
+    the first element defines whether to turn the module on or off, and the second is an amount of energy to draw -- 
+    assuming the module is on. See :meth:`.GensetModule.step` and :meth:`.GensetModule.update_status` for details.
     """
 
     marginal_cost: Optional[float] = None
