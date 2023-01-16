@@ -100,7 +100,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             The amount of energy to draw or send.
 
             If ``normalized``, the action is assumed to be normalized and is un-normalized into the range
-            ``[self.min_act, self.max_act]``.
+            [:attr:`.BaseModule.min_act`, :attr:`.BaseModule.max_act`].
 
             If the **unnormalized** action is positive, the module acts as a source and provides energy to the
             microgrid. Otherwise, the module acts as a sink and absorbs energy.
@@ -110,7 +110,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         normalized : bool, default True
             Whether ``action`` is normalized. If True, action is assumed to be normalized and is un-normalized into the
-            range ``[self.min_act, self.max_act]``.
+            range [:attr:`.BaseModule.min_act`, :attr:`.BaseModule.max_act`].
 
         Raises
         ------
