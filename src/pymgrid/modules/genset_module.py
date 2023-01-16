@@ -9,7 +9,7 @@ class GensetModule(BaseMicrogridModule):
     """
     A genset/generator module.
 
-    This module is a fixed source module; when used as a module in a microgrid, you must pass it an energy production
+    This module is a controllable source module; when used as a module in a microgrid, you must pass it an energy production
     request.
 
     Parameters
@@ -94,6 +94,51 @@ class GensetModule(BaseMicrogridModule):
         super().__init__(raise_errors, provided_energy_name=provided_energy_name, absorbed_energy_name=None)
 
     def step(self, action, normalized=True):
+        """
+        Take one step in the module, attempting to draw a certain amount of energy from the genset.
+
+        Parameters
+        ----------
+        action : float or np.ndarray, shape (2,)
+            Two-dimensional vector containing two values. The first value is used to passed to
+            :meth:`.GensetModule.update_status` while the second is the amount of energy to draw from the genset.
+
+            If ``normalized``, the amount of energy is assumed to be normalized and is un-normalized into the range
+            [:attr:`.GensetModule.min_act`, :attr:`.GensetModule.max_act`].
+
+            If the **unnormalized** action is positive, the module acts as a source and provides energy to the
+            microgrid. Otherwise, the module acts as a sink and absorbs energy.
+
+            If the unnormalized action implies acting as a sink and ``is_sink`` is False -- or the converse -- an
+            ``AssertionError`` is raised.
+
+            .. warning::
+               The first element in ``action`` is not denormalized before being passed to
+               :meth:`.GensetModule.update_status`, regardless of the value of ``normalized``.
+
+        normalized : bool, default True
+            Whether ``action`` is normalized. If True, action is assumed to be normalized and is un-normalized into the
+            range [:attr:`.GensetModule.min_act`, :attr:`.GensetModule.max_act`].
+
+        Raises
+        ------
+        AssertionError
+            If action implies acting as a sink, or ``action[0]`` in outside of ``[0, 1]``.
+
+        Returns
+        -------
+        observation : np.ndarray
+            State of the module after taking action ``action``.
+        reward : float
+            Reward/cost after taking the action.
+        done : bool
+            Whether the module terminates.
+        info : dict
+            Additional information from this step.
+            Will include either `provided_energy` or `absorbed_energy` as a key, denoting the amount of energy
+            this module provided to or absorbed from the microgrid.
+
+        """
         goal_status = action[0]
         assert 0 <= goal_status <= 1
         self.update_status(goal_status)
