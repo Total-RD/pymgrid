@@ -51,6 +51,11 @@ html_theme = 'pydata_sphinx_theme'
 html_theme_options = {
     "primary_sidebar_end": ["indices.html", "sidebar-ethical-ads.html"],
 
+    "logo": {
+          "image_light": "logo-light.png",
+          "image_dark": "logo-dark.png",
+       },
+
     "icon_links": [
             {
                 "name": "GitHub",
