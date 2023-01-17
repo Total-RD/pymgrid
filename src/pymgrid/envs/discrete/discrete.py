@@ -9,20 +9,26 @@ from pymgrid.envs.base import BaseMicrogridEnv
 
 class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
     """
-    A discrete env that implements priority lists as actions on a microgrid.
+        A discrete env that implements priority lists as actions on a microgrid.
 
-    The env assumes that you need to meet the consumption in fixed sink (e.g. load) modules and that
-    you would like to use as much of your flex source modules (e.g. PV) as possible.
+        The environment deploys fixed controllable modules to the extent necessary to zero out the net load (load minus
+        renewable generation).
+    """
 
-    The env assumes that all module actions are either singletons or have length two. In the latter case, assumes that
-    the first value is boolean. This
-
-    Attributes
-    -----------------
-    actions_list: List[Tuple[Tuple]]
-        List of priority tuples. Each priority tuple defines the order in which to prioritize fixed source modules.
-            Each tuple contains three elements (module_name, total_actions_for_{module_name}, action_num).
-            For example: (('genset', 0), 2, 1) is a tuple defining the first element (of two) for ('genset', 0).
+    actions_list: list
+    """
+    List of priority lists.
+    
+    Each element in this list corresponds to an action in the environment's action space, and defines an order 
+    in which to deploy fixed controllable modules. Specifically, each action corresponds to a unique priority list, 
+    itself containing :class:`PriorityListElements<.PriorityListElement>` that represents a particular module's position
+    in the deployment order.
+    
+    Returns
+    -------
+    actions_list : list of list of :class:`.PriorityListElement`
+        List of all priority lists.
+        
     """
 
     yaml_tag = u"!DiscreteMicrogridEnv"
