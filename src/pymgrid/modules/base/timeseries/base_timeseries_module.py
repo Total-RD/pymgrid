@@ -35,7 +35,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
         self._forecast_param = forecaster
         self._forecast_horizon = forecast_horizon * (forecaster is not None)
-        self.forecaster = get_forecaster(
+        self._forecaster = get_forecaster(
             forecaster,
             self._get_observation_spaces(),
             self.is_sink and not self.is_source,
@@ -88,11 +88,11 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         try:
             val_c = self.time_series[self.current_step, :]
         except IndexError:
-            forecast = self.forecaster.full_pad(self.time_series.shape, self._forecast_horizon)
+            forecast = self._forecaster.full_pad(self.time_series.shape, self._forecast_horizon)
         else:
-            forecast = self.forecaster(val_c=val_c,
-                                       val_c_n=val_c_n,
-                                       n=self.forecast_horizon)
+            forecast = self._forecaster(val_c=val_c,
+                                        val_c_n=val_c_n,
+                                        n=self.forecast_horizon)
 
         return None if forecast is None else factor * forecast
 
@@ -113,7 +113,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         try:
             return factor * self.time_series[self.current_step, :]
         except IndexError:
-            return factor * self.forecaster.full_pad(self.time_series.shape, 1).reshape(-1)
+            return factor * self._forecaster.full_pad(self.time_series.shape, 1).reshape(-1)
 
     @property
     def time_series(self):
@@ -154,6 +154,34 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         return self._max_act
 
     @property
+    def forecaster(self):
+        """
+        View of the forecaster.
+
+        Returns
+        -------
+        forecaster : :class:`.Forecaster`
+            The module's forecaster.
+
+        """
+        return self._forecaster
+
+    def set_forecaster(self,
+                       forecaster,
+                       forecast_horizon=DEFAULT_HORIZON,
+                       forecaster_increase_uncertainty=False):
+
+        self._forecaster = get_forecaster(
+            forecaster,
+            self._get_observation_spaces(),
+            self.is_sink and not self.is_source,
+            self.time_series,
+            increase_uncertainty=forecaster_increase_uncertainty
+        )
+
+        self._forecast_horizon = forecast_horizon * (forecaster is not None)
+
+    @property
     def forecast_horizon(self):
         """
         The number of steps until which the module forecasts.
@@ -168,13 +196,13 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @forecast_horizon.setter
     def forecast_horizon(self, value):
-        if self.forecaster is not None:
+        if self._forecaster is not None:
             self._forecast_horizon = value
         else:
             from warnings import warn
             from pymgrid.forecast.forecaster import OracleForecaster
             warn("Setting forecast_horizon requires a non-null forecaster. Implementing OracleForecaster.")
-            self.forecaster = OracleForecaster(self._observation_space, self.is_sink and not self.is_source)
+            self._forecaster = OracleForecaster(self._observation_space, self.is_sink and not self.is_source)
             self._forecast_horizon = value
 
     @property
@@ -192,7 +220,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
         """
         try:
-            return self.forecaster.increase_uncertainty
+            return self._forecaster.increase_uncertainty
         except AttributeError:
             return False
 
