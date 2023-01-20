@@ -199,8 +199,14 @@ class GaussianNoiseForecaster(Forecaster):
         return self._noise_std
 
     def _forecast(self, val_c, val_c_n, n):
-        forecast = val_c_n + self._get_noise(len(val_c_n)).reshape(val_c_n.shape)
-        forecast[(forecast * val_c_n) < 0] = 0
+        forecast = val_c_n + self._get_noise(val_c_n.shape).reshape(val_c_n.shape)
+
+        lt_lb = forecast < self._forecast_shaped_space.unnormalized.low
+        gt_ub = forecast > self._forecast_shaped_space.unnormalized.high
+
+        forecast[lt_lb] = self._forecast_shaped_space.unnormalized.low[lt_lb]
+        forecast[gt_ub] = self._forecast_shaped_space.unnormalized.high[gt_ub]
+
         return forecast
 
     def __repr__(self):
