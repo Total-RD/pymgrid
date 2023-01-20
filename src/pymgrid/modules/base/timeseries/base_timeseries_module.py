@@ -184,16 +184,29 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                        forecaster,
                        forecast_horizon=DEFAULT_HORIZON,
                        forecaster_increase_uncertainty=False):
+        """
+        TODO write this docstring
+        Then get this into your MPC/RBC/RL config somehow
 
-        self._forecaster = get_forecaster(
-            forecaster,
-            self._get_observation_spaces(),
-            self.is_sink and not self.is_source,
-            self.time_series,
-            increase_uncertainty=forecaster_increase_uncertainty
-        )
+        Parameters
+        ----------
+        forecaster
+        forecast_horizon
+        forecaster_increase_uncertainty
 
-        self._forecast_horizon = forecast_horizon * (forecaster is not None)
+        Returns
+        -------
+
+        """
+
+        self.forecast_horizon = forecast_horizon * (forecaster is not None)
+
+        self._forecaster = get_forecaster(forecaster,
+                                          self._observation_space,
+                                          (self.forecast_horizon, len(self.state_components)),
+                                          self.is_sink and not self.is_source,
+                                          self.time_series,
+                                          increase_uncertainty=forecaster_increase_uncertainty)
 
     @property
     def forecast_horizon(self):
