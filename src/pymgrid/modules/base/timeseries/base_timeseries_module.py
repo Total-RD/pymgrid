@@ -179,17 +179,37 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                        forecast_horizon=DEFAULT_HORIZON,
                        forecaster_increase_uncertainty=False):
         """
-        TODO write this docstring
-        Then get this into your MPC/RBC/RL config somehow
+        Set the forecaster for this module.
 
-        Parameters
-        ----------
-        forecaster
-        forecast_horizon
-        forecaster_increase_uncertainty
+        Sets the forecaster with the same logic as upon initialization.
 
-        Returns
-        -------
+        forecaster : callable, float, "oracle", or None, default None.
+            Function that gives a forecast n-steps ahead.
+
+            * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
+
+              * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
+
+              * ``val_{c+n}`` is the value in the time series n steps in the future
+
+              * n is the number of steps in the future at which we are forecasting.
+
+              The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+              as the inputs ``val_c`` and ``val_{c+n}``.
+
+            * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+              that is added to the true value.
+
+            * If ``"oracle"``, gives a perfect forecast.
+
+            * If ``None``, no forecast.
+
+        forecast_horizon : int
+            Number of steps in the future to forecast. If forecaster is None, this parameter is ignored and the resultant
+            horizon will be zero.
+
+        forecaster_increase_uncertainty : bool, default False
+            Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
 
         """
 
