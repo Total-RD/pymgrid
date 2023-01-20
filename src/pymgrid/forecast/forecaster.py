@@ -2,8 +2,10 @@ import numpy as np
 from pandas.api.types import is_number, is_numeric_dtype
 from abc import abstractmethod
 
+from pymgrid.utils.space import ModuleSpace
 
-def get_forecaster(forecaster, observation_space, sink_only=False, time_series=None, increase_uncertainty=False):
+
+def get_forecaster(forecaster, observation_space, forecast_shape, sink_only=False, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
 
@@ -53,17 +55,18 @@ def get_forecaster(forecaster, observation_space, sink_only=False, time_series=N
     """
 
     if forecaster is None:
-        return NoForecaster(observation_space, sink_only)
+        return NoForecaster(observation_space, forecast_shape, sink_only)
     elif isinstance(forecaster, (UserDefinedForecaster, OracleForecaster, GaussianNoiseForecaster)):
         return forecaster
     elif callable(forecaster):
-        return UserDefinedForecaster(forecaster, observation_space, sink_only, time_series)
+        return UserDefinedForecaster(forecaster, observation_space, forecast_shape, sink_only, time_series)
     elif forecaster == "oracle":
-        return OracleForecaster(observation_space, sink_only)
+        return OracleForecaster(observation_space, forecast_shape, sink_only)
     elif is_number(forecaster):
         return GaussianNoiseForecaster(
             forecaster,
             observation_space,
+            forecast_shape,
             sink_only,
             increase_uncertainty=increase_uncertainty
         )
