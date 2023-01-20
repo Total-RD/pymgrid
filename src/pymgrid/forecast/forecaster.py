@@ -212,6 +212,7 @@ class NoForecaster(Forecaster):
     def _forecast(self, val_c, val_c_n, n):
         return None
 
+
 def _validate_callable_forecaster(forecaster, time_series):
     val_c = time_series[0]
     n = np.random.randint(2, len(time_series))
