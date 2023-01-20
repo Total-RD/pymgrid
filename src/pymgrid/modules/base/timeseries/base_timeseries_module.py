@@ -232,8 +232,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             from warnings import warn
             warn("Setting forecast_horizon requires a non-null forecaster. Implementing OracleForecaster.")
             self._forecaster = OracleForecaster(self._observation_space,
-                                                sink_only=self.is_sink and not self.is_source,
-                                                forecast_shape=(value, len(self.state_components)))
+                                                forecast_shape=(value, len(self.state_components)),
+                                                sink_only=self.is_sink and not self.is_source
+                                                )
 
         self._forecaster.observation_space = self._observation_space
 
