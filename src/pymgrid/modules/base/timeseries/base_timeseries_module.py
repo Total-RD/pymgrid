@@ -43,13 +43,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             increase_uncertainty=forecaster_increase_uncertainty
         )
 
-        self._state_dict_keys = {
-            "current":  [f"{component}_current" for component in self.state_components],
-            "forecast": [
-                f"{component}_forecast_{j}"
-                for j in range(self._forecast_horizon) for component in self.state_components
-            ]
-        }
+        self._state_dict_keys = self._set_state_dict_keys()
 
         super().__init__(raise_errors, provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name)
@@ -73,6 +67,15 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             _min = 0.0
 
         return _min, _max, _min, _max
+
+    def _set_state_dict_keys(self):
+        return {
+            "current": [f"{component}_current" for component in self.state_components],
+            "forecast": [
+                f"{component}_forecast_{j}"
+                for j in range(self._forecast_horizon) for component in self.state_components
+            ]
+        }
 
     def forecast(self):
         """
