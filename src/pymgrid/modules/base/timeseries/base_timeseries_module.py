@@ -35,13 +35,12 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
         self._forecast_param = forecaster
         self._forecast_horizon = forecast_horizon * (forecaster is not None)
-        self._forecaster = get_forecaster(
-            forecaster,
-            self._get_observation_spaces(),
-            self.is_sink and not self.is_source,
-            self.time_series,
-            increase_uncertainty=forecaster_increase_uncertainty
-        )
+        self._forecaster = get_forecaster(forecaster,
+                                          self._get_observation_spaces(),
+                                          forecast_shape=(self.forecast_horizon, len(self.state_components)),
+                                          sink_only=self.is_sink and not self.is_source,
+                                          time_series=self.time_series,
+                                          increase_uncertainty=forecaster_increase_uncertainty)
 
         self._state_dict_keys = self._set_state_dict_keys()
 
@@ -219,7 +218,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         if value > 0 and isinstance(self._forecaster, NoForecaster):
             from warnings import warn
             warn("Setting forecast_horizon requires a non-null forecaster. Implementing OracleForecaster.")
-            self._forecaster = OracleForecaster(self._observation_space, self.is_sink and not self.is_source)
+            self._forecaster = OracleForecaster(self._observation_space,
+                                                sink_only=self.is_sink and not self.is_source,
+                                                forecast_shape=(value, len(self.state_components)))
 
         self._forecaster.observation_space = self._observation_space
 
