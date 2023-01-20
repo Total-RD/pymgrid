@@ -106,6 +106,20 @@ class Forecaster:
         empty_forecast = np.array([]).reshape((0, shape[1]))
         return self._pad(empty_forecast, forecast_horizon)
 
+    @property
+    def observation_space(self):
+        return self._observation_space
+
+    @observation_space.setter
+    def observation_space(self, value):
+        self._observation_space = value
+        self._fill_arr = (self._observation_space.unnormalized.high + self._observation_space.unnormalized.low) / 2
+        new_shape = (
+            int((value.shape[0] - self._forecast_shaped_space.shape[1]) / self._forecast_shaped_space.shape[1]),
+            self._forecast_shaped_space.shape[1]
+        )
+        self._forecast_shaped_space = self._get_forecast_shaped_space(new_shape)
+
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplemented
