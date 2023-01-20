@@ -72,11 +72,18 @@ def get_forecaster(forecaster, observation_space, sink_only=False, time_series=N
 
 
 class Forecaster:
-    def __init__(self, observation_space, sink_only):
+    def __init__(self, observation_space, forecast_shape, sink_only):
         self._observation_space = observation_space
+        self._forecast_shaped_space = self._get_forecast_shaped_space(forecast_shape)
         self._fill_arr = (self._observation_space.unnormalized.high + self._observation_space.unnormalized.low) / 2
         if sink_only:
             self._fill_arr *= -1
+
+    def _get_forecast_shaped_space(self, shape):
+        n_in_forecast = shape[0]*shape[1]
+        return ModuleSpace(self._observation_space.unnormalized.low[-n_in_forecast:].reshape(shape),
+                           self._observation_space.unnormalized.high[-n_in_forecast:].reshape(shape),
+                           shape=shape)
 
     @abstractmethod
     def _forecast(self, val_c, val_c_n, n):
@@ -120,7 +127,7 @@ class Forecaster:
 
 
 class UserDefinedForecaster(Forecaster):
-    def __init__(self, forecaster_function, observation_space, sink_only, time_series):
+    def __init__(self, forecaster_function, observation_space, forecast_shape, sink_only, time_series):
         self.is_vectorized_forecaster, self.cast_to_arr = \
             _validate_callable_forecaster(forecaster_function, time_series)
 
@@ -129,7 +136,7 @@ class UserDefinedForecaster(Forecaster):
 
         self._forecaster = forecaster_function
 
-        super().__init__(observation_space, sink_only)
+        super().__init__(observation_space, forecast_shape, sink_only)
 
     def _cast_to_arr(self, forecast, val_c_n):
         if self.cast_to_arr:
@@ -147,13 +154,13 @@ class OracleForecaster(Forecaster):
 
 
 class GaussianNoiseForecaster(Forecaster):
-    def __init__(self, noise_std, observation_space, sink_only, increase_uncertainty=False):
+    def __init__(self, noise_std, observation_space, forecast_shape, sink_only, increase_uncertainty=False):
         self.input_noise_std = noise_std
         self.increase_uncertainty = increase_uncertainty
         self._noise_size = None
         self._noise_std = None
 
-        super().__init__(observation_space, sink_only)
+        super().__init__(observation_space, forecast_shape, sink_only)
 
     def _get_noise_std(self):
         if self.increase_uncertainty:
