@@ -84,8 +84,16 @@ class Forecaster:
 
     def _get_forecast_shaped_space(self, shape):
         n_in_forecast = shape[0]*shape[1]
-        return ModuleSpace(self._observation_space.unnormalized.low[-n_in_forecast:].reshape(shape),
-                           self._observation_space.unnormalized.high[-n_in_forecast:].reshape(shape),
+
+        if n_in_forecast:
+            unnormalized_low = self._observation_space.unnormalized.low[-n_in_forecast:]
+            unnormalized_high = self._observation_space.unnormalized.high[-n_in_forecast:]
+        else:
+            unnormalized_low = np.array([])
+            unnormalized_high = np.array([])
+
+        return ModuleSpace(unnormalized_low=unnormalized_low.reshape(shape),
+                           unnormalized_high=unnormalized_high.reshape(shape),
                            shape=shape)
 
     @abstractmethod
