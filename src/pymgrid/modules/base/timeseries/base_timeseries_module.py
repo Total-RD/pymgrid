@@ -48,6 +48,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         super().__init__(raise_errors, provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name)
 
+        self._current_forecast = self.forecast()
+
     def _set_time_series(self, time_series):
         _time_series = np.array(time_series)
         try:
@@ -76,6 +78,16 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                 for j in range(self._forecast_horizon) for component in self.state_components
             ]
         }
+
+    def reset(self):
+        self._current_step = 0
+        self._logger.flush()
+        self._current_forecast = self.forecast()
+        return self.to_normalized(self.state, obs=True)
+
+    def step(self, action, normalized=True):
+        self._current_forecast = self.forecast()
+        return super().step(action, normalized=normalized)
 
     def forecast(self):
         """
@@ -229,11 +241,10 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @property
     def state_dict(self):
-        forecast = self.forecast()
-
         state_dict = dict(zip(self._state_dict_keys['current'], self.current_obs))
-        if forecast is not None:
-            state_dict.update(zip(self._state_dict_keys['forecast'], forecast.reshape(-1)))
+
+        if self._current_forecast is not None:
+            state_dict.update(zip(self._state_dict_keys['forecast'], self._current_forecast.reshape(-1)))
 
         return state_dict
 
