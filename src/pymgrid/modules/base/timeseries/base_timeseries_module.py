@@ -3,7 +3,7 @@ from abc import abstractmethod
 import numpy as np
 from pymgrid.microgrid import DEFAULT_HORIZON
 from pymgrid.modules.base import BaseMicrogridModule
-from pymgrid.forecast.forecaster import get_forecaster
+from pymgrid.forecast.forecaster import get_forecaster, OracleForecaster, NoForecaster
 
 
 class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
@@ -211,14 +211,17 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     @forecast_horizon.setter
     def forecast_horizon(self, value):
-        if self._forecaster is not None:
-            self._forecast_horizon = value
-        else:
+
+        self._forecast_horizon = value
+        self._state_dict_keys = self._set_state_dict_keys()
+        self._observation_space = self._get_observation_spaces()
+
+        if value > 0 and isinstance(self._forecaster, NoForecaster):
             from warnings import warn
-            from pymgrid.forecast.forecaster import OracleForecaster
             warn("Setting forecast_horizon requires a non-null forecaster. Implementing OracleForecaster.")
             self._forecaster = OracleForecaster(self._observation_space, self.is_sink and not self.is_source)
-            self._forecast_horizon = value
+
+        self._forecaster.observation_space = self._observation_space
 
     @property
     def forecaster_increase_uncertainty(self):
