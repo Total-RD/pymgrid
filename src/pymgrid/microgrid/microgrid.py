@@ -408,17 +408,44 @@ class Microgrid(yaml.YAMLObject):
                        forecast_horizon=DEFAULT_HORIZON,
                        forecaster_increase_uncertainty=False):
         """
-        TODO write this docstring
-        Then get this into your MPC/RBC/RL config somehow
+        Set the forecaster for timeseries modules in the microgrid.
 
-        Parameters
-        ----------
-        forecaster
-        forecast_horizon
-        forecaster_increase_uncertainty
+        You may either pass in a single value for ``forecaster`` to apply the same forecasting logic to all timeseries
+        modules, or pass key-value pairs in a ``dict`` to set the forecaster for specific modules. In the latter case,
+        you may also set different forecasters for each named module. See :meth:`.get_forecaster` for additional details
+        on setting forecasters.
 
-        Returns
-        -------
+        forecaster : callable, float, "oracle", None, or dict.
+            Function that gives a forecast n-steps ahead.
+
+            * If ``callable``, must take as arguments ``(val_c: float, val_{c+n}: float, n: int)``, where
+
+              * ``val_c`` is the current value in the time series: ``self.time_series[self.current_step]``
+
+              * ``val_{c+n}`` is the value in the time series n steps in the future
+
+              * n is the number of steps in the future at which we are forecasting.
+
+              The output ``forecast = forecaster(val_c, val_{c+n}, n)`` must have the same sign
+              as the inputs ``val_c`` and ``val_{c+n}``.
+
+            * If ``float``, serves as a standard deviation for a mean-zero gaussian noise function
+              that is added to the true value.
+
+            * If ``"oracle"``, gives a perfect forecast.
+
+            * If ``None``, no forecast.
+
+            * If ``dict``, must contain key-value pairs of the form ``module_name: forecaster``.
+              Will set the forecaster of the module corresponding to ``module_name`` using the logic above.
+
+
+        forecast_horizon : int
+            Number of steps in the future to forecast. If forecaster is None, this parameter is ignored and the resultant
+            horizon will be zero.
+
+        forecaster_increase_uncertainty : bool, default False
+            Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
 
         """
         if isinstance(forecaster, dict):
