@@ -403,6 +403,48 @@ class Microgrid(yaml.YAMLObject):
 
         return df.to_dict()
 
+    def set_forecaster(self,
+                       forecaster,
+                       forecast_horizon=DEFAULT_HORIZON,
+                       forecaster_increase_uncertainty=False):
+        """
+        TODO write this docstring
+        Then get this into your MPC/RBC/RL config somehow
+
+        Parameters
+        ----------
+        forecaster
+        forecast_horizon
+        forecaster_increase_uncertainty
+
+        Returns
+        -------
+
+        """
+        if isinstance(forecaster, dict):
+            for module_name, _forecaster in forecaster.items():
+                if module_name not in self._modules.names():
+                    raise NameError(f'Unrecognized module {module_name}.')
+
+                try:
+                    self._modules[module_name].set_forecaster(
+                        _forecaster,
+                        forcast_horizon=forecast_horizon,
+                        forecaster_increase_uncertainty=forecaster_increase_uncertainty
+                    )
+                except AttributeError:
+                    pass
+        else:
+            for module in self._modules.iterlist():
+                try:
+                    module.set_forecaster(
+                        forecaster,
+                        forecast_horizon=forecast_horizon,
+                        forecaster_increase_uncertainty=forecaster_increase_uncertainty
+                    )
+                except AttributeError:
+                    pass
+
     def get_forecast_horizon(self):
         """
         Get the forecast horizon of timeseries modules contained in the microgrid.
