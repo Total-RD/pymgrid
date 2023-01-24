@@ -70,7 +70,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             Normalized observation after resetting.
 
         """
-        self._current_step = 0
+        self._update_step(reset=True)
         self._logger.flush()
         return self.to_normalized(self.state, obs=True)
 
@@ -143,7 +143,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         state_dict = self.state_dict
         reward, done, info = self._unnormalized_step(denormalized_action)
         self._log(state_dict, reward=reward, **info)
-        self._current_step += 1
+        self._update_step()
 
         obs = self.to_normalized(self.state, obs=True)
 
@@ -279,6 +279,11 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         _info.update(state_dict_pre_step)
         self._logger.log(**_info)
+
+    def _update_step(self, reset=False):
+        if reset:
+            self._current_step = 0
+        self._current_step += 1
 
     @abstractmethod
     def update(self, external_energy_change, as_source=False, as_sink=False):
