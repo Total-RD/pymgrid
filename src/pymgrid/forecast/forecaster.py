@@ -143,6 +143,10 @@ class Forecaster:
     def __call__(self, val_c, val_c_n, n):
         if len(val_c_n.shape) == 1:
             val_c_n = val_c_n.reshape((-1, 1))
+
+        if val_c_n.shape[0] > self._forecast_shaped_space.shape[0]:
+            raise RuntimeError(f'val_c_n shape {val_c_n.shape} is too large for space {self._forecast_shaped_space.shape}')
+
         forecast = self._forecast(val_c, val_c_n, n)
 
         if forecast is None:
