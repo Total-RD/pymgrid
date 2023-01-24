@@ -83,6 +83,11 @@ class Forecaster:
             self._fill_arr *= -1
 
     def _get_forecast_shaped_space(self, shape):
+        if len(shape) == 1:
+            shape = (*shape, 1)
+        elif len(shape) > 2:
+            raise ValueError(f'shape must be one- or two-dimensional.')
+
         n_in_forecast = shape[0]*shape[1]
 
         if n_in_forecast:
