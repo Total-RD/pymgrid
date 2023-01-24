@@ -78,15 +78,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             ]
         }
 
-    def reset(self):
-        self._current_step = 0
-        self._logger.flush()
+    def _update_step(self, reset=False):
+        super()._update_step(reset=reset)
         self._current_forecast = self.forecast()
-        return self.to_normalized(self.state, obs=True)
-
-    def step(self, action, normalized=True):
-        self._current_forecast = self.forecast()
-        return super().step(action, normalized=normalized)
 
     def forecast(self):
         """
