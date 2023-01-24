@@ -217,11 +217,13 @@ class GaussianNoiseForecaster(Forecaster):
     def _forecast(self, val_c, val_c_n, n):
         forecast = val_c_n + self._get_noise(val_c_n.shape).reshape(val_c_n.shape)
 
-        lt_lb = forecast < self._forecast_shaped_space.unnormalized.low
-        gt_ub = forecast > self._forecast_shaped_space.unnormalized.high
+        lb = self._forecast_shaped_space.unnormalized.low[-val_c_n.shape[0]:]
+        ub = self._forecast_shaped_space.unnormalized.high[-val_c_n.shape[0]:]
+        lt_lb = forecast < lb
+        gt_ub = forecast > ub
 
-        forecast[lt_lb] = self._forecast_shaped_space.unnormalized.low[lt_lb]
-        forecast[gt_ub] = self._forecast_shaped_space.unnormalized.high[gt_ub]
+        forecast[lt_lb] = lb[lt_lb]
+        forecast[gt_ub] = ub[gt_ub]
 
         return forecast
 
