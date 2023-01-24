@@ -194,31 +194,25 @@ class OracleForecaster(Forecaster):
 
 class GaussianNoiseForecaster(Forecaster):
     def __init__(self, noise_std, observation_space, forecast_shape, sink_only, increase_uncertainty=False):
+        super().__init__(observation_space, forecast_shape, sink_only)
+
         self.input_noise_std = noise_std
         self.increase_uncertainty = increase_uncertainty
-        self._noise_size = None
-        self._noise_std = None
 
-        super().__init__(observation_space, forecast_shape, sink_only)
+        self._noise_size = self._forecast_shaped_space.shape
+        self._noise_std = self._get_noise_std()
 
     def _get_noise_std(self):
         if self.increase_uncertainty:
-            return self.input_noise_std * (1 + np.log(1 + np.arange(self._noise_size)))
+            return self.input_noise_std * np.outer(
+                1 + np.log(1 + np.arange(self._noise_size[0])),
+                np.ones(self._noise_size[-1])
+            )
         else:
             return self.input_noise_std
 
     def _get_noise(self, size):
-        if self._noise_size is None:
-            self._noise_size = size
-        if size != self._noise_size:
-            raise ValueError(f"size {size} incompatible with previous size {self._noise_size}")
-        return np.random.normal(scale=self.noise_std, size=size)
-
-    @property
-    def noise_std(self):
-        if self._noise_std is None:
-            self._noise_std = self._get_noise_std()
-        return self._noise_std
+        return np.random.normal(scale=self._noise_std, size=size)
 
     def _forecast(self, val_c, val_c_n, n):
         forecast = val_c_n + self._get_noise(val_c_n.shape).reshape(val_c_n.shape)
@@ -230,6 +224,14 @@ class GaussianNoiseForecaster(Forecaster):
         forecast[gt_ub] = self._forecast_shaped_space.unnormalized.high[gt_ub]
 
         return forecast
+
+    @property
+    def noise_std(self):
+        return self._noise_std
+
+    @noise_std.setter
+    def noise_std(self, value):
+        pass
 
     def __repr__(self):
         return f'GaussianNoiseForecaster(noise_std={self.input_noise_std}, ' \
