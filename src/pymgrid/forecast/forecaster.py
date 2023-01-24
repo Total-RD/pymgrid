@@ -106,6 +106,11 @@ class Forecaster:
         else:
             pad_amount = n - forecast.shape[0]
             pad = self._fill_arr.reshape((-1, forecast.shape[1]))[-pad_amount:]
+
+            if pad.shape[0] < pad_amount:
+                raise RuntimeError("Attempting to pad a forecast to a value larger than the module's observation space "
+                                   "implies.")
+
             return np.concatenate((forecast, pad))
 
     def full_pad(self, shape, forecast_horizon):
