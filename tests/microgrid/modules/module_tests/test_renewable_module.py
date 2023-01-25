@@ -1,13 +1,19 @@
+
 from pymgrid.modules import RenewableModule
 
-from tests.microgrid.modules.module_tests.timeseries_modules import TestTimeseriesModuleForecasting, TestTimeseriesModuleNoForecasting
+from tests.microgrid.modules.module_tests.timeseries_modules import (
+    TestTimeseriesModuleForecasting,
+    TestTimeseriesModuleNoForecasting,
+    TestTimeSeriesModuleForecastingNegativeVals,
+    TestTimeSeriesModuleNoForecastingNegativeVals
+)
 
 
 class TestRenewableModuleNoForecasting(TestTimeseriesModuleNoForecasting):
     __test__ = True
 
     def get_module(self):
-        return RenewableModule(self.time_series)
+        return RenewableModule(self.module_time_series)
 
     def test_init_current_renewable(self):
         renewable_module = self.get_module()
@@ -32,7 +38,7 @@ class TestRenewableModuleForecasting(TestTimeseriesModuleForecasting):
     __test__ = True
 
     def get_module(self):
-        return RenewableModule(self.time_series, forecaster="oracle", forecast_horizon=self.forecast_horizon)
+        return RenewableModule(self.module_time_series, forecaster="oracle", forecast_horizon=self.forecast_horizon)
 
     def test_step(self):
         renewable_module = self.get_module()
@@ -47,3 +53,7 @@ class TestRenewableModuleForecasting(TestTimeseriesModuleForecasting):
         self.assertFalse(done)
         self.assertEqual(info["provided_energy"], unnormalized_action)
         self.assertEqual(info["curtailment"], 0)
+
+
+class TestRenewableModuleForecastingNegativeVals(TestTimeSeriesModuleForecastingNegativeVals, TestRenewableModuleForecasting):
+    pass
