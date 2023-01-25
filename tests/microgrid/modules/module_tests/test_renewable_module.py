@@ -11,6 +11,7 @@ from tests.microgrid.modules.module_tests.timeseries_modules import (
 
 class TestRenewableModuleNoForecasting(TestTimeseriesModuleNoForecasting):
     __test__ = True
+    action_space_dim = 1
 
     def get_module(self):
         return RenewableModule(self.module_time_series)
@@ -36,6 +37,7 @@ class TestRenewableModuleNoForecasting(TestTimeseriesModuleNoForecasting):
 
 class TestRenewableModuleForecasting(TestTimeseriesModuleForecasting):
     __test__ = True
+    action_space_dim = 1
 
     def get_module(self):
         return RenewableModule(self.module_time_series, forecaster="oracle", forecast_horizon=self.forecast_horizon)
