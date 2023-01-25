@@ -81,3 +81,13 @@ class TestTimeseriesModuleForecasting(TestTimeseriesModule):
         self.assertEqual(renewable_module.forecast(), self.time_series[1:1+self.forecast_horizon].reshape((-1, 1)))
         self.assertEqual(renewable_module.state, self.time_series[:1+self.forecast_horizon])
         self.assertEqual(len(renewable_module.state_dict), 1+self.forecast_horizon)
+
+
+class TestTimeSeriesModuleNoForecastingNegativeVals(TestTimeseriesModuleNoForecasting):
+    def _get_module_time_series(self):
+        return -1 * self._get_time_series()
+
+
+class TestTimeSeriesModuleForecastingNegativeVals(TestTimeseriesModuleForecasting):
+    def _get_module_time_series(self):
+        return -1 * self._get_time_series()
