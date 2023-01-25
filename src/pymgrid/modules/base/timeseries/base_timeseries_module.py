@@ -38,7 +38,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         self._forecaster = get_forecaster(forecaster,
                                           self._get_observation_spaces(),
                                           forecast_shape=(self.forecast_horizon, len(self.state_components)),
-                                          sink_only=self.is_sink and not self.is_source,
                                           time_series=self.time_series,
                                           increase_uncertainty=forecaster_increase_uncertainty)
 
@@ -228,7 +227,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         self._forecaster = get_forecaster(forecaster,
                                           self._observation_space,
                                           (self.forecast_horizon, len(self.state_components)),
-                                          self.is_sink and not self.is_source,
                                           self.time_series,
                                           increase_uncertainty=forecaster_increase_uncertainty)
 

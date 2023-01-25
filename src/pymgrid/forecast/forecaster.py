@@ -5,7 +5,7 @@ from abc import abstractmethod
 from pymgrid.utils.space import ModuleSpace
 
 
-def get_forecaster(forecaster, observation_space, forecast_shape, sink_only=False, time_series=None, increase_uncertainty=False):
+def get_forecaster(forecaster, observation_space, forecast_shape, time_series=None, increase_uncertainty=False):
     """
     Get the forecasting function for the time series module.
 
@@ -36,9 +36,6 @@ def get_forecaster(forecaster, observation_space, forecast_shape, sink_only=Fals
         Observation space; used to determine values to pad missing forecasts when we are forecasting past the
         end of the time series.
 
-    sink_only : bool
-        Whether the module is a sink and is not a source.
-
     time_series: ndarray[float] or None, default None.
         The underlying time series, used to validate UserDefinedForecaster.
         Only used if callable(forecaster).
@@ -55,27 +52,22 @@ def get_forecaster(forecaster, observation_space, forecast_shape, sink_only=Fals
     """
 
     if forecaster is None:
-        return NoForecaster(observation_space, forecast_shape, sink_only)
+        return NoForecaster(observation_space, forecast_shape)
     elif isinstance(forecaster, (UserDefinedForecaster, OracleForecaster, GaussianNoiseForecaster)):
         return forecaster
     elif callable(forecaster):
-        return UserDefinedForecaster(forecaster, observation_space, forecast_shape, sink_only, time_series)
+        return UserDefinedForecaster(forecaster, observation_space, forecast_shape, time_series)
     elif forecaster == "oracle":
-        return OracleForecaster(observation_space, forecast_shape, sink_only)
+        return OracleForecaster(observation_space, forecast_shape)
     elif is_number(forecaster):
-        return GaussianNoiseForecaster(
-            forecaster,
-            observation_space,
-            forecast_shape,
-            sink_only,
-            increase_uncertainty=increase_uncertainty
-        )
+        return GaussianNoiseForecaster(forecaster, observation_space, forecast_shape,
+                                       increase_uncertainty=increase_uncertainty)
     else:
         raise ValueError(f"Unable to parse forecaster of type {type(forecaster)}")
 
 
 class Forecaster:
-    def __init__(self, observation_space, forecast_shape, sink_only):
+    def __init__(self, observation_space, forecast_shape):
         self._observation_space = observation_space
         self._forecast_shaped_space = self._get_forecast_shaped_space(forecast_shape)
         self._fill_arr = (self._observation_space.unnormalized.high + self._observation_space.unnormalized.low) / 2
@@ -176,7 +168,7 @@ class Forecaster:
 
 
 class UserDefinedForecaster(Forecaster):
-    def __init__(self, forecaster_function, observation_space, forecast_shape, sink_only, time_series):
+    def __init__(self, forecaster_function, observation_space, forecast_shape, time_series):
         self.is_vectorized_forecaster, self.cast_to_arr = \
             _validate_callable_forecaster(forecaster_function, time_series)
 
@@ -185,7 +177,7 @@ class UserDefinedForecaster(Forecaster):
 
         self._forecaster = forecaster_function
 
-        super().__init__(observation_space, forecast_shape, sink_only)
+        super().__init__(observation_space, forecast_shape)
 
     def _cast_to_arr(self, forecast, val_c_n):
         if self.cast_to_arr:
@@ -203,8 +195,8 @@ class OracleForecaster(Forecaster):
 
 
 class GaussianNoiseForecaster(Forecaster):
-    def __init__(self, noise_std, observation_space, forecast_shape, sink_only, increase_uncertainty=False):
-        super().__init__(observation_space, forecast_shape, sink_only)
+    def __init__(self, noise_std, observation_space, forecast_shape, increase_uncertainty=False):
+        super().__init__(observation_space, forecast_shape)
 
         self.input_noise_std = noise_std
         self.increase_uncertainty = increase_uncertainty
