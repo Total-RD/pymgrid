@@ -74,6 +74,11 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
     def _get_bounds(self):
         _min, _max = np.min(self._time_series), np.max(self._time_series)
+        if _min > 0:
+            _min = 0
+        elif _max < 0:
+            _max = 0
+
         return _min, _max, _min, _max
 
     def _set_state_dict_keys(self):
