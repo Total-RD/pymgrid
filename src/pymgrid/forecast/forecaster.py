@@ -32,6 +32,9 @@ def get_forecaster(forecaster, observation_space, forecast_shape, time_series=No
 
         * If ``None``, no forecast.
 
+    forecast_shape : int or tuple of int
+        Expected shape of forecasts. If an integer, will return forecasts of shape (shape, 1).
+
     observation_space : :class:`ModuleSpace <pymgrid.utils.space.ModuleSpace>`
         Observation space; used to determine values to pad missing forecasts when we are forecasting past the
         end of the time series.
