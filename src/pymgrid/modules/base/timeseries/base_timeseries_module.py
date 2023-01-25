@@ -57,7 +57,20 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             shape = (-1, 1)
         _time_series = _time_series.reshape(shape)
         assert len(_time_series) == len(time_series)
-        return _time_series
+        return self._sign_check(_time_series)
+
+    def _sign_check(self, time_series):
+        if self.is_source and self.is_sink:
+            return time_series
+
+        if not ((np.sign(time_series) <= 0).all() or (np.sign(time_series) >= 0).all()):
+            raise ValueError('time_series cannot contain both positive and negative values unless it is both '
+                             'a source and a sink.')
+
+        if self.is_source:
+            return np.abs(time_series)
+        else:
+            return -np.abs(time_series)
 
     def _get_bounds(self):
         _min, _max = np.min(self._time_series), np.max(self._time_series)
