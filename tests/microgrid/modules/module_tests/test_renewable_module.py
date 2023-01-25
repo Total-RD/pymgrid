@@ -55,5 +55,11 @@ class TestRenewableModuleForecasting(TestTimeseriesModuleForecasting):
         self.assertEqual(info["curtailment"], 0)
 
 
-class TestRenewableModuleForecastingNegativeVals(TestTimeSeriesModuleForecastingNegativeVals, TestRenewableModuleForecasting):
+class TestRenewableModuleForecastingNegativeVals(TestTimeSeriesModuleForecastingNegativeVals,
+                                                 TestRenewableModuleForecasting):
+    pass
+
+
+class TestRenewableModuleNoForecastingNegativeVals(TestTimeSeriesModuleNoForecastingNegativeVals,
+                                                   TestRenewableModuleNoForecasting):
     pass
