@@ -9,6 +9,9 @@ from tests.helpers.test_case import TestCase
 
 class TestTimeseriesModule(TestCase):
     __test__ = False
+    negative_time_series = False
+    forecast_horizon: int
+    action_space_dim: int
 
     def setUp(self) -> None:
         self.module_time_series = self._get_module_time_series()
@@ -18,7 +21,8 @@ class TestTimeseriesModule(TestCase):
         return self._get_time_series()
 
     def _get_time_series(self):
-        return 2 - np.cos(np.pi * np.arange(100) / 2)
+        sign = -1 if self.negative_time_series else 1
+        return sign * (2 - np.cos(np.pi * np.arange(100) / 2))
 
     @abstractmethod
     def get_module(self):
@@ -29,8 +33,10 @@ class TestTimeseriesModule(TestCase):
         normalized_action_space = module.action_space["normalized"]
         unnormalized_action_space = module.action_space["unnormalized"]
 
-        self.assertEqual(normalized_action_space, Box(low=0, high=1, shape=(1, )))
-        self.assertEqual(unnormalized_action_space, Box(low=0, high=self.time_series.max(), shape=(1, )))
+        self.assertEqual(normalized_action_space, Box(low=0, high=1, shape=(self.action_space_dim, )))
+        self.assertEqual(unnormalized_action_space, Box(low=min(0, self.time_series.min()),
+                                                        high=max(0, self.time_series.max()),
+                                                        shape=(self.action_space_dim, )))
 
     def test_observation_space(self):
         module = self.get_module()
@@ -38,15 +44,17 @@ class TestTimeseriesModule(TestCase):
         unnormalized_obs_space = module.observation_space["unnormalized"]
 
         self.assertEqual(normalized_obs_space, Box(low=0, high=1, shape=(1+self.forecast_horizon,)))
-        self.assertEqual(unnormalized_obs_space, Box(low=0, high=self.time_series.max(), shape=(1+self.forecast_horizon,)))
+        self.assertEqual(unnormalized_obs_space, Box(low=min(0, self.time_series.min()),
+                                                     high=max(0, self.time_series.max()),
+                                                     shape=(1+self.forecast_horizon,)))
 
 
     def test_observations_in_observation_space(self):
         module = self.get_module()
 
         observation_space = ModuleSpace(
-            unnormalized_low=0,
-            unnormalized_high=self.time_series.max(),
+            unnormalized_low=min(0, self.time_series.min()),
+            unnormalized_high=max(0, self.time_series.max()),
             shape=(1 + module.forecast_horizon,)
         )
 
@@ -75,12 +83,11 @@ class TestTimeseriesModuleForecasting(TestTimeseriesModule):
     forecast_horizon = 24
 
     def test_init(self):
-        renewable_module = self.get_module()
-        self.assertEqual(renewable_module.current_renewable, self.time_series[0])
-        self.assertIsNotNone(renewable_module.forecast())
-        self.assertEqual(renewable_module.forecast(), self.time_series[1:1+self.forecast_horizon].reshape((-1, 1)))
-        self.assertEqual(renewable_module.state, self.time_series[:1+self.forecast_horizon])
-        self.assertEqual(len(renewable_module.state_dict), 1+self.forecast_horizon)
+        module = self.get_module()
+        self.assertIsNotNone(module.forecast())
+        self.assertEqual(module.forecast(), self.time_series[1:1 + self.forecast_horizon].reshape((-1, 1)))
+        self.assertEqual(module.state, self.time_series[:1 + self.forecast_horizon])
+        self.assertEqual(len(module.state_dict), 1 + self.forecast_horizon)
 
 
 class TestTimeSeriesModuleNoForecastingNegativeVals(TestTimeseriesModuleNoForecasting):
