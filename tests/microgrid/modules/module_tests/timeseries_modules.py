@@ -9,14 +9,20 @@ from tests.helpers.test_case import TestCase
 
 class TestTimeseriesModule(TestCase):
     __test__ = False
-    forecast_horizon: int
 
     def setUp(self) -> None:
-        self.time_series = 2-np.cos(np.pi*np.arange(100)/2)
+        self.module_time_series = self._get_module_time_series()
+        self.time_series = self._get_time_series()
+
+    def _get_module_time_series(self):
+        return self._get_time_series()
+
+    def _get_time_series(self):
+        return 2 - np.cos(np.pi * np.arange(100) / 2)
 
     @abstractmethod
     def get_module(self):
-        pass
+        return NotImplemented
 
     def test_action_space(self):
         module = self.get_module()
