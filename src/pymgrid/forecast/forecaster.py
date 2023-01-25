@@ -122,6 +122,17 @@ class Forecaster:
         empty_forecast = np.array([]).reshape((0, shape[1]))
         return self._pad(empty_forecast, forecast_horizon)
 
+    def _clip(self, forecast):
+        lb = self._forecast_shaped_space.unnormalized.low[-forecast.shape[0]:]
+        ub = self._forecast_shaped_space.unnormalized.high[-forecast.shape[0]:]
+        lt_lb = forecast < lb
+        gt_ub = forecast > ub
+
+        forecast[lt_lb] = lb[lt_lb]
+        forecast[gt_ub] = ub[gt_ub]
+
+        return forecast
+
     @property
     def observation_space(self):
         return self._observation_space
@@ -156,6 +167,7 @@ class Forecaster:
             return None
         else:
             forecast = self._pad(forecast, n)
+            forecast = self._clip(forecast)
             assert forecast.shape == (n, val_c_n.shape[1])
             return forecast
 
@@ -213,17 +225,7 @@ class GaussianNoiseForecaster(Forecaster):
         return np.random.normal(scale=self._noise_std, size=size)
 
     def _forecast(self, val_c, val_c_n, n):
-        forecast = val_c_n + self._get_noise(val_c_n.shape).reshape(val_c_n.shape)
-
-        lb = self._forecast_shaped_space.unnormalized.low[-val_c_n.shape[0]:]
-        ub = self._forecast_shaped_space.unnormalized.high[-val_c_n.shape[0]:]
-        lt_lb = forecast < lb
-        gt_ub = forecast > ub
-
-        forecast[lt_lb] = lb[lt_lb]
-        forecast[gt_ub] = ub[gt_ub]
-
-        return forecast
+        return val_c_n + self._get_noise(val_c_n.shape).reshape(val_c_n.shape)
 
     @property
     def noise_std(self):
