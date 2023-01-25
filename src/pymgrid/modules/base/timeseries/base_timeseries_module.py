@@ -105,7 +105,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             The forecasted time series.
         """
         val_c_n = self.time_series[1+self.current_step:1+self.current_step+self.forecast_horizon, :]
-        factor = -1 if (self.is_sink and not self.is_source) else 1
         try:
             val_c = self.time_series[self.current_step, :]
         except IndexError:
@@ -115,7 +114,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                         val_c_n=val_c_n,
                                         n=self.forecast_horizon)
 
-        return None if forecast is None else factor * forecast
+        return None if forecast is None else forecast
 
     def _done(self):
         return self._current_step == len(self) - 1
@@ -130,11 +129,10 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         obs : np.ndarray, shape (len(self.state_components), )
             The observation.
         """
-        factor = -1 if (self.is_sink and not self.is_source) else 1
         try:
-            return factor * self.time_series[self.current_step, :]
+            return self.time_series[self.current_step, :]
         except IndexError:
-            return factor * self._forecaster.full_pad(self.time_series.shape, 1).reshape(-1)
+            return self._forecaster.full_pad(self.time_series.shape, 1).reshape(-1)
 
     @property
     def time_series(self):
