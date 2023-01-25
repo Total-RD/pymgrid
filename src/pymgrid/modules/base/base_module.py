@@ -138,7 +138,14 @@ class BaseMicrogridModule(yaml.YAMLObject):
         try:
             denormalized_action = denormalized_action[self._energy_pos]
         except (IndexError, TypeError):
-            assert isinstance(denormalized_action, (float, int))
+            if not isinstance(denormalized_action, (float, int)):
+                try:
+                    flat_dim = np.product(denormalized_action.shape)
+                    assert flat_dim == 0
+                except (AttributeError, AssertionError):
+                    raise ValueError(f'Bad action {denormalized_action}')
+                else:
+                    denormalized_action = 0.0
 
         state_dict = self.state_dict
         reward, done, info = self._unnormalized_step(denormalized_action)
