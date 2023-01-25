@@ -79,8 +79,6 @@ class Forecaster:
         self._observation_space = observation_space
         self._forecast_shaped_space = self._get_forecast_shaped_space(forecast_shape)
         self._fill_arr = (self._observation_space.unnormalized.high + self._observation_space.unnormalized.low) / 2
-        if sink_only:
-            self._fill_arr *= -1
 
     def _get_forecast_shaped_space(self, shape):
         if len(shape) == 1:
