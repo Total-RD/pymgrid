@@ -249,7 +249,7 @@ class TestUserDefinedForecaster(TestCase):
     def test_scalar_forecaster(self):
         forecaster = UserDefinedForecaster(forecaster_function=self.oracle_scalar_forecaster,
                                            time_series=self.simple_time_series,
-                                           observation_space=self.get_obs_space(negative=False),
+                                           observation_space=self.get_obs_space(negative=True),
                                            forecast_shape=(FORECAST_HORIZON,),
                                            sink_only=False)
         val_c, val_c_n, n = get_test_inputs(state_components=1, negative=True)
