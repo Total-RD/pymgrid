@@ -171,7 +171,7 @@ class TestMicrogridLoadPV(TestCase):
         # Check that there are log entries for all modules of each name
         self.assertEqual(log_row['load'].index.get_level_values(0).nunique(), self.n_loads)
 
-        self.assertEqual(log_entry('load', 'load_current'), -1 * self.load_ts[step_number])
+        self.assertEqual(log_entry('load', 'load_current'), self.load_ts[step_number])
         self.assertEqual(log_entry('load', 'load_met'), self.load_ts[step_number])
 
         if loss_load == 0:
