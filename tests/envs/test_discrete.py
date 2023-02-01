@@ -1,4 +1,5 @@
 from copy import deepcopy
+from math import factorial
 
 from tests.helpers.test_case import TestCase
 from tests.helpers.modular_microgrid import get_modular_microgrid
@@ -68,6 +69,15 @@ class TestDiscreteEnvScenario(TestCase):
                 action = env.sample_action(strict_bound=True)
                 env.step(action)
                 self.assertEqual(len(env.log), j+1)
+
+    def test_action_space(self):
+        env = deepcopy(self.env)
+
+        n_action_modules = len(env.modules.controllable.sources) + len(env.modules.controllable.source_and_sinks)
+        genset_modules = len(env.modules.genset) if hasattr(env.modules, 'genset') else 0
+
+        n_actions = factorial(n_action_modules) * (2 ** genset_modules)
+        self.assertEqual(env.action_space.n, n_actions)
 
 
 class TestDiscreteEnvScenario1(TestDiscreteEnvScenario):
