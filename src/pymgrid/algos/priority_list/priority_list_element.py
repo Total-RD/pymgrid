@@ -4,7 +4,7 @@ from typing import Tuple, Optional
 
 
 @total_ordering
-@dataclass(frozen=True, eq=False)
+@dataclass(frozen=True)
 class PriorityListElement:
     """
     A dataclass that acts as a representation of a module's position in a deployment order.
