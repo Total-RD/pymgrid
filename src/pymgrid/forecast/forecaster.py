@@ -2,6 +2,7 @@ import numpy as np
 from pandas.api.types import is_number, is_numeric_dtype
 from abc import abstractmethod
 
+from pymgrid.utils.ray import ray_decorator
 from pymgrid.utils.space import ModuleSpace
 
 
@@ -117,6 +118,7 @@ class Forecaster:
         empty_forecast = np.array([]).reshape((0, shape[1]))
         return self._pad(empty_forecast, forecast_horizon)
 
+    @ray_decorator
     def _clip(self, forecast):
         lb = self._forecast_shaped_space.unnormalized.low[-forecast.shape[0]:]
         ub = self._forecast_shaped_space.unnormalized.high[-forecast.shape[0]:]
