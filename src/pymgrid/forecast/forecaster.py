@@ -1,6 +1,7 @@
 import numpy as np
-from pandas.api.types import is_number, is_numeric_dtype
 from abc import abstractmethod
+
+from pandas.api.types import is_number, is_numeric_dtype
 
 from pymgrid.utils.ray import ray_decorator
 from pymgrid.utils.space import ModuleSpace
