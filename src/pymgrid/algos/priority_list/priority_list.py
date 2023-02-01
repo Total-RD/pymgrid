@@ -1,7 +1,7 @@
 import numpy as np
+import pandas as pd
 
 from abc import abstractmethod
-from _warnings import warn
 from itertools import permutations
 
 
@@ -32,9 +32,18 @@ class PriorityListAlgo:
                                      for module in self.modules.controllable.source_and_sinks.iterlist()
                                      for n_actions in range(module.action_space.shape[0])])
 
-        priority_lists = list(permutations(controllable_sources))
+        all_permutations = permutations(controllable_sources)
+        priority_lists = self._remove_redundant_actions(all_permutations)
 
         return priority_lists
+
+    def _remove_redundant_actions(self, priority_lists):
+        pls = []
+        for pl in priority_lists:
+            is_redundant = pd.DataFrame(el.module for el in pl).duplicated()
+            pls.append(tuple(el for j, el in enumerate(pl) if not is_redundant.iloc[j]))
+
+        return list(set(pls))
 
     def _populate_action(self, priority_list):
         action = self.get_empty_action()
