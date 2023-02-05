@@ -436,6 +436,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         log : pd.DataFrame
 
         """
+        return self.log_frame()
 
     @property
     def logger(self):
