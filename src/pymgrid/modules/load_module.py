@@ -60,14 +60,18 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 final_step=-1,
                  raise_errors=False):
-        super().__init__(time_series,
-                         raise_errors=raise_errors,
-                         forecaster=forecaster,
-                         forecast_horizon=forecast_horizon,
-                         forecaster_increase_uncertainty=forecaster_increase_uncertainty,
-                         provided_energy_name=None,
-                         absorbed_energy_name='load_met')
+        super().__init__(
+            time_series,
+            raise_errors=raise_errors,
+            forecaster=forecaster,
+            forecast_horizon=forecast_horizon,
+            forecaster_increase_uncertainty=forecaster_increase_uncertainty,
+            final_step=final_step,
+            provided_energy_name=None,
+            absorbed_energy_name='load_met'
+        )
 
         self.name = ('load', None)
 

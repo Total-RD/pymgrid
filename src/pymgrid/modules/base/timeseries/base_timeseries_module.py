@@ -25,6 +25,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 final_step=-1,
                  provided_energy_name='provided_energy',
                  absorbed_energy_name='absorbed_energy',
                  normalize_pos=...):

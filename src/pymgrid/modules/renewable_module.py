@@ -64,14 +64,19 @@ class RenewableModule(BaseTimeSeriesMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 final_step=-1,
                  provided_energy_name='renewable_used'):
-        super().__init__(time_series,
-                         raise_errors,
-                         forecaster=forecaster,
-                         forecast_horizon=forecast_horizon,
-                         forecaster_increase_uncertainty=forecaster_increase_uncertainty,
-                         provided_energy_name=provided_energy_name,
-                         absorbed_energy_name=None)
+        super().__init__(
+            time_series,
+            raise_errors,
+            forecaster=forecaster,
+            forecast_horizon=forecast_horizon,
+            forecaster_increase_uncertainty=forecaster_increase_uncertainty,
+            final_step=final_step,
+            provided_energy_name=provided_energy_name,
+            absorbed_energy_name=None
+        )
+
         self.name = ('renewable', None)
 
     def update(self, external_energy_change, as_source=False, as_sink=False):
