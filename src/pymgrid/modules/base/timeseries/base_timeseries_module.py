@@ -1,6 +1,5 @@
-from abc import abstractmethod
-
 import numpy as np
+
 from pymgrid.microgrid import DEFAULT_HORIZON
 from pymgrid.modules.base import BaseMicrogridModule
 from pymgrid.forecast.forecaster import get_forecaster, OracleForecaster, NoForecaster
