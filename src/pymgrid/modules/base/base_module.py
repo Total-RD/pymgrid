@@ -506,6 +506,10 @@ class BaseMicrogridModule(yaml.YAMLObject):
         """
         return self._current_step
 
+    @current_step.setter
+    def current_step(self, value):
+        self._current_step = value
+
     @property
     @abstractmethod
     def min_obs(self):
