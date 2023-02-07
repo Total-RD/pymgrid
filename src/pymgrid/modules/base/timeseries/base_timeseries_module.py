@@ -25,6 +25,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 initial_step=0,
                  final_step=-1,
                  provided_energy_name='provided_energy',
                  absorbed_energy_name='absorbed_energy',
@@ -45,7 +46,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
         self._state_dict_keys = self._set_state_dict_keys()
 
-        super().__init__(raise_errors, provided_energy_name=provided_energy_name,
+        super().__init__(raise_errors,
+                         initial_step=initial_step,
+                         provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name)
 
         self._current_forecast = self.forecast()

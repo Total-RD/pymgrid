@@ -77,6 +77,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 initial_step=0,
                  final_step=-1,
                  cost_per_unit_co2=0.0,
                  raise_errors=False):
@@ -91,6 +92,7 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             forecaster=forecaster,
             forecast_horizon=forecast_horizon,
             forecaster_increase_uncertainty=forecaster_increase_uncertainty,
+            initial_step=initial_step,
             final_step=final_step,
             absorbed_energy_name='grid_export'
         )

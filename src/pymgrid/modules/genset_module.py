@@ -68,6 +68,7 @@ class GensetModule(BaseMicrogridModule):
                  wind_down_time=0,
                  allow_abortion=True,
                  init_start_up=True,
+                 initial_step=0,
                  raise_errors=False,
                  provided_energy_name='genset_production'):
 
@@ -91,7 +92,10 @@ class GensetModule(BaseMicrogridModule):
         self._steps_until_up, self._steps_until_down = self._reset_up_down_times()
         self.name = ('genset', None)
 
-        super().__init__(raise_errors, provided_energy_name=provided_energy_name, absorbed_energy_name=None)
+        super().__init__(raise_errors,
+                         initial_step=initial_step,
+                         provided_energy_name=provided_energy_name,
+                         absorbed_energy_name=None)
 
     def step(self, action, normalized=True):
         """
