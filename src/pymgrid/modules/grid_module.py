@@ -94,7 +94,8 @@ class GridModule(BaseTimeSeriesMicrogridModule):
             forecaster_increase_uncertainty=forecaster_increase_uncertainty,
             initial_step=initial_step,
             final_step=final_step,
-            absorbed_energy_name='grid_export'
+            absorbed_energy_name='grid_export',
+            provided_energy_name='grid_import'
         )
 
     def _check_params(self, max_import, max_export, time_series):
