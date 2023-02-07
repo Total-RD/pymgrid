@@ -188,7 +188,7 @@ class Microgrid(yaml.YAMLObject):
             for module in modules:
                 microgrid_step.append(name, *module.step(0.0, normalized=False))
 
-        fixed_provided, fixed_consumed, _ = microgrid_step.balance()
+        fixed_provided, fixed_consumed, _, _ = microgrid_step.balance()
         log_dict = self._get_log_dict(fixed_provided, fixed_consumed, prefix='fixed')
 
         for name, modules in self.controllable.iterdict():
@@ -206,7 +206,7 @@ class Microgrid(yaml.YAMLObject):
                 module_step = module.step(_control, normalized=normalized)  # obs, reward, done, info.
                 microgrid_step.append(name, *module_step)
 
-        provided, consumed, _ = microgrid_step.balance()
+        provided, consumed, _, _ = microgrid_step.balance()
         difference = provided - consumed                # if difference > 0, have an excess. Try to use flex sinks to dissapate
                                                         # otherwise, insufficient. Use flex sources to make up
 
@@ -245,10 +245,10 @@ class Microgrid(yaml.YAMLObject):
                     microgrid_step.append(name, *module_step)
                     energy_needed -= source_amt
 
-        provided, consumed, reward = microgrid_step.balance()
+        provided, consumed, reward, shaped_reward = microgrid_step.balance()
         log_dict = self._get_log_dict(provided, consumed, log_dict=log_dict, prefix='overall')
 
-        self._balance_logger.log(reward=reward, **log_dict)
+        self._balance_logger.log(reward=reward, shaped_reward=shaped_reward, **log_dict)
 
         if not np.isclose(provided, consumed):
             raise RuntimeError('Microgrid modules unable to balance energy production with consumption.\n'
