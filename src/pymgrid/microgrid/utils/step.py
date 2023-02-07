@@ -32,7 +32,7 @@ class MicrogridStep:
     def balance(self):
         provided_energy = np.sum(self._info['provided_energy'])
         absorbed_energy = np.sum(self._info['absorbed_energy'])
-        return provided_energy, absorbed_energy, self._reward
+        return provided_energy, absorbed_energy, self._reward, self.shaped_reward()
 
     def output(self):
         _info = {k: v for k, v in self._info.items() if k not in ('absorbed_energy', 'provided_energy')}
