@@ -36,9 +36,9 @@ class MicrogridStep:
 
     def output(self):
         _info = {k: v for k, v in self._info.items() if k not in ('absorbed_energy', 'provided_energy')}
-        return self._obs, self.shape_reward(), self._done, _info
+        return self._obs, self.shaped_reward(), self._done, _info
 
-    def shape_reward(self):
+    def shaped_reward(self):
         if self._reward_shaping_func is not None:
             return self._reward_shaping_func(self._info)
 
