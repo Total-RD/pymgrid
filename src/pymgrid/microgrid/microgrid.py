@@ -185,7 +185,7 @@ class Microgrid(yaml.YAMLObject):
 
         """
         control_copy = control.copy()
-        microgrid_step = MicrogridStep()
+        microgrid_step = MicrogridStep(reward_shaping_func=self.reward_shaping_func)
 
         for name, modules in self.fixed.iterdict():
             for module in modules:
