@@ -36,12 +36,13 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     def __init__(self,
                  raise_errors,
+                 initial_step=0,
                  provided_energy_name='provided_energy',
                  absorbed_energy_name='absorbed_energy'
                  ):
 
         self.raise_errors = raise_errors
-        self._current_step = 0
+        self._current_step = initial_step
         self._action_space = self._get_action_spaces()
         self._observation_space = self._get_observation_spaces()
         self.provided_energy_name, self.absorbed_energy_name = provided_energy_name, absorbed_energy_name
