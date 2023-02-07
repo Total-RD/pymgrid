@@ -87,11 +87,14 @@ class Microgrid(yaml.YAMLObject):
                  modules,
                  add_unbalanced_module=True,
                  loss_load_cost=10.,
-                 overgeneration_cost=2.):
+                 overgeneration_cost=2.,
+                 reward_shaping_func=None):
         self._modules = self._get_module_container(modules,
                                                    add_unbalanced_module,
                                                    loss_load_cost,
                                                    overgeneration_cost)
+
+        self.reward_shaping_func = reward_shaping_func
 
         self._balance_logger = ModularLogger()
         self._microgrid_logger = ModularLogger()  # log additional information.
