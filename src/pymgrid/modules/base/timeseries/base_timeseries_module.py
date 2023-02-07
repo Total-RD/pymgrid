@@ -41,6 +41,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                           time_series=self.time_series,
                                           increase_uncertainty=forecaster_increase_uncertainty)
 
+        self.final_step = final_step
+
         self._state_dict_keys = self._set_state_dict_keys()
 
         super().__init__(raise_errors, provided_energy_name=provided_energy_name,
@@ -277,6 +279,20 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             return self._forecaster.increase_uncertainty
         except AttributeError:
             return False
+
+    @property
+    def final_step(self):
+        return self._final_step
+
+    @final_step.setter
+    def final_step(self, value):
+        if not value // 1 == value:
+            raise ValueError('final_step value must be an integer.')
+
+        if value <= 0:
+            self._final_step = len(self) - 1
+        else:
+            self._final_step = value
 
     @property
     def state_dict(self):
