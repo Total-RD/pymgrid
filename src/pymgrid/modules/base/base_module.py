@@ -42,6 +42,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
                  ):
 
         self.raise_errors = raise_errors
+        self._initial_step = initial_step
         self._current_step = initial_step
         self._action_space = self._get_action_spaces()
         self._observation_space = self._get_observation_spaces()
@@ -510,6 +511,18 @@ class BaseMicrogridModule(yaml.YAMLObject):
     @current_step.setter
     def current_step(self, value):
         self._current_step = value
+
+    @property
+    def initial_step(self):
+        """
+        Initial step of the module; used in deserialization.
+
+        Returns
+        -------
+        int
+
+        """
+        return self._initial_step
 
     @property
     @abstractmethod
