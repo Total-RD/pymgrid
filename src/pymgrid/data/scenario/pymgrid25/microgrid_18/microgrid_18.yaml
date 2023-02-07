@@ -3,9 +3,11 @@ modules:
 - - load
   - !LoadModule
     cls_params:
+      final_step: 8759
       forecast_horizon: 23
       forecaster: oracle
       forecaster_increase_uncertainty: false
+      initial_step: 0
       raise_errors: false
       time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv.gz'
     name:
@@ -16,9 +18,11 @@ modules:
 - - pv
   - !RenewableModule
     cls_params:
+      final_step: 8759
       forecast_horizon: 23
       forecaster: oracle
       forecaster_increase_uncertainty: false
+      initial_step: 0
       provided_energy_name: renewable_used
       raise_errors: false
       time_series: !NDArray 'data/cls_params/RenewableModule/time_series.csv.gz'
@@ -30,6 +34,7 @@ modules:
 - - unbalanced_energy
   - !UnbalancedEnergyModule
     cls_params:
+      initial_step: 0
       loss_load_cost: 10
       overgeneration_cost: 1
       raise_errors: false
@@ -46,6 +51,7 @@ modules:
       cost_per_unit_co2: 0.1
       genset_cost: 0.4
       init_start_up: true
+      initial_step: 0
       provided_energy_name: genset_production
       raise_errors: false
       running_max_production: 34418.700000000004
@@ -69,6 +75,7 @@ modules:
       efficiency: 0.9
       init_charge: null
       init_soc: 1
+      initial_step: 0
       max_capacity: 82080
       max_charge: 20520
       max_discharge: 20520
@@ -85,9 +92,11 @@ modules:
   - !GridModule
     cls_params:
       cost_per_unit_co2: 0.1
+      final_step: 8759
       forecast_horizon: 23
       forecaster: oracle
       forecaster_increase_uncertainty: false
+      initial_step: 0
       max_export: 68836
       max_import: 68836
       raise_errors: false
