@@ -888,15 +888,24 @@ class BaseMicrogridModule(yaml.YAMLObject):
         cls_params = inspect.signature(cls).parameters
 
         cls_kwargs = {}
-        missing_params = []
-        for p_name in cls_params.keys():
+        missing_params, default_params = [], []
+
+        for p_name, p_value in cls_params.items():
             try:
                 cls_kwargs[p_name] = param_dict.pop(p_name)
             except KeyError:
-                missing_params.append(p_name)
+                if p_value.default is p_value.empty:
+                    missing_params.append(p_name)
+                else:
+                    cls_kwargs[p_name] = p_value.default
+                    default_params.append(p_name)
+
+        if len(default_params):
+            warn(f'Missing parameter values {default_params} for {cls}. Using available default values.')
 
         if len(missing_params):
-            raise KeyError(f"Missing parameter values {missing_params} for {cls}")
+            raise KeyError(f"Missing parameter values {missing_params} for {cls} with no default values available.")
+
         return cls(**cls_kwargs)
 
     def deserialize(self, serialized_dict):
