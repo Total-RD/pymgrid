@@ -191,7 +191,9 @@ class BaseMicrogridEnv(Microgrid, Env):
             assert isinstance(microgrid, NonModularMicrogrid)
             return cls.from_nonmodular(microgrid)
         else:
-            return cls(modules.to_tuples(), add_unbalanced_module=False)
+            return cls(modules.to_tuples(),
+                       add_unbalanced_module=False,
+                       reward_shaping_func=microgrid.reward_shaping_func)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
