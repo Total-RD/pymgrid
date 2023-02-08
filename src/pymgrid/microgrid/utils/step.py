@@ -16,16 +16,17 @@ class MicrogridStep:
         self._reward += reward
         if done:
             self._done = True
+
+        try:
+            self._info[module_name].append(info)
+        except KeyError:
+            self._info[module_name] = [info]
+
         for key, value in info.items():
             try:
                 self._info[key].append(value)
             except KeyError:
                 pass
-
-            try:
-                self._info[module_name][key] = value
-            except KeyError:
-                self._info[module_name] = {key: value}
 
     def balance(self):
         provided_energy = np.sum(self._info['provided_energy'])
