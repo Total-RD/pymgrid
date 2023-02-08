@@ -651,7 +651,15 @@ class BaseMicrogridModule(yaml.YAMLObject):
             Average marginal cost.
 
         """
-        return NotImplemented
+        return self.production_marginal_cost
+
+    @property
+    def production_marginal_cost(self):
+        return 0.0
+
+    @property
+    def absorption_marginal_cost(self):
+        return 0.0
 
     @property
     def action_space(self):

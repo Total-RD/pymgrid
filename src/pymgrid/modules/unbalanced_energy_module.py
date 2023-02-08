@@ -108,3 +108,11 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
     @property
     def is_sink(self):
         return True
+
+    @property
+    def production_marginal_cost(self):
+        return self.loss_load_cost
+
+    @property
+    def absorption_marginal_cost(self):
+        return self.overgeneration_cost
