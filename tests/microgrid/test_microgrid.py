@@ -325,14 +325,15 @@ class TestMicrogridRewardShaping(TestMicrogridLoadPV):
     def reward_shaping_func(energy_info, cost_info):
         total = 0
         for module_name, info_list in energy_info.items():
-            for j, (energy_type, energy_amount) in enumerate(info_list.items()):
-                if energy_type == 'absorbed_energy':
-                    marginal_cost = cost_info[module_name][j]['absorption_marginal_cost']
-                elif energy_type == 'provided_energy':
-                    marginal_cost = cost_info[module_name][j]['production_marginal_cost']
-                else:
-                    # Some other key
-                    continue
-                total += energy_amount * marginal_cost
+            for module_info in info_list:
+                for j, (energy_type, energy_amount) in enumerate(module_info.items()):
+                    if energy_type == 'absorbed_energy':
+                        marginal_cost = cost_info[module_name][j]['absorption_marginal_cost']
+                    elif energy_type == 'provided_energy':
+                        marginal_cost = cost_info[module_name][j]['production_marginal_cost']
+                    else:
+                        # Some other key
+                        continue
+                    total += energy_amount * marginal_cost
 
         return total
