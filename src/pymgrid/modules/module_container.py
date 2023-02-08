@@ -33,7 +33,7 @@ class Container(UserDict):
             l.extend(raw_container.to_list())
         return l
 
-    def to_dict(self):
+    def to_dict(self, *attrs):
         """
         Get the modules as a dictionary.
 
@@ -45,7 +45,13 @@ class Container(UserDict):
         """
         d = dict()
         for k, raw_container in self.containers.items():
-            d.update(raw_container)
+            if attrs:
+                d.update({
+                    name: [{attr: getattr(module, attr) for attr in attrs} for module in module_list]
+                    for name, module_list in raw_container.items()
+                })
+            else:
+                d.update(raw_container)
         return d
 
     def to_tuples(self):
