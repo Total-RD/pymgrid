@@ -310,3 +310,29 @@ class TestMicrogridManyEachExcessLoad(TestMicrogridManyEach):
         pv_ts = 10*np.random.rand(100)
         load_ts = pv_ts + 5*np.random.rand(100)
         return load_ts, pv_ts
+
+
+class TestMicrogridRewardShaping(TestMicrogridLoadPV):
+    def set_microgrid(self):
+        original_microgrid, n_loads, n_pvs = super().set_microgrid()
+        new_microgrid = Microgrid(original_microgrid.modules.to_tuples(),
+                                  add_unbalanced_module=False,
+                                  reward_shaping_func=self.reward_shaping_func)
+
+        return new_microgrid, n_loads, n_pvs
+
+    @staticmethod
+    def reward_shaping_func(energy_info, cost_info):
+        total = 0
+        for module_name, info_list in energy_info.items():
+            for j, (energy_type, energy_amount) in enumerate(info_list):
+                if energy_type == 'absorbed_energy':
+                    marginal_cost = cost_info[module_name][j]['absorption_marginal_cost']
+                elif energy_type == 'provided_energy':
+                    marginal_cost = cost_info[module_name][j]['production_marginal_cost']
+                else:
+                    # Some other key
+                    continue
+                total += energy_amount * marginal_cost
+
+        return total
