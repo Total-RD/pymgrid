@@ -514,13 +514,6 @@ class Microgrid(yaml.YAMLObject):
 
         return horizons[0]
 
-    def set_forecast_horizon(self, value):
-        for module in self._modules.iterlist():
-            try:
-                module.forecast_horizon = value
-            except AttributeError:
-                pass
-
     def set_module_attr(self, attr_name, value):
         """
         Set the value of an attribute in all modules containing that attribute.
