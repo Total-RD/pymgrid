@@ -69,6 +69,25 @@ class TestMicrogrid(TestCase):
 
                     self.assertTrue(empty_action_space != has_corresponding_action)  # XOR
 
+    def test_set_module_attr_forecast_horizon(self):
+        forecast_horizon = 50
+
+        microgrid = get_modular_microgrid()
+        microgrid.set_module_attr('forecast_horizon', forecast_horizon)
+
+        microgrid_fh = [module.forecast_horizon for module in microgrid.modules.iterlist()
+                        if hasattr(module, 'forecast_horizon')]
+
+        self.assertEqual(min(microgrid_fh), max(microgrid_fh))
+
+        self.assertEqual(min(microgrid_fh), forecast_horizon)
+
+    def test_set_module_attr_bad_attr_name(self):
+        microgrid = get_modular_microgrid()
+
+        with self.assertRaises(AttributeError):
+            microgrid.set_module_attr('blah', 'blah')
+
 
 class TestMicrogridLoadPV(TestCase):
     def setUp(self):
