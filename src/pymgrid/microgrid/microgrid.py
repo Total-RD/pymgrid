@@ -185,7 +185,7 @@ class Microgrid(yaml.YAMLObject):
 
         """
         control_copy = control.copy()
-        microgrid_step = MicrogridStep(reward_shaping_func=self.reward_shaping_func)
+        microgrid_step = MicrogridStep(reward_shaping_func=self.reward_shaping_func, cost_info=self.get_cost_info())
 
         for name, modules in self.fixed.iterdict():
             for module in modules:
@@ -265,6 +265,9 @@ class Microgrid(yaml.YAMLObject):
         if log_dict:
             _log_dict.update(log_dict)
         return _log_dict
+
+    def get_cost_info(self):
+        return self._modules.to_dict('production_marginal_cost', 'absorption_marginal_cost')
 
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         """
