@@ -21,10 +21,11 @@ class MicrogridStep:
                 self._info[key].append(value)
             except KeyError:
                 pass
+
             try:
-                self._info[module_name].append((key, value))
+                self._info[module_name][key] = value
             except KeyError:
-                self._info[module_name] = [(key, value)]
+                self._info[module_name] = {key: value}
 
     def balance(self):
         provided_energy = np.sum(self._info['provided_energy'])
