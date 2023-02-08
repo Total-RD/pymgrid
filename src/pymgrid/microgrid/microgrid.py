@@ -521,6 +521,38 @@ class Microgrid(yaml.YAMLObject):
             except AttributeError:
                 pass
 
+    def set_module_attr(self, attr_name, value):
+        """
+        Set the value of an attribute in all modules containing that attribute.
+
+        Does nothing in modules not already containing the attribute.
+
+        Parameters
+        ----------
+        attr_name : str
+            Name of the module attribute.
+        value : any
+            Value to set the attribute to.
+
+        Raises
+        ------
+        AttributeError
+            If no module has the attribute.
+
+        """
+        set_at_least_one = False
+
+        for module in self._modules.iterlist():
+            if not hasattr(module, attr_name):
+                continue
+
+            setattr(module, attr_name, value)
+            set_at_least_one = True
+
+        if not set_at_least_one:
+            raise AttributeError(f'No module has attribute {attr_name}.')
+
+
     @property
     def modules(self):
         """
