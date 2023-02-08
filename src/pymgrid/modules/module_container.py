@@ -35,12 +35,23 @@ class Container(UserDict):
 
     def to_dict(self, *attrs):
         """
-        Get the modules as a dictionary.
+        Get the modules or module attributes as a dictionary.
 
+        If attrs is empty, will return a dictionary with modules as the values. Otherwise returns a dictionary
+        with attributes as the values in dictionary form.
+
+        Parameters
+        ----------
+        attrs : str
+            Names of module attributes to return. If empty, returns the modules.
         Returns
         -------
-        d : dict[str, module]
-            Dictionary with module names as keys, modules as tuples.
+        d : dict[str, list[module]] or dict[str, list[dict]]
+
+            * If attrs is empty:
+              Dictionary with module names as keys, modules as values.
+
+            * Otherwise, a dictionary with module names as keys, module attributes as values in a dict.
 
         """
         d = dict()
