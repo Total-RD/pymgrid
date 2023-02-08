@@ -291,7 +291,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
     def _update_step(self, reset=False):
         if reset:
-            self._current_step = 0
+            self._current_step = self._initial_step
         self._current_step += 1
 
     @abstractmethod
