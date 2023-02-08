@@ -39,12 +39,14 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
                  modules,
                  add_unbalanced_module=True,
                  loss_load_cost=10,
-                 overgeneration_cost=2
+                 overgeneration_cost=2,
+                 reward_shaping_func=None
                  ):
         super().__init__(modules,
                          add_unbalanced_module=add_unbalanced_module,
                          loss_load_cost=loss_load_cost,
-                         overgeneration_cost=overgeneration_cost)
+                         overgeneration_cost=overgeneration_cost,
+                         reward_shaping_func=reward_shaping_func)
 
         self.action_space, self.actions_list = self._get_action_space()
 

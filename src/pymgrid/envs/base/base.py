@@ -70,13 +70,15 @@ class BaseMicrogridEnv(Microgrid, Env):
                  add_unbalanced_module=True,
                  loss_load_cost=10,
                  overgeneration_cost=2,
+                 reward_shaping_func=None,
                  flat_spaces=True
                  ):
 
         super().__init__(modules,
                          add_unbalanced_module=add_unbalanced_module,
                          loss_load_cost=loss_load_cost,
-                         overgeneration_cost=overgeneration_cost)
+                         overgeneration_cost=overgeneration_cost,
+                         reward_shaping_func=reward_shaping_func)
 
         self._flat_spaces = flat_spaces
         self.action_space = self._get_action_space()
