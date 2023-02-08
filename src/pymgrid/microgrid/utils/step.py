@@ -2,8 +2,9 @@ import numpy as np
 
 
 class MicrogridStep:
-    def __init__(self, reward_shaping_func=None):
+    def __init__(self, reward_shaping_func=None, cost_info=None):
         self._reward_shaping_func = reward_shaping_func
+        self.cost_info = cost_info
         self._obs = dict()
         self._reward = 0.0
         self._done = False
@@ -35,14 +36,17 @@ class MicrogridStep:
         return provided_energy, absorbed_energy, self._reward, self.shaped_reward()
 
     def output(self):
-        _info = {k: v for k, v in self._info.items() if k not in ('absorbed_energy', 'provided_energy')}
-        return self._obs, self.shaped_reward(), self._done, _info
+        return self._obs, self.shaped_reward(), self._done, self._output_info()
 
     def shaped_reward(self):
         if self._reward_shaping_func is not None:
-            return self._reward_shaping_func(self._info)
+            assert isinstance(self.cost_info, dict)
+            return self._reward_shaping_func(self._output_info(), self.cost_info)
 
         return self._reward
+
+    def _output_info(self):
+        return {k: v for k, v in self._info.items() if k not in ('absorbed_energy', 'provided_energy')}
 
     @property
     def obs(self):
