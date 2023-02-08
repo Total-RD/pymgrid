@@ -42,6 +42,12 @@ class Microgrid(yaml.YAMLObject):
     overgeneration_cost : float, default 2.0
         Cost per unit of excess generation.  Ignored if ``add_unbalanced_module=False``.
 
+    reward_shaping_func : callable or None, default None
+        Function that allows for custom definition of the microgrid's reward/cost.
+        If None, the cost of each step is simply the total cost of all modules.
+        For example, you may define a function that defines the cost as only being the loss load, or only
+        the pv curtailment.
+
     Examples
     --------
     >>> from pymgrid import Microgrid
