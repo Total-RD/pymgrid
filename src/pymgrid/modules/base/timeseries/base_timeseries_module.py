@@ -120,7 +120,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         return None if forecast is None else forecast
 
     def _done(self):
-        return self._current_step == len(self) - 1
+        return self._current_step >= self._final_step - 1
 
     @property
     def current_obs(self):
@@ -293,7 +293,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             raise ValueError('final_step value must be an integer.')
 
         if value <= 0:
-            self._final_step = len(self) - 1
+            self._final_step = len(self)
         else:
             self._final_step = value
 
