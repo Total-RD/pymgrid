@@ -42,14 +42,14 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                           time_series=self.time_series,
                                           increase_uncertainty=forecaster_increase_uncertainty)
 
-        self.final_step = final_step
-
         self._state_dict_keys = self._set_state_dict_keys()
 
         super().__init__(raise_errors,
                          initial_step=initial_step,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name)
+
+        self.final_step = final_step
 
         self._current_forecast = self.forecast()
 
@@ -296,6 +296,9 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             self._final_step = len(self)
         else:
             self._final_step = value
+
+        if self._final_step <= self.initial_step:
+            raise ValueError('final_step value must be greater than initial_step')
 
     @property
     def state_dict(self):
