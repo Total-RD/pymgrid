@@ -58,7 +58,7 @@ class Container(UserDict):
         for k, raw_container in self.containers.items():
             if attrs:
                 d.update({
-                    name: [{attr: getattr(module, attr) for attr in attrs} for module in module_list]
+                    name: [{attr: getattr(module, attr, NotImplemented) for attr in attrs} for module in module_list]
                     for name, module_list in raw_container.items()
                 })
             else:
