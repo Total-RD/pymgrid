@@ -545,7 +545,6 @@ class Microgrid(yaml.YAMLObject):
         if not set_at_least_one:
             raise AttributeError(f'No module has attribute {attr_name}.')
 
-
     @property
     def modules(self):
         """
