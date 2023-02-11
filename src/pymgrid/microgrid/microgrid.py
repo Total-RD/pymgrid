@@ -825,7 +825,7 @@ class Microgrid(yaml.YAMLObject):
     def _dir_additions(self):
         return {
             x for x in dir(self._modules) if
-            not x.startswith('_') and not callable(getattr(self._modules, x))
+            not x.startswith('_') and not callable(getattr(self._modules, x)) and x in self._modules
         }
 
     def __dir__(self):
