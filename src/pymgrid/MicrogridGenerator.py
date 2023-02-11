@@ -399,7 +399,7 @@ class MicrogridGenerator:
             #size=self._size_mg()
             self.microgrids.append(convert(self._create_microgrid()))
         
-        if verbose:
+        if verbose and not modular:
             self.print_mg_parameters()
 
         return self
