@@ -868,12 +868,12 @@ class ModelPredictiveControl:
         grid_diff = grid_import - grid_export
 
         if battery_charge > 0 and battery_discharge > 0:
-            if not np.isclose([battery_charge, battery_discharge], 0).any():
+            if not np.isclose([battery_charge, battery_discharge], 0, atol=1e-4).any():
                 warn(f"battery_charge={battery_charge} and battery_discharge={battery_discharge} are both nonzero. "
                     f"Flattening to the difference, leading to a {'discharge' if battery_diff > 0 else 'charge'} of {battery_diff}.")
 
         if grid_import > 0 and grid_export > 0:
-            if not np.isclose([grid_import, grid_export], 0).any():
+            if not np.isclose([grid_import, grid_export], 0, atol=1e-4).any():
                 warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
                     f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
 
