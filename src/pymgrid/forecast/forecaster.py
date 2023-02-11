@@ -235,7 +235,7 @@ class GaussianNoiseForecaster(Forecaster):
 
     def __repr__(self):
         return f'GaussianNoiseForecaster(noise_std={self.input_noise_std}, ' \
-               f'increase_uncertainty={self.increase_uncertainty}'
+               f'increase_uncertainty={self.increase_uncertainty})'
 
 
 class NoForecaster(Forecaster):
