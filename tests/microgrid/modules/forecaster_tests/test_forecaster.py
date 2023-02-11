@@ -299,15 +299,49 @@ class TestGetForecaster(TestCase):
         forecaster = get_forecaster(None, POSITIVE_OBSERVATION_SPACE, (FORECAST_HORIZON, STATE_COMPONENTS))
         self.assertIsInstance(forecaster, NoForecaster)
 
-    def test_gaussian_noise_forecaster(self):
+    def test_gaussian_noise_forecaster_init(self):
         noise_std = 0.5
         forecaster = get_forecaster(noise_std, POSITIVE_OBSERVATION_SPACE, (FORECAST_HORIZON, STATE_COMPONENTS))
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
 
-    def test_gaussian_noise_forecaster_increase_uncertainty(self):
+    def test_gaussian_noise_forecaster_increase_uncertainty_init(self):
         noise_std = 0.5
         forecaster = get_forecaster(noise_std, POSITIVE_OBSERVATION_SPACE, (FORECAST_HORIZON, STATE_COMPONENTS), increase_uncertainty=True)
         self.assertIsInstance(forecaster, GaussianNoiseForecaster)
         self.assertEqual(forecaster.input_noise_std, noise_std)
         self.assertTrue((forecaster.noise_std != noise_std).any())
+
+    def test_gaussian_noise_forecaster_correct_size(self):
+        noise_std = 0.5
+        forecaster = get_forecaster(noise_std, POSITIVE_OBSERVATION_SPACE, (FORECAST_HORIZON, STATE_COMPONENTS))
+
+        val_c, val_c_n, n = get_test_inputs()
+        forecast = forecaster(val_c, val_c_n, n)
+
+        self.assertEqual(forecast.shape, val_c_n.shape)
+        self.assertEqual(forecast.shape, (FORECAST_HORIZON, STATE_COMPONENTS))
+        self.assertTrue((forecast.reshape(-1) >= 0).all())
+
+    def test_gaussian_noise_forecaster_insufficient_true_vals(self):
+        noise_std = 0.5
+        forecaster = get_forecaster(noise_std, POSITIVE_OBSERVATION_SPACE, (FORECAST_HORIZON, STATE_COMPONENTS))
+
+        val_c, val_c_n, _ = get_test_inputs(n=FORECAST_HORIZON-2)
+        forecast = forecaster(val_c, val_c_n, FORECAST_HORIZON)
+
+        self.assertEqual(forecast.shape, (FORECAST_HORIZON, STATE_COMPONENTS))
+        self.assertTrue((forecast.reshape(-1) >= 0).all())
+
+    def test_gaussian_noise_forecaster_insufficient_true_vals_increasing_uncertainty(self):
+        noise_std = 0.5
+        forecaster = get_forecaster(noise_std,
+                                    POSITIVE_OBSERVATION_SPACE,
+                                    (FORECAST_HORIZON, STATE_COMPONENTS),
+                                    increase_uncertainty=True)
+
+        val_c, val_c_n, _ = get_test_inputs(n=FORECAST_HORIZON-2)
+        forecast = forecaster(val_c, val_c_n, FORECAST_HORIZON)
+
+        self.assertEqual(forecast.shape, (FORECAST_HORIZON, STATE_COMPONENTS))
+        self.assertTrue((forecast.reshape(-1) >= 0).all())
