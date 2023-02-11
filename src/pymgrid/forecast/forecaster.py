@@ -220,7 +220,14 @@ class GaussianNoiseForecaster(Forecaster):
             return self.input_noise_std
 
     def _get_noise(self, size):
-        return np.random.normal(scale=self._noise_std, size=size)
+        try:
+            return np.random.normal(scale=self._noise_std, size=size)
+        except ValueError:
+            noise_std = self._noise_std[:size[0], :]
+            if noise_std.shape != size:
+                raise RuntimeError(f'Cannot broadcast shapes {self._noise_std.shape} and {size}.')
+
+            return np.random.normal(scale=noise_std, size=size)
 
     def _forecast(self, val_c, val_c_n, n):
         return val_c_n + self._get_noise(val_c_n.shape).reshape(val_c_n.shape)
