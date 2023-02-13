@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 
 from collections import UserDict, UserList
 from pymgrid.modules.base import BaseMicrogridModule
@@ -106,6 +107,52 @@ class Container(UserDict):
         """
         for name, modules in self.to_dict().items():
             yield name, modules
+
+    def get_attrs(self, *attrs, as_pandas=True, unique=False):
+        if not attrs:
+            raise ValueError('Missing attrs to get.')
+
+        d = dict()
+        for k, raw_container in self.containers.items():
+            d.update({
+                name: [{attr: getattr(module, attr, NotImplemented) for attr in attrs} for module in module_list]
+                for name, module_list in raw_container.items()
+            })
+
+        d_df = pd.DataFrame({(name, num): subdict for name, module_list in d.items()
+                            for num, subdict in enumerate(module_list)}).T
+
+        bad_keys = []
+        uniques, nonunqies = {}, []
+
+        for k, v in d_df.iteritems():
+            try:
+                unique_item = v[v != NotImplemented].unique().item()
+            except ValueError:
+                if len(unique_item) == 0:
+                    # Only values were NotImplemented
+                    bad_keys.append(k)
+                else:
+                    nonuniques.append(k)
+            else:
+                uniques[k] = unique_item
+
+        if len(bad_keys):
+            raise KeyError(f'No values found for key(s) {bad_keys}')
+
+        if unique:
+            if len(nonunqies):
+                raise ValueError(f"Attribute(s) {nonunqies} have non-unique values, cannot return single unique value.")
+
+            if not as_pandas:
+                return uniques
+
+            return pd.Series(uniques)
+
+        if as_pandas:
+            return d_df
+
+        return d
 
     def dir_additions(self):
         """
