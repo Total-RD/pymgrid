@@ -123,13 +123,15 @@ class Container(UserDict):
                             for num, subdict in enumerate(module_list)}).T
 
         bad_keys = []
-        uniques, nonunqies = {}, []
+        uniques, nonuniques = {}, []
 
         for k, v in d_df.iteritems():
+            unique_items = v[v != NotImplemented].unique()
+
             try:
-                unique_item = v[v != NotImplemented].unique().item()
+                unique_item = unique_items.item()
             except ValueError:
-                if len(unique_item) == 0:
+                if len(unique_items) == 0:
                     # Only values were NotImplemented
                     bad_keys.append(k)
                 else:
@@ -141,8 +143,8 @@ class Container(UserDict):
             raise KeyError(f'No values found for key(s) {bad_keys}')
 
         if unique:
-            if len(nonunqies):
-                raise ValueError(f"Attribute(s) {nonunqies} have non-unique values, cannot return single unique value.")
+            if len(nonuniques):
+                raise ValueError(f"Attribute(s) {nonuniques} have non-unique values, cannot return single unique value.")
 
             if not as_pandas:
                 return uniques
