@@ -541,7 +541,10 @@ class ModelPredictiveControl:
                                          iteration=i,
                                          total_iterations=num_iter)
 
-            self.microgrid.run(control, normalized=False)
+            _, _, done, _ = self.microgrid.run(control, normalized=False)
+
+            if done:
+                break
 
         return self.microgrid.get_log()
 
