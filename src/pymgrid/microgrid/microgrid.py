@@ -546,6 +546,18 @@ class Microgrid(yaml.YAMLObject):
             raise AttributeError(f'No module has attribute {attr_name}.')
 
     @property
+    def current_step(self):
+        return self._modules.get_attrs('current_step', unique=True).item()
+
+    @property
+    def initial_step(self):
+        return self.modules.get_attrs('initial_step', unique=True).item()
+
+    @property
+    def final_step(self):
+        return self.modules.get_attrs('final_step', unique=True).item()
+
+    @property
     def modules(self):
         """
         View of the module container.
