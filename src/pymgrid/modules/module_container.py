@@ -140,7 +140,7 @@ class Container(UserDict):
                 uniques[k] = unique_item
 
         if len(bad_keys):
-            raise KeyError(f'No values found for key(s) {bad_keys}')
+            raise AttributeError(f'No values found for key(s) {bad_keys}')
 
         if unique:
             if len(nonuniques):
