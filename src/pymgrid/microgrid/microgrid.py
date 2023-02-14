@@ -547,14 +547,40 @@ class Microgrid(yaml.YAMLObject):
 
     @property
     def current_step(self):
+        """
+        Current step of underlying modules.
+
+        Returns
+        -------
+        current_step : int
+            Current step.
+        """
         return self._modules.get_attrs('current_step', unique=True).item()
 
     @property
     def initial_step(self):
+        """
+        Initial step at which to start underlying timeseries data.
+
+        The step to which :attr:`.current_step` is reset to when calling :meth:`.reset`.
+
+        Returns
+        -------
+        initial_step : int
+            Initial step.
+        """
         return self.modules.get_attrs('initial_step', unique=True).item()
 
     @property
     def final_step(self):
+        """
+        Final step of underlying timeseries data.
+
+        Returns
+        -------
+        final_step : int
+            Final step.
+        """
         return self.modules.get_attrs('final_step', unique=True).item()
 
     @property
