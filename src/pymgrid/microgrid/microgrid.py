@@ -273,7 +273,7 @@ class Microgrid(yaml.YAMLObject):
         return _log_dict
 
     def get_cost_info(self):
-        return self._modules.to_dict('production_marginal_cost', 'absorption_marginal_cost')
+        return self._modules.get_attrs('production_marginal_cost', 'absorption_marginal_cost', as_pandas=False)
 
     def sample_action(self, strict_bound=False, sample_flex_modules=False):
         """
