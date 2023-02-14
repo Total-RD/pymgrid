@@ -108,7 +108,51 @@ class Container(UserDict):
         for name, modules in self.to_dict().items():
             yield name, modules
 
-    def get_attrs(self, *attrs, as_pandas=True, unique=False):
+    def get_attrs(self, *attrs, unique=False, as_pandas=True):
+        """
+        Get module attributes as a dictionary or pandas object.
+
+        If `unique`, checks that the value is unique for all modules and returns only the unique value.
+        Otherwise, returns the values for all modules.
+
+        If `as_pandas`, returns either a pd.Series (if `unique`) or pd.DataFrame of attributes.
+
+        Parameters
+        ----------
+        attrs : str
+            Names of module attributes to return.
+
+        unique : bool, default False
+            Whether to check for and return a single, unique value for an attribute.
+            If different modules have different values, a `ValueError` will be raised.
+
+        as_pandas: bool, default True
+            Whether to return either a pd.Series or pd.DataFrame.
+            If True, the return value will be a pd.Series if `unique` and a pd.DataFrame otherwise.
+            If False, returns a dict.
+
+        .. note::
+            If only some modules have a particular attribute, `get_attrs` will not raise an error.
+            If `unique`, the unique value of the modules containing the value will be returned.
+            Otherwise, `NotImplemented` will fill in missing values.
+
+        Returns
+        -------
+        d : dict or pd.DataFrame or pd.Series
+
+            * Returns dict if `as_pandas` is False.
+
+            * Otherwise, returns a pd.Series if `unique` and a pd.DataFrame if not.
+
+        Raises
+        ------
+        ValueError
+            If `attrs` is empty or `unique` is True and non-unique values are found.
+
+        AttributeError
+            If no module has the particular attribute.
+
+        """
         if not attrs:
             raise ValueError('Missing attrs to get.')
 
