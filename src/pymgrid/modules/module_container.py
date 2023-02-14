@@ -34,36 +34,19 @@ class Container(UserDict):
             l.extend(raw_container.to_list())
         return l
 
-    def to_dict(self, *attrs):
+    def to_dict(self):
         """
-        Get the modules or module attributes as a dictionary.
+        Get the modules as a dictionary.
 
-        If attrs is empty, will return a dictionary with modules as the values. Otherwise returns a dictionary
-        with attributes as the values in dictionary form.
-
-        Parameters
-        ----------
-        attrs : str
-            Names of module attributes to return. If empty, returns the modules.
         Returns
         -------
-        d : dict[str, list[module]] or dict[str, list[dict]]
-
-            * If attrs is empty:
-              Dictionary with module names as keys, modules as values.
-
-            * Otherwise, a dictionary with module names as keys, module attributes as values in a dict.
+        d : dict[str, list[module]]
+            Dictionary with module names as keys, modules as values.
 
         """
         d = dict()
         for k, raw_container in self.containers.items():
-            if attrs:
-                d.update({
-                    name: [{attr: getattr(module, attr, NotImplemented) for attr in attrs} for module in module_list]
-                    for name, module_list in raw_container.items()
-                })
-            else:
-                d.update(raw_container)
+            d.update(raw_container)
         return d
 
     def to_tuples(self):
