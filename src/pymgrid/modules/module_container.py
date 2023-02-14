@@ -116,13 +116,13 @@ class Container(UserDict):
 
         .. note::
             If only some modules have a particular attribute, `get_attrs` will not raise an error.
+
             If `unique`, the unique value of the modules containing the value will be returned.
             Otherwise, `NotImplemented` will fill in missing values.
 
         Returns
         -------
         d : dict or pd.DataFrame or pd.Series
-
             * Returns dict if `as_pandas` is False.
 
             * Otherwise, returns a pd.Series if `unique` and a pd.DataFrame if not.
