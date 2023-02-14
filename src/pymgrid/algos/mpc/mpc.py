@@ -533,12 +533,7 @@ class ModelPredictiveControl:
 
     def _run_mpc_on_modular(self, forecast_steps=None, verbose=False):
 
-        if forecast_steps is None:
-            num_iter = len(self.microgrid) - self.horizon
-        else:
-            assert forecast_steps <= len(self.microgrid) - self.horizon, 'forecast steps can\'t look past horizon'
-            num_iter = forecast_steps
-
+        num_iter = self._get_num_iter(forecast_steps)
         self.microgrid.reset()
 
         for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
@@ -549,6 +544,17 @@ class ModelPredictiveControl:
             self.microgrid.run(control, normalized=False)
 
         return self.microgrid.get_log()
+
+
+    def _get_num_iter(self, forecast_steps=None):
+        if forecast_steps is not None:
+            assert forecast_steps <= len(self.microgrid), 'forecast steps cannot be longer than data length.'
+            return forecast_steps
+
+        elif not self.is_modular:
+            return len(self.microgrid) - self.horizon
+
+        return self.microgrid.final_step - self.microgrid.initial_step
 
     def _run_mpc_on_sample(self, sample, forecast_steps=None, verbose=False):
         """
