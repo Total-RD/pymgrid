@@ -69,6 +69,26 @@ class TestMicrogrid(TestCase):
 
                     self.assertTrue(empty_action_space != has_corresponding_action)  # XOR
 
+    def test_current_step(self):
+        microgrid = get_modular_microgrid()
+
+        self.assertEqual(microgrid.current_step, 0)
+
+        for j in range(4):
+            with self.subTest(step=j):
+                microgrid.run(microgrid.sample_action())
+                self.assertEqual(microgrid.current_step, j+1)
+
+    def test_current_step_after_reset(self):
+        microgrid = get_modular_microgrid()
+        self.assertEqual(microgrid.current_step, 0)
+
+        microgrid.run(microgrid.sample_action())
+        self.assertEqual(microgrid.current_step, 1)
+
+        microgrid.reset()
+        self.assertEqual(microgrid.current_step, 0)
+
     def test_set_module_attr_forecast_horizon(self):
         forecast_horizon = 50
 
