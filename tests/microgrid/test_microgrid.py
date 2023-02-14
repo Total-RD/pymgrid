@@ -88,6 +88,25 @@ class TestMicrogrid(TestCase):
         with self.assertRaises(AttributeError):
             microgrid.set_module_attr('blah', 'blah')
 
+    def test_get_cost_info(self):
+        modules = 'genset', 'battery', 'renewable', 'load', 'grid', 'balancing'
+
+        microgrid = get_modular_microgrid()
+        cost_info = microgrid.get_cost_info()
+
+        for module in modules:
+            with self.subTest(info_of_module=cost_info):
+                self.assertIn(module, cost_info.keys())
+                self.assertEqual(len(cost_info[module]), 1)
+                self.assertIsInstance(cost_info[module][0], dict)
+
+                self.assertIn('production_marginal_cost', cost_info[module][0])
+                self.assertIn('absorption_marginal_cost', cost_info[module][0])
+                self.assertEqual(len(cost_info[module][0]), 2)
+
+                self.assertTrue(pd.api.types.is_number(cost_info[module][0]['production_marginal_cost']))
+                self.assertTrue(pd.api.types.is_number(cost_info[module][0]['absorption_marginal_cost']))
+
 
 class TestMicrogridLoadPV(TestCase):
     def setUp(self):
