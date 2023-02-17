@@ -80,6 +80,25 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
 
         return self._populate_action(priority_list)
 
+    def remove_action(self, action_number):
+        """
+        Remove an action from the action space.
+
+        Useful is two actions happen to be redundant in a particular use case.
+
+        Parameters
+        ----------
+        action_number : int
+            Index of the action to remove.
+
+        """
+
+        if action_number not in self.action_space:
+            raise ValueError('Cannot remove action that is not in the action space!')
+
+        self.actions_list.pop(action_number)
+        self.action_space = Discrete(self.action_space.n - 1)
+
     def step(self, action):
         self._microgrid_logger.log(action=action)
         microgrid_action = self._get_action(action)
