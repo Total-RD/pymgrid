@@ -109,7 +109,7 @@ class Container(UserDict):
             Whether to check for and return a single, unique value for an attribute.
             If different modules have different values, a `ValueError` will be raised.
 
-        as_pandas: bool, default True
+        as_pandas : bool, default True
             Whether to return either a pd.Series or pd.DataFrame.
             If True, the return value will be a pd.Series if `unique` and a pd.DataFrame otherwise.
             If False, returns a dict.
@@ -117,8 +117,8 @@ class Container(UserDict):
         .. note::
             If only some modules have a particular attribute, `get_attrs` will not raise an error.
 
-            If `unique`, the unique value of the modules containing the value will be returned.
-            Otherwise, `NotImplemented` will fill in missing values.
+            If ``unique``, the unique value of the modules containing the value will be returned.
+            Otherwise, ``NotImplemented`` will fill in missing values.
 
         Returns
         -------
@@ -130,7 +130,8 @@ class Container(UserDict):
         Raises
         ------
         ValueError
-            If `attrs` is empty or `unique` is True and non-unique values are found.
+            * If `attrs` is empty, or
+            * `unique` is True and non-unique values are found.
 
         AttributeError
             If no module has the particular attribute.
