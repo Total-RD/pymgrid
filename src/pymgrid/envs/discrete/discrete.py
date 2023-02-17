@@ -84,7 +84,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
         """
         Remove an action from the action space.
 
-        Useful is two actions happen to be redundant in a particular use case.
+        Useful if two actions happen to be redundant in a particular use case.
 
         Parameters
         ----------
