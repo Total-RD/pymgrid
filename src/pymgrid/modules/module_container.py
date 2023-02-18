@@ -139,6 +139,9 @@ class Container(UserDict):
         AttributeError
             If no module has the particular attribute.
 
+            .. warning::
+            This check is not performed if both ``unique`` and ``as_pandas`` are False.
+
         """
         if not attrs:
             raise ValueError('Missing attrs to get.')
@@ -149,6 +152,9 @@ class Container(UserDict):
                 name: [{attr: getattr(module, attr, NotImplemented) for attr in attrs} for module in module_list]
                 for name, module_list in raw_container.items()
             })
+
+        if not (unique or as_pandas):
+            return d
 
         d_df = pd.DataFrame({(name, num): subdict for name, module_list in d.items()
                             for num, subdict in enumerate(module_list)}).T
