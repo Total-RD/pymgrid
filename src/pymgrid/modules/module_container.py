@@ -6,6 +6,9 @@ from pymgrid.modules.base import BaseMicrogridModule
 
 
 class Container(UserDict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dir_additions = self.dir_additions()
 
     @property
     def containers(self):
@@ -191,7 +194,7 @@ class Container(UserDict):
         additions = set(self.keys())
         for x in self.values():
             try:
-                additions.update(x.dir_additions())
+                additions.update(x.dir_additions)
             except AttributeError:
                 pass
         return additions
@@ -226,11 +229,11 @@ class Container(UserDict):
 
     def __dir__(self):
         rv = set(super().__dir__())
-        rv = rv | self.dir_additions()
+        rv = rv | self.dir_additions
         return sorted(rv)
 
     def __contains__(self, item):
-        return item in self.data.keys() or item in self.dir_additions()
+        return item in self.data.keys() or item in self.dir_additions
 
 
 class ModuleContainer(Container):
