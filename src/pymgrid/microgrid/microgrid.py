@@ -418,7 +418,8 @@ class Microgrid(yaml.YAMLObject):
     def set_forecaster(self,
                        forecaster,
                        forecast_horizon=DEFAULT_HORIZON,
-                       forecaster_increase_uncertainty=False):
+                       forecaster_increase_uncertainty=False,
+                       forecaster_relative_noise=False):
         """
         Set the forecaster for timeseries modules in the microgrid.
 
@@ -469,7 +470,8 @@ class Microgrid(yaml.YAMLObject):
                     self._modules[module_name].set_forecaster(
                         _forecaster,
                         forcast_horizon=forecast_horizon,
-                        forecaster_increase_uncertainty=forecaster_increase_uncertainty
+                        forecaster_increase_uncertainty=forecaster_increase_uncertainty,
+                        forecaster_relative_noise=forecaster_relative_noise
                     )
                 except AttributeError:
                     pass
@@ -479,7 +481,8 @@ class Microgrid(yaml.YAMLObject):
                     module.set_forecaster(
                         forecaster,
                         forecast_horizon=forecast_horizon,
-                        forecaster_increase_uncertainty=forecaster_increase_uncertainty
+                        forecaster_increase_uncertainty=forecaster_increase_uncertainty,
+                        forecaster_relative_noise=forecaster_relative_noise
                     )
                 except AttributeError:
                     pass
