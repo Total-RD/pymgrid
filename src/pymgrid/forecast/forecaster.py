@@ -201,23 +201,34 @@ class OracleForecaster(Forecaster):
 
 
 class GaussianNoiseForecaster(Forecaster):
-    def __init__(self, noise_std, observation_space, forecast_shape, increase_uncertainty=False):
+    def __init__(self,
+                 noise_std,
+                 observation_space,
+                 forecast_shape,
+                 time_series,
+                 increase_uncertainty=False,
+                 relative_noise=False):
         super().__init__(observation_space, forecast_shape)
 
         self.input_noise_std = noise_std
         self.increase_uncertainty = increase_uncertainty
+        self.relative_noise = relative_noise
 
         self._noise_size = self._forecast_shaped_space.shape
-        self._noise_std = self._get_noise_std()
+        self._noise_std = self._get_noise_std(time_series)
 
-    def _get_noise_std(self):
+    def _get_noise_std(self, time_series):
+        scalar_val = self.input_noise_std
+        if self.relative_noise:
+            scalar_val *= np.abs(time_series.mean())
+
         if self.increase_uncertainty:
-            return self.input_noise_std * np.outer(
+            return scalar_val * np.outer(
                 1 + np.log(1 + np.arange(self._noise_size[0])),
                 np.ones(self._noise_size[-1])
             )
         else:
-            return self.input_noise_std
+            return scalar_val
 
     def _get_noise(self, size):
         try:
