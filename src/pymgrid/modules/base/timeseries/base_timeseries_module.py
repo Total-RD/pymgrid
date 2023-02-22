@@ -25,6 +25,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 forecaster_relative_noise=False,
                  initial_step=0,
                  final_step=-1,
                  provided_energy_name='provided_energy',
@@ -40,7 +41,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                           self._get_observation_spaces(),
                                           forecast_shape=(self.forecast_horizon, len(self.state_components)),
                                           time_series=self.time_series,
-                                          increase_uncertainty=forecaster_increase_uncertainty)
+                                          increase_uncertainty=forecaster_increase_uncertainty,
+                                          relative_noise=forecaster_relative_noise)
 
         self._state_dict_keys = self._set_state_dict_keys()
 
@@ -233,7 +235,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                                           self._observation_space,
                                           (self.forecast_horizon, len(self.state_components)),
                                           self.time_series,
-                                          increase_uncertainty=forecaster_increase_uncertainty)
+                                          increase_uncertainty=forecaster_increase_uncertainty,
+                                          relative_noise=relative_noise)
 
     @property
     def forecast_horizon(self):

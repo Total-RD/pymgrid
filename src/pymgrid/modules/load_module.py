@@ -60,6 +60,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
                  forecaster=None,
                  forecast_horizon=DEFAULT_HORIZON,
                  forecaster_increase_uncertainty=False,
+                 forecaster_relative_noise=False,
                  initial_step=0,
                  final_step=-1,
                  raise_errors=False):
@@ -69,6 +70,7 @@ class LoadModule(BaseTimeSeriesMicrogridModule):
             forecaster=forecaster,
             forecast_horizon=forecast_horizon,
             forecaster_increase_uncertainty=forecaster_increase_uncertainty,
+            forecaster_relative_noise=forecaster_relative_noise,
             initial_step=initial_step,
             final_step=final_step,
             provided_energy_name=None,
