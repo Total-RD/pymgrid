@@ -292,6 +292,25 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             return False
 
     @property
+    def forecaster_relative_noise(self):
+        """
+        View of :class:`pymgrid.forecast.GaussianNoiseForecaster``.forecaster_relative_noise`.
+
+        Required for serialization as a mirror to the class parameter.
+        Will only ever be True if ``self.forecaster`` is a ``GaussianNoiseForecaster``.
+
+        Returns
+        -------
+        forecaster_relative_noise : bool
+            Associated attribute of ``self.forecaster``.
+
+        """
+        try:
+            return self._forecaster.relative_noise
+        except AttributeError:
+            return False
+
+    @property
     def final_step(self):
         return self._final_step
 
