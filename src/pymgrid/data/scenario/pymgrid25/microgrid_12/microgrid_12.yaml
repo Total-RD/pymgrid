@@ -7,6 +7,7 @@ modules:
       forecast_horizon: 23
       forecaster: oracle
       forecaster_increase_uncertainty: false
+      forecaster_relative_noise: false
       initial_step: 0
       raise_errors: false
       time_series: !NDArray 'data/cls_params/LoadModule/time_series.csv.gz'
@@ -22,6 +23,7 @@ modules:
       forecast_horizon: 23
       forecaster: oracle
       forecaster_increase_uncertainty: false
+      forecaster_relative_noise: false
       initial_step: 0
       provided_energy_name: renewable_used
       raise_errors: false
@@ -72,6 +74,7 @@ modules:
       forecast_horizon: 23
       forecaster: oracle
       forecaster_increase_uncertainty: false
+      forecaster_relative_noise: false
       initial_step: 0
       max_export: 96428
       max_import: 96428
