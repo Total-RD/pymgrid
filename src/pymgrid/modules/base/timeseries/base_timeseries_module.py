@@ -304,9 +304,11 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
             self._final_step = len(self)
         else:
             self._final_step = value
-
-        if self._final_step <= self.initial_step:
-            raise ValueError('final_step value must be greater than initial_step')
+        try:
+            if self._final_step <= self.initial_step:
+                raise ValueError('final_step value must be greater than initial_step')
+        except AttributeError:
+            pass
 
     @property
     def state_dict(self):
