@@ -7,7 +7,12 @@ from pymgrid.utils.ray import ray_decorator
 from pymgrid.utils.space import ModuleSpace
 
 
-def get_forecaster(forecaster, observation_space, forecast_shape, time_series=None, increase_uncertainty=False):
+def get_forecaster(forecaster,
+                   observation_space,
+                   forecast_shape,
+                   time_series=None,
+                   increase_uncertainty=False,
+                   relative_noise=False):
     """
     Get the forecasting function for the time series module.
 
@@ -65,8 +70,12 @@ def get_forecaster(forecaster, observation_space, forecast_shape, time_series=No
     elif forecaster == "oracle":
         return OracleForecaster(observation_space, forecast_shape)
     elif is_number(forecaster):
-        return GaussianNoiseForecaster(forecaster, observation_space, forecast_shape,
-                                       increase_uncertainty=increase_uncertainty)
+        return GaussianNoiseForecaster(forecaster,
+                                       observation_space,
+                                       forecast_shape,
+                                       time_series,
+                                       increase_uncertainty=increase_uncertainty,
+                                       relative_noise=relative_noise)
     else:
         raise ValueError(f"Unable to parse forecaster of type {type(forecaster)}")
 
