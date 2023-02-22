@@ -47,12 +47,20 @@ def get_forecaster(forecaster,
         end of the time series.
 
     time_series: ndarray[float] or None, default None.
-        The underlying time series, used to validate UserDefinedForecaster.
-        Only used if callable(forecaster).
+        The underlying time series.
 
-    increase_uncertainty : bool, default False.
+        * If ``callable(forecaster)``, used to validate :class:`.UserDefinedForecaster`.
+        * If ``forecaster`` is numeric and ``relative_noise`` is true, the noise standard deviation
+          will be defined relative to the mean of the time series.
+
+    increase_uncertainty : bool, default False
        Whether to increase uncertainty for farther-out dates if using
-       a GaussianNoiseForecaster. Ignored otherwise.
+       :class:`.GaussianNoiseForecaster`. Ignored otherwise.
+
+    relative_noise : bool, default False
+       Whether to define noise standard deviation relative to mean of time series if using
+       :class:`.GaussianNoiseForecaster`. Ignored otherwise.
+
 
     Returns
     -------
