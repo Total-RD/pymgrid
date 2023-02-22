@@ -460,6 +460,10 @@ class Microgrid(yaml.YAMLObject):
         forecaster_increase_uncertainty : bool, default False
             Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
 
+        forecaster_relative_noise : bool, default False
+            Whether to define noise standard deviation relative to mean of time series if using
+            :class:`.GaussianNoiseForecaster`. Ignored otherwise.
+
         """
         if isinstance(forecaster, dict):
             for module_name, _forecaster in forecaster.items():
