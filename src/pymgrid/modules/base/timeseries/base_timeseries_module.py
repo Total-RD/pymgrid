@@ -193,7 +193,8 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
     def set_forecaster(self,
                        forecaster,
                        forecast_horizon=DEFAULT_HORIZON,
-                       forecaster_increase_uncertainty=False):
+                       forecaster_increase_uncertainty=False,
+                       relative_noise=False):
         """
         Set the forecaster for this module.
 
@@ -226,6 +227,10 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
 
         forecaster_increase_uncertainty : bool, default False
             Whether to increase uncertainty for farther-out dates if using a GaussianNoiseForecaster. Ignored otherwise.
+
+        relative_noise : bool, default False
+            Whether to define noise standard deviation relative to mean of time series if using
+            :class:`.GaussianNoiseForecaster`. Ignored otherwise.
 
         """
 
