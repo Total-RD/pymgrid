@@ -81,7 +81,7 @@ def get_forecaster(forecaster,
         return GaussianNoiseForecaster(forecaster,
                                        observation_space,
                                        forecast_shape,
-                                       time_series,
+                                       time_series=time_series,
                                        increase_uncertainty=increase_uncertainty,
                                        relative_noise=relative_noise)
     else:
@@ -222,7 +222,7 @@ class GaussianNoiseForecaster(Forecaster):
                  noise_std,
                  observation_space,
                  forecast_shape,
-                 time_series,
+                 time_series=None,
                  increase_uncertainty=False,
                  relative_noise=False):
         super().__init__(observation_space, forecast_shape)
@@ -237,6 +237,8 @@ class GaussianNoiseForecaster(Forecaster):
     def _get_noise_std(self, time_series):
         scalar_val = self.input_noise_std
         if self.relative_noise:
+            if time_series is None:
+                raise ValueError('Must pass time_series if relative_noise is True.')
             scalar_val *= np.abs(time_series.mean())
 
         if self.increase_uncertainty:
