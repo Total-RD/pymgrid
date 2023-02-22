@@ -35,12 +35,14 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         self._time_series = self._set_time_series(time_series)
         self._min_obs, self._max_obs, self._min_act, self._max_act = self._get_bounds()
 
+        self.final_step = final_step
+
         self._forecast_param = forecaster
         self._forecast_horizon = forecast_horizon * (forecaster is not None)
         self._forecaster = get_forecaster(forecaster,
                                           self._get_observation_spaces(),
                                           forecast_shape=(self.forecast_horizon, len(self.state_components)),
-                                          time_series=self.time_series,
+                                          time_series=self.time_series[initial_step:self.final_step, :],
                                           increase_uncertainty=forecaster_increase_uncertainty,
                                           relative_noise=forecaster_relative_noise)
 
@@ -50,8 +52,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
                          initial_step=initial_step,
                          provided_energy_name=provided_energy_name,
                          absorbed_energy_name=absorbed_energy_name)
-
-        self.final_step = final_step
 
         self._current_forecast = self.forecast()
 
@@ -239,7 +239,7 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         self._forecaster = get_forecaster(forecaster,
                                           self._observation_space,
                                           (self.forecast_horizon, len(self.state_components)),
-                                          self.time_series,
+                                          self.time_series[self.initial_step:self._final_step, :],
                                           increase_uncertainty=forecaster_increase_uncertainty,
                                           relative_noise=relative_noise)
 
