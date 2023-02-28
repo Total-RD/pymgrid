@@ -102,7 +102,7 @@ class PriorityListAlgo:
         if module_to_deploy.is_sink:
             assert module_max_consumption >= 0
 
-            if -1 * remaining_load < module_to_deploy.max_consumption:
+            if -1 * remaining_load > module_to_deploy.max_consumption:
                 # Can't consume it all
                 module_consumption = -1.0 * module_to_deploy.max_consumption
             else:
