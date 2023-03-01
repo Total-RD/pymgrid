@@ -43,6 +43,13 @@ class ContinuousMicrogridEnv(BaseMicrogridEnv):
         Otherwise, they are nested :class:`gym:gym.spaces.Dict` of :class:`gym:gym.spaces.Tuple`
         of :class:`gym:gym.spaces.Box`, corresponding to the structure of the ``control`` arg of :meth:`.Microgrid.run`.
 
+    trajectory_func : callable or None, default None
+        Callable that sets an initial and final step for an episode. ``trajectory_func`` must take two inputs:
+        :attr:`.initial_step` and :attr:`.final_step`, and return two integers: the initial and final step for
+        that particular episode, respectively. This function will be called every time :meth:`.reset` is called.
+
+        If None, :attr:`.initial_step` and :attr:`.final_step` are used to define every episode.
+
     """
     _nested_action_space = None
 
