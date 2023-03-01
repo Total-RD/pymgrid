@@ -45,6 +45,13 @@ class BaseMicrogridEnv(Microgrid, Env):
         Otherwise, they are nested :class:`gym:gym.spaces.Dict` of :class:`gym:gym.spaces.Tuple`
         of :class:`gym:gym.spaces.Box`, corresponding to the structure of the ``control`` arg of :meth:`.Microgrid.run`.
 
+    trajectory_func : callable or None, default None
+        Callable that sets an initial and final step for an episode. ``trajectory_func`` must take two inputs:
+        :attr:`.initial_step` and :attr:`.final_step`, and return two integers: the initial and final step for
+        that particular episode, respectively. This function will be called every time :meth:`.reset` is called.
+
+        If None, :attr:`.initial_step` and :attr:`.final_step` are used to define every episode.
+
     """
 
     action_space = None
@@ -71,7 +78,8 @@ class BaseMicrogridEnv(Microgrid, Env):
                  loss_load_cost=10,
                  overgeneration_cost=2,
                  reward_shaping_func=None,
-                 flat_spaces=True
+                 flat_spaces=True,
+                 trajectory_func=None
                  ):
 
         super().__init__(modules,
@@ -81,6 +89,7 @@ class BaseMicrogridEnv(Microgrid, Env):
                          reward_shaping_func=reward_shaping_func)
 
         self._flat_spaces = flat_spaces
+        self.trajectory_func = trajectory_func
         self.action_space = self._get_action_space()
         self.observation_space, self._nested_observation_space = self._get_observation_space()
 
@@ -108,6 +117,9 @@ class BaseMicrogridEnv(Microgrid, Env):
         ----------
         action : dict[str, list[float]]
             An action provided by the agent.
+
+        normalized : bool, default True
+            Whether the passed action is normalized or not.
 
         Returns
         -------
