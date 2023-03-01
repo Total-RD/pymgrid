@@ -104,6 +104,10 @@ class BaseMicrogridEnv(Microgrid, Env):
 
         return (flatten_space(obs_space) if self._flat_spaces else obs_space), obs_space
 
+    def reset(self):
+        obs = super().reset()
+        return flatten(self._nested_observation_space, obs) if self._flat_spaces else obs
+
     def step(self, action, normalized=True):
         """
         Run one timestep of the environment's dynamics.
@@ -144,10 +148,6 @@ class BaseMicrogridEnv(Microgrid, Env):
         if self._flat_spaces:
             obs = flatten(self._nested_observation_space, obs)
         return obs, reward, done, info
-
-    def reset(self):
-        obs = super().reset()
-        return flatten(self._nested_observation_space, obs) if self._flat_spaces else obs
 
     def render(self, mode="human"):
         """:meta private:"""
