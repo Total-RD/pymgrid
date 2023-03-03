@@ -1,6 +1,6 @@
 import numpy as np
 
-from pymgrid.envs.trajectory.base import BaseTrajectory
+from pymgrid.microgrid.trajectory.base import BaseTrajectory
 
 
 class StochasticTrajectory(BaseTrajectory):
