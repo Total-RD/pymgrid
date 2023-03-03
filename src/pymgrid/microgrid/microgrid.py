@@ -48,6 +48,14 @@ class Microgrid(yaml.YAMLObject):
         For example, you may define a function that defines the cost as only being the loss load, or only
         the pv curtailment.
 
+    trajectory_func : callable or None, default None
+        Callable that sets an initial and final step for an episode. ``trajectory_func`` must take two inputs:
+        :attr:`.initial_step` and :attr:`.final_step`, and return two integers: the initial and final step for
+        that particular episode, respectively. This function will be called every time :meth:`.reset` is called.
+
+        If None, :attr:`.initial_step` and :attr:`.final_step` are used to define every episode.
+
+
     Examples
     --------
     >>> from pymgrid import Microgrid
