@@ -108,6 +108,9 @@ class Microgrid(yaml.YAMLObject):
                                                    loss_load_cost,
                                                    overgeneration_cost)
 
+        self._initial_step = self._get_module_initial_step()
+        self._final_step = self._get_module_final_step()
+
         self.reward_shaping_func = reward_shaping_func
 
         self._balance_logger = ModularLogger()
@@ -584,10 +587,18 @@ class Microgrid(yaml.YAMLObject):
         initial_step : int
             Initial step.
         """
+        return self._initial_step
+
+    def _get_module_initial_step(self):
         return self.modules.get_attrs('initial_step', unique=True).item()
 
     @initial_step.setter
     def initial_step(self, value):
+        self._set_initial_step(value)
+
+    def _set_initial_step(self, value, modules_only=False):
+        if not modules_only:
+            self._initial_step = value
         self.set_module_attr('initial_step', value)
 
     @property
@@ -600,10 +611,18 @@ class Microgrid(yaml.YAMLObject):
         final_step : int
             Final step.
         """
+        return self._final_step
+
+    def _get_module_final_step(self):
         return self.modules.get_attrs('final_step', unique=True).item()
 
     @final_step.setter
     def final_step(self, value):
+        self._set_final_step(value)
+
+    def _set_final_step(self, value, modules_only=False):
+        if not modules_only:
+            self._final_step = value
         self.set_module_attr('final_step', value)
 
     @property
