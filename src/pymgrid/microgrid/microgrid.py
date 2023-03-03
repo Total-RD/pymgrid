@@ -630,7 +630,12 @@ class Microgrid(yaml.YAMLObject):
         return self._initial_step
 
     def _get_module_initial_step(self):
-        return self.modules.get_attrs('initial_step', unique=True).item()
+        initial_step = self.modules.get_attrs('initial_step', unique=True)
+        try:
+            return initial_step.item()
+        except ValueError:
+            if initial_step.empty:
+                return 0
 
     @initial_step.setter
     def initial_step(self, value):
@@ -654,7 +659,12 @@ class Microgrid(yaml.YAMLObject):
         return self._final_step
 
     def _get_module_final_step(self):
-        return self.modules.get_attrs('final_step', unique=True).item()
+        final_step = self.modules.get_attrs('final_step', unique=True)
+        try:
+            return final_step.item()
+        except ValueError:
+            if final_step.empty:
+                return np.inf
 
     @final_step.setter
     def final_step(self, value):
