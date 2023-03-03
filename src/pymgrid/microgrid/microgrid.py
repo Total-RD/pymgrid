@@ -102,7 +102,9 @@ class Microgrid(yaml.YAMLObject):
                  add_unbalanced_module=True,
                  loss_load_cost=10.,
                  overgeneration_cost=2.,
-                 reward_shaping_func=None):
+                 reward_shaping_func=None,
+                 trajectory_func=None):
+
         self._modules = self._get_module_container(modules,
                                                    add_unbalanced_module,
                                                    loss_load_cost,
@@ -112,6 +114,7 @@ class Microgrid(yaml.YAMLObject):
         self._final_step = self._get_module_final_step()
 
         self.reward_shaping_func = reward_shaping_func
+        self.trajectory_func = self._check_trajectory_func(trajectory_func)
 
         self._balance_logger = ModularLogger()
         self._microgrid_logger = ModularLogger()  # log additional information.
@@ -160,6 +163,36 @@ class Microgrid(yaml.YAMLObject):
             modules.append(self._get_unbalanced_energy_module(loss_load_cost, overgeneration_cost))
 
         return ModuleContainer(modules)
+
+    def _check_trajectory_func(self, trajectory_func):
+        if trajectory_func is None:
+            return trajectory_func
+
+        if not callable(trajectory_func):
+            raise TypeError('trajectory_func must be callable.')
+
+        output = trajectory_func(self._initial_step, self._final_step)
+
+        try:
+            initial_step, final_step = output
+            if not (isinstance(initial_step, int) and isinstance(final_step, int)):
+                raise ValueError
+        except (TypeError, ValueError):
+            raise TypeError(f'trajectory func must return two integer values, not {output}')
+
+        if initial_step < self._initial_step:
+            raise ValueError(f'trajectory_func returned initial_step value ({initial_step}) less than env\'s initial '
+                             f'step: ({self._initial_step})')
+
+        if final_step > self._final_step:
+            raise ValueError(f'trajectory_func returned final_step value ({final_step}) greater than env\'s final step:'
+                             f' ({self._final_step})')
+
+        if initial_step >= final_step:
+            raise ValueError(f'trajectory_func returned values ({initial_step}, {final_step}) such that initial_step'
+                             f'was greater than or equal to final_step.')
+
+        return trajectory_func
 
     def reset(self):
         """
