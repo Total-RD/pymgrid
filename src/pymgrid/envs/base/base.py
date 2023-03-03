@@ -78,8 +78,8 @@ class BaseMicrogridEnv(Microgrid, Env):
                  loss_load_cost=10,
                  overgeneration_cost=2,
                  reward_shaping_func=None,
-                 flat_spaces=True,
-                 trajectory_func=None
+                 trajectory_func=None,
+                 flat_spaces=True
                  ):
 
         super().__init__(modules,
