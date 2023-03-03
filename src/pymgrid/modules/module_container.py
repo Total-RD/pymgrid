@@ -186,7 +186,7 @@ class Container(UserDict):
             if not as_pandas:
                 return uniques
 
-            return pd.Series(uniques)
+            return pd.Series(uniques, dtype=None if len(uniques) else float)
 
         if as_pandas:
             return d_df
