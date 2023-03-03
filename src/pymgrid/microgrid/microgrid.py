@@ -858,17 +858,25 @@ class Microgrid(yaml.YAMLObject):
 
         instance = cls(mapping["modules"], add_unbalanced_module=False)
         instance._balance_logger = instance._balance_logger.from_raw(mapping.get("balance_log"))
+        instance.trajectory_func = mapping['trajectory_func']
+        instance.initial_step = mapping['initial_step']
+        instance.final_step = mapping['final_step']
         return instance
 
     def serialize(self, dumper_stream):
         """
         :meta private:
         """
-        data = {
+        return dump_data(self._serialization_data(), dumper_stream, self.yaml_tag)
+
+    def _serialization_data(self):
+        return {
             "modules": self._modules.to_tuples(),
+            'trajectory_func': self.trajectory_func,
+            'initial_step': self.initial_step,
+            'final_step': self.final_step,
             **self._balance_logger.serialize("balance_log")
         }
-        return dump_data(data, dumper_stream, self.yaml_tag)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
