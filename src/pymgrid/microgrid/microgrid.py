@@ -981,7 +981,10 @@ class Microgrid(yaml.YAMLObject):
         if type(self) != type(other):
             return NotImplemented
 
-        return self.modules == other.modules and self._balance_logger == other._balance_logger
+        return all([
+            self.modules == other.modules,
+            self._balance_logger == other._balance_logger,
+            self.trajectory_func == other.trajectory_func])
 
     def __repr__(self):
         module_str = [name + ' x ' + str(len(modules)) for name, modules in self._modules.iterdict()]
