@@ -601,7 +601,7 @@ class Microgrid(yaml.YAMLObject):
             set_at_least_one = True
 
         if not set_at_least_one:
-            raise AttributeError(f'No module has attribute {attr_name}.')
+            raise AttributeError(f"No module has attribute '{attr_name}'.")
 
     @property
     def current_step(self):
