@@ -203,11 +203,18 @@ class Microgrid(yaml.YAMLObject):
         dict[str, list[float]]
             Observations from resetting the modules as well as the flushed balance log.
         """
+        self._set_trajectory()
         return {
             **{name: [module.reset() for module in module_list] for name, module_list in self.modules.iterdict()},
             **{"balance": self._balance_logger.flush(),
                "other": self._microgrid_logger.flush()}
         }
+
+    def _set_trajectory(self):
+        if self.trajectory_func is not None:
+            initial_step, final_step = self.trajectory_func(self._initial_step, self._final_step)
+            self._set_initial_step(initial_step, modules_only=True)
+            self._set_final_step(final_step, modules_only=True)
 
     def run(self, control, normalized=True):
         """
