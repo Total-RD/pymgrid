@@ -859,8 +859,8 @@ class Microgrid(yaml.YAMLObject):
         instance = cls(mapping["modules"], add_unbalanced_module=False)
         instance._balance_logger = instance._balance_logger.from_raw(mapping.get("balance_log"))
         instance.trajectory_func = mapping.get('trajectory_func', None)
-        instance.initial_step = mapping.get('initial_step', instance.initial_step)
-        instance.final_step = mapping.get('final_step', instance.final_step)
+        instance._initial_step = mapping.get('initial_step', instance.initial_step)
+        instance._final_step = mapping.get('final_step', instance.final_step)
         return instance
 
     def serialize(self, dumper_stream):
