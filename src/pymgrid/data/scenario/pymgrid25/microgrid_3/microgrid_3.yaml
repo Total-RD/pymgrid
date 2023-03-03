@@ -1,4 +1,6 @@
 !Microgrid
+final_step: 8759
+initial_step: 0
 modules:
 - - load
   - !LoadModule
@@ -90,3 +92,4 @@ modules:
       _current_step: 0
       current_charge: 20490.0
       soc: 0.2
+trajectory_func: null
