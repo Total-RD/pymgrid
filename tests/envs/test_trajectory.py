@@ -157,7 +157,7 @@ class TestTrajectory(TestCase):
 
     def test_trajectory_serialization(self):
         import yaml
-        from pymgrid.envs.trajectory import DeterministicTrajectory
+        from pymgrid.microgrid.trajectory import DeterministicTrajectory
 
         trajectory_func = DeterministicTrajectory(10, 20)
 
