@@ -7,6 +7,13 @@ from ._deprecated.non_modular_microgrid import NonModularMicrogrid
 from .microgrid import Microgrid
 from .MicrogridGenerator import MicrogridGenerator
 
-from .microgrid.trajectory import DeterministicTrajectory, StochasticTrajectory, FixedLengthStochasticTrajectory
+from .utils import add_pymgrid_yaml_representers
 
-__all__ = [Microgrid, MicrogridGenerator, NonModularMicrogrid]
+import pymgrid.envs
+
+__all__ = [
+    'Microgrid',
+    'MicrogridGenerator',
+    'NonModularMicrogrid',
+    'envs'
+]
