@@ -7,6 +7,20 @@ from pathlib import Path
 TO_CSV_TYPES = np.ndarray, pd.core.generic.NDFrame
 
 
+def add_pymgrid_yaml_representers():
+    add_numpy_pandas_representers()
+    from pymgrid.microgrid.trajectory import (
+        DeterministicTrajectory,
+        StochasticTrajectory,
+        FixedLengthStochasticTrajectory
+    )
+
+    from pymgrid.microgrid.reward_shaping import (
+        PVCurtailmentShaper,
+        BatteryDischargeShaper
+    )
+
+
 def dump_data(data_dict, stream, yaml_tag):
     if not hasattr(stream, "name"):
         return data_dict
