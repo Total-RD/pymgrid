@@ -18,3 +18,6 @@ class BaseRewardShaper(yaml.YAMLObject):
     @abstractmethod
     def __call__(self, step_info, cost_info):
         pass
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}()'
