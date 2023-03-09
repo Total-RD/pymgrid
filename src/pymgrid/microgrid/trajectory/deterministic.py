@@ -1,5 +1,3 @@
-import numpy as np
-
 from pymgrid.microgrid.trajectory.base import BaseTrajectory
 
 
