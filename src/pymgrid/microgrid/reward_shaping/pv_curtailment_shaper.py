@@ -1,4 +1,4 @@
-from .base import BaseRewardShaper
+from pymgrid.microgrid.reward_shaping.base import BaseRewardShaper
 
 
 class PVCurtailmentShaper(BaseRewardShaper):
