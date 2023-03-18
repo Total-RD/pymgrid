@@ -17,6 +17,10 @@ class BatteryDischargeShaper(BaseRewardShaper):
         loss_load = self.sum_module_val(step_info, 'unbalanced_energy', 'provided_energy')
 
         # battery_discharge is in [0, load-loss_load]; loss_load is in [0, load].
-        percent_battery = (battery_discharge - loss_load) / load
+        try:
+            percent_battery = (battery_discharge - loss_load) / load
+        except ZeroDivisionError:
+            return 0.0
+
         assert -1 <= percent_battery <= 1
         return percent_battery
