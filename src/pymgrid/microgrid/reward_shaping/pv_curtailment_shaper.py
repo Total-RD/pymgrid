@@ -2,6 +2,14 @@ from pymgrid.microgrid.reward_shaping.base import BaseRewardShaper
 
 
 class PVCurtailmentShaper(BaseRewardShaper):
+    """
+    Use in a config with 
+    
+    microgrid:
+        attributes:
+            reward_shaping_func: !PVCurtailmentShaper {}
+    """
+
     yaml_tag = u"!PVCurtailmentShaper"
 
     def __call__(self, step_info, cost_info):
