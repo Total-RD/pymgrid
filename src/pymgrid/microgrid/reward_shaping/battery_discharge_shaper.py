@@ -8,6 +8,12 @@ class BatteryDischargeShaper(BaseRewardShaper):
      Return a value in [-1, 1]. Value of -1 implies that all load was loss load. Value of 1 implies all load
      was met by battery.
 
+    Use in a config with
+
+    microgrid:
+        attributes:
+            reward_shaping_func: !BatteryDischargeShaper {}
+
     """
     yaml_tag = u"!BatteryDischargeShaper"
 
