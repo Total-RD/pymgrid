@@ -162,7 +162,7 @@ class Container(UserDict):
         bad_keys = []
         uniques, nonuniques = {}, []
 
-        for k, v in d_df.iteritems():
+        for k, v in d_df.items():
             unique_items = v[v != NotImplemented].unique()
 
             try:
