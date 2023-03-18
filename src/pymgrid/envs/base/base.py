@@ -94,7 +94,7 @@ class BaseMicrogridEnv(Microgrid, Env):
         self.observation_space, self._nested_observation_space = self._get_observation_space()
 
     @abstractmethod
-    def _get_action_space(self):
+    def _get_action_space(self, remove_redundant_actions=False):
         pass
 
     def _get_observation_space(self):

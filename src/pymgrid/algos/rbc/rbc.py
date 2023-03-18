@@ -23,16 +23,16 @@ class RuleBasedControl(PriorityListAlgo):
         cost to the highest.
 
     """
-    def __init__(self, microgrid, priority_list=None):
+    def __init__(self, microgrid, priority_list=None, remove_redundant_gensets=True):
         super().__init__()
         self._microgrid = deepcopy(microgrid)
-        self._priority_list = self._get_priority_list(priority_list)
+        self._priority_list = self._get_priority_list(priority_list, remove_redundant_gensets)
 
-    def _get_priority_list(self, priority_list):
+    def _get_priority_list(self, priority_list, remove_redundant_gensets):
         """
         Given a microgrid, return the optimal order of module deployment.
         """
-        priority_lists = self.get_priority_lists()
+        priority_lists = self.get_priority_lists(remove_redundant_gensets=remove_redundant_gensets)
 
         if priority_list is None:
             return sorted(priority_lists[0])
