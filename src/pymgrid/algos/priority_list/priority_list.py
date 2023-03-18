@@ -8,11 +8,11 @@ from itertools import permutations
 from gym.spaces import Discrete
 
 from pymgrid.algos.priority_list import PriorityListElement as Element
+from pymgrid.modules import GensetModule
 
 
 class PriorityListAlgo:
-
-    def get_priority_lists(self):
+    def get_priority_lists(self, remove_redundant_gensets):
         """
         Get all of the priority lists for the microgrid.
 
@@ -33,17 +33,39 @@ class PriorityListAlgo:
                                      for n_actions in range(module.action_space.shape[0])])
 
         all_permutations = permutations(controllable_sources)
-        priority_lists = self._remove_redundant_actions(all_permutations)
+        priority_lists = self._remove_redundant_actions(all_permutations, gensets=remove_redundant_gensets)
 
         return priority_lists
 
-    def _remove_redundant_actions(self, priority_lists):
+    def _remove_redundant_actions(self, priority_lists, gensets=False):
         pls = []
         for pl in priority_lists:
             is_redundant = pd.DataFrame(el.module for el in pl).duplicated()
             pls.append(tuple(el for j, el in enumerate(pl) if not is_redundant.iloc[j]))
 
-        return list(set(pls))
+        unique_pls = list(dict.fromkeys(pls))
+
+        if gensets:
+            unique_pls = self._remove_redundant_gensets(unique_pls)
+
+        return unique_pls
+
+    def _remove_redundant_gensets(self, priority_lists):
+        redundant_genset_actions = []
+        for module_name, module_list in self.modules.iterdict():
+            for module_n, module in enumerate(module_list):
+                if isinstance(module, GensetModule):
+                    if module.running_min_production == 0:
+                        removable_element = Element(
+                            module=(module_name, module_n),
+                            module_actions=2,
+                            action=0,
+                            marginal_cost=module.marginal_cost
+                        )
+                        redundant_genset_actions.append(removable_element)
+
+        return [el for el in priority_lists if not any(redundant in el for redundant in redundant_genset_actions)]
+
 
     def _populate_action(self, priority_list):
         action = self.get_empty_action()

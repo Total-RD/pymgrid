@@ -41,7 +41,8 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
                  loss_load_cost=10,
                  overgeneration_cost=2,
                  reward_shaping_func=None,
-                 trajectory_func=None
+                 trajectory_func=None,
+                 remove_redundant_gensets=True
                  ):
         super().__init__(modules,
                          add_unbalanced_module=add_unbalanced_module,
@@ -50,9 +51,9 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
                          reward_shaping_func=reward_shaping_func,
                          trajectory_func=trajectory_func)
 
-        self.action_space, self.actions_list = self._get_action_space()
+        self.action_space, self.actions_list = self._get_action_space(remove_redundant_gensets)
 
-    def _get_action_space(self):
+    def _get_action_space(self, remove_redundant_gensets=False):
         """
         An action here is a priority list - in what order to deploy controllable source modules.
         Compute the total expected load
@@ -62,7 +63,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
         :return:
         """
 
-        priority_lists = self.get_priority_lists()
+        priority_lists = self.get_priority_lists(remove_redundant_gensets)
 
         n_actions = len(priority_lists)
 
