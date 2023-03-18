@@ -127,6 +127,31 @@ class TestMicrogrid(TestCase):
                 self.assertTrue(pd.api.types.is_number(cost_info[module][0]['production_marginal_cost']))
                 self.assertTrue(pd.api.types.is_number(cost_info[module][0]['absorption_marginal_cost']))
 
+    def test_set_initial_step(self):
+        microgrid = get_modular_microgrid()
+
+        self.assertEqual(microgrid.initial_step, 0)
+
+        for module_name, module in microgrid.modules.iterdict():
+            with self.subTest(module_name=module_name):
+                try:
+                    initial_step = module.initial_step
+                except AttributeError:
+                    continue
+
+                self.assertEqual(initial_step, 0)
+
+        microgrid.initial_step = 1
+
+        for module_name, module in microgrid.modules.iterdict():
+            with self.subTest(module_name=module_name):
+                try:
+                    initial_step = module.initial_step
+                except AttributeError:
+                    continue
+
+                self.assertEqual(initial_step, 1)
+
 
 class TestMicrogridLoadPV(TestCase):
     def setUp(self):
