@@ -539,7 +539,8 @@ class ModelPredictiveControl:
         for i in tqdm(range(num_iter), desc="MPC Progress", disable=(not verbose)):
             control = self._set_and_solve(*self._get_modular_state_values(),
                                          iteration=i,
-                                         total_iterations=num_iter)
+                                         total_iterations=num_iter,
+                                          verbose=verbose>1)
 
             _, _, done, _ = self.microgrid.run(control, normalized=False)
 
@@ -730,7 +731,8 @@ class ModelPredictiveControl:
                       genset_co2,
                       iteration=None,
                       total_iterations=None,
-                      return_steps=0):
+                      return_steps=0,
+                       verbose=False):
         """
         Sets the parameters in the problem and then solves the problem.
             Specifically, sets the right-hand sides b and d from the paper of the
@@ -790,7 +792,7 @@ class ModelPredictiveControl:
             warn("Infeasible problem")
 
         if self.is_modular:
-            return self._extract_modular_control(load_vector)
+            return self._extract_modular_control(load_vector, verbose)
         else:
             return self._extract_control_dict(return_steps, pv_vector, load_vector)
 
@@ -861,7 +863,7 @@ class ModelPredictiveControl:
 
             return control_dicts
 
-    def _extract_modular_control(self, load_vector):
+    def _extract_modular_control(self, load_vector, verbose):
         control = dict()
         control_vals = list(self.p_vars.value)
 
@@ -877,12 +879,12 @@ class ModelPredictiveControl:
         grid_diff = grid_import - grid_export
 
         if battery_charge > 0 and battery_discharge > 0:
-            if not np.isclose([battery_charge, battery_discharge], 0, atol=1e-4).any():
+            if verbose and not np.isclose([battery_charge, battery_discharge], 0, atol=1e-4).any():
                 warn(f"battery_charge={battery_charge} and battery_discharge={battery_discharge} are both nonzero. "
                     f"Flattening to the difference, leading to a {'discharge' if battery_diff > 0 else 'charge'} of {battery_diff}.")
 
         if grid_import > 0 and grid_export > 0:
-            if not np.isclose([grid_import, grid_export], 0, atol=1e-4).any():
+            if verbose and not np.isclose([grid_import, grid_export], 0, atol=1e-4).any():
                 warn(f"grid_import={grid_import} and grid_export={grid_export} are both nonzero. "
                     f"Flattening to the difference, leading to a {'import' if grid_diff > 0 else 'export'} of {grid_diff}.")
 
