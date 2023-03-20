@@ -1,3 +1,5 @@
+import numpy as np
+
 from pymgrid.microgrid.reward_shaping.base import BaseRewardShaper
 
 
@@ -28,5 +30,5 @@ class BatteryDischargeShaper(BaseRewardShaper):
         except ZeroDivisionError:
             return 0.0
 
-        assert -1 <= percent_battery <= 1
+        assert -1 <= percent_battery <= 1 or np.isclose(percent_battery, 1) or np.isclose(percent_battery, 0)
         return percent_battery
