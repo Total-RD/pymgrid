@@ -177,7 +177,7 @@ class BaseMicrogridEnv(Microgrid, Env):
         return self._flat_spaces
 
     @classmethod
-    def from_microgrid(cls, microgrid):
+    def from_microgrid(cls, microgrid, **kwargs):
         """
         Construct an RL environment from a microgrid.
 
@@ -201,11 +201,15 @@ class BaseMicrogridEnv(Microgrid, Env):
             modules = microgrid.modules
         except AttributeError:
             assert isinstance(microgrid, NonModularMicrogrid)
-            return cls.from_nonmodular(microgrid)
-        else:
-            return cls(modules.to_tuples(),
-                       add_unbalanced_module=False,
-                       reward_shaping_func=microgrid.reward_shaping_func)
+            return cls.from_nonmodular(microgrid, **kwargs)
+
+        kwargs = kwargs.copy()
+
+        kwargs['add_unbalanced_module'] = kwargs.pop('add_unbalanced_module', False)
+        kwargs['reward_shaping_func'] = kwargs.pop('reward_shaping_func', microgrid.reward_shaping_func)
+        kwargs['trajectory_func'] = kwargs.pop('trajectory_func', microgrid.trajectory_func)
+
+        return cls(modules.to_tuples(), **kwargs)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
