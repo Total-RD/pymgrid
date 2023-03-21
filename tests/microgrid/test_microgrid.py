@@ -40,6 +40,38 @@ class TestMicrogrid(TestCase):
 
         self.assertTrue(all(v == [None] for v in action.values()))
 
+    def test_action_space(self):
+        microgrid = get_modular_microgrid()
+        action = microgrid.action_space.sample()
+
+        for module_name, module_list in microgrid.modules.iterdict():
+            for module_num, module in enumerate(module_list):
+                if 'controllable' in module.module_type:
+                    with self.subTest(module_name=module_name, module_num=module_num):
+                        self.assertIn(action[module_name][module_num], module.action_space)
+
+    def test_action_space_normalize(self):
+        microgrid = get_modular_microgrid()
+        action = microgrid.action_space.sample()
+        normalized = microgrid.action_space.normalize(action)
+
+        for module_name, module_list in microgrid.modules.iterdict():
+            for module_num, module in enumerate(module_list):
+                if 'controllable' in module.module_type:
+                    with self.subTest(module_name=module_name, module_num=module_num):
+                        self.assertIn(normalized[module_name][module_num], module.action_space.normalized)
+
+    def test_action_space_denormalize(self):
+        microgrid = get_modular_microgrid()
+        action = microgrid.action_space.sample(normalized=True)
+        denormalized = microgrid.action_space.denormalize(action)
+
+        for module_name, module_list in microgrid.modules.iterdict():
+            for module_num, module in enumerate(module_list):
+                if 'controllable' in module.module_type:
+                    with self.subTest(module_name=module_name, module_num=module_num):
+                        self.assertIn(denormalized[module_name][module_num], module.action_space.unnormalized)
+
     def test_sample_action(self):
         microgrid = get_modular_microgrid()
         action = microgrid.sample_action()
