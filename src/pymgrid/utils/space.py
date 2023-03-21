@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 
 from gym.spaces import Box, Dict, Space, Tuple
+from typing import Union
 
 
 class _PymgridDict(Dict):
@@ -63,6 +64,10 @@ class _PymgridDict(Dict):
         return self.get_attr('shape')
 
 
+class _PymgridSpace(Space):
+    _unnormalized: Union[Box, _PymgridDict]
+    _normalized: Union[Box, _PymgridDict]
+    _spread: Union[np.ndarray, dict]
 
     def contains(self, x):
         """
