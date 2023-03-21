@@ -1,6 +1,8 @@
+import operator
 import numpy as np
 import warnings
 
+from abc import abstractmethod
 from gym.spaces import Box, Dict, Space, Tuple
 from typing import Union
 
@@ -101,32 +103,6 @@ class _PymgridSpace(Space):
             return self._normalized.sample()
         return self._unnormalized.sample()
 
-    def normalize(self, val):
-        low, high = self._unnormalized.low, self._unnormalized.high
-
-        self._shape_check(val, 'normalize')
-        self._bounds_check(val, low, high)
-
-        normalized = (val - low) / self._spread
-
-        try:
-            return normalized.item()
-        except (AttributeError, ValueError):
-            return normalized
-
-    def denormalize(self, val):
-        low, high = self._unnormalized.low, self._unnormalized.high
-
-        self._shape_check(val, 'denormalize')
-        self._bounds_check(val, 0, 1)
-
-        denormalized = low + self._spread * val
-
-        try:
-            return denormalized.item()
-        except (AttributeError, ValueError):
-            return denormalized
-
     def _shape_check(self, val, func):
         low = self._unnormalized.low
         if hasattr(val, '__len__') and len(val) != len(low):
@@ -134,13 +110,13 @@ class _PymgridSpace(Space):
         elif isinstance(val, (int, float)) and len(low) != 1:
             raise TypeError(f'Unable to {func} scalar value, expected array-like of shape {len(low)}')
 
-    def _bounds_check(self, val, low, high):
-        array_like_check = hasattr(val, '__len__') and \
-                           not (all((low <= val) & (val <= high)) or np.allclose(val, low) or np.allclose(val, high))
-        scalar_check = not hasattr(val, '__len__') and not low <= val <= high
+    @abstractmethod
+    def normalize(self, val):
+        pass
 
-        if array_like_check or scalar_check:
-            warnings.warn(f'Value {val} resides out of expected bounds of value to be normalized: [{low}, {high}].')
+    @abstractmethod
+    def denormalize(self, val):
+        pass
 
     @property
     def normalized(self):
@@ -192,6 +168,40 @@ class ModuleSpace(_PymgridSpace):
         self._spread = self._unnormalized.high - self._unnormalized.low
         self._spread[self._spread == 0] = 1
 
+    def normalize(self, val):
+        low, high = self._unnormalized.low, self._unnormalized.high
+
+        self._shape_check(val, 'normalize')
+        self._bounds_check(val, low, high)
+
+        normalized = (val - low) / self._spread
+
+        try:
+            return normalized.item()
+        except (AttributeError, ValueError):
+            return normalized
+
+    def denormalize(self, val):
+        low, high = self._unnormalized.low, self._unnormalized.high
+
+        self._shape_check(val, 'denormalize')
+        self._bounds_check(val, 0, 1)
+
+        denormalized = low + self._spread * val
+
+        try:
+            return denormalized.item()
+        except (AttributeError, ValueError):
+            return denormalized
+
+    def _bounds_check(self, val, low, high):
+        array_like_check = hasattr(val, '__len__') and \
+                           not (all((low <= val) & (val <= high)) or np.allclose(val, low) or np.allclose(val, high))
+        scalar_check = not hasattr(val, '__len__') and not low <= val <= high
+
+        if array_like_check or scalar_check:
+            warnings.warn(f'Value {val} resides out of expected bounds of value to be normalized: [{low}, {high}].')
+
 
 class MicrogridSpace(_PymgridSpace):
     def __init__(self, module_space_dict, seed=None):
@@ -222,3 +232,32 @@ class MicrogridSpace(_PymgridSpace):
             spread[k] = s
 
         return spread
+
+    def normalize(self, val):
+        low, high = self._unnormalized.low, self._unnormalized.high
+
+        self._shape_check(val, 'normalize')
+        val_minus_low = self.dict_op(val, low, operator.sub)
+        normalized = self.dict_op(val_minus_low, self._spread, operator.truediv)
+
+        # normalized = (val - low) / self._spread
+
+        return normalized
+
+    def denormalize(self, val):
+        low, high = self._unnormalized.low, self._unnormalized.high
+
+        self._shape_check(val, 'denormalize')
+
+        val_times_spread = self.dict_op(val, self._spread, operator.mul)
+        denormalized = self.dict_op(val_times_spread, low, operator.add)
+
+        return denormalized
+
+    @staticmethod
+    def dict_op(first, second, op):
+        out = {}
+        for k, first_list in first.items():
+            second_list = second[k]
+            out[k] = [op(f, s) for f, s in zip(first_list, second_list)]
+        return out
