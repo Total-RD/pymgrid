@@ -42,6 +42,7 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
                  overgeneration_cost=2,
                  reward_shaping_func=None,
                  trajectory_func=None,
+                 flat_spaces=True,
                  remove_redundant_gensets=True
                  ):
         super().__init__(modules,
@@ -49,7 +50,8 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
                          loss_load_cost=loss_load_cost,
                          overgeneration_cost=overgeneration_cost,
                          reward_shaping_func=reward_shaping_func,
-                         trajectory_func=trajectory_func)
+                         trajectory_func=trajectory_func,
+                         flat_spaces=flat_spaces)
 
         self.action_space, self.actions_list = self._get_action_space(remove_redundant_gensets)
 
