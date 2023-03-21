@@ -16,8 +16,6 @@ class _PymgridDict(Dict):
 
             super().__init__(self._transform_builtins(d, normalized))
 
-        print('here')
-
     def _transform_builtins(self, d, normalized=False):
         space_key = 'normalized' if normalized else 'unnormalized'
 
