@@ -10,7 +10,7 @@ from pymgrid.modules import ModuleContainer, UnbalancedEnergyModule
 from pymgrid.utils.logger import ModularLogger
 from pymgrid.microgrid.utils.step import MicrogridStep
 from pymgrid.utils.serialize import add_numpy_pandas_representers, add_numpy_pandas_constructors, dump_data
-
+from pymgrid.utils.space import MicrogridSpace
 
 class Microgrid(yaml.YAMLObject):
     """
@@ -109,6 +109,8 @@ class Microgrid(yaml.YAMLObject):
                                                    add_unbalanced_module,
                                                    loss_load_cost,
                                                    overgeneration_cost)
+
+        self.action_space = MicrogridSpace(self._modules.get_attrs('action_space', 'module_type', as_pandas=False))
 
         self._initial_step = self._get_module_initial_step()
         self._final_step = self._get_module_final_step()
