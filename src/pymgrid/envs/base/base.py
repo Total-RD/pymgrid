@@ -217,5 +217,14 @@ class BaseMicrogridEnv(Microgrid, Env):
         return cls.from_microgrid(microgrid)
 
     @classmethod
+    def from_scenario(cls, microgrid_number=0, **kwargs):
+        env = super().from_scenario(microgrid_number=microgrid_number)
+
+        if kwargs:
+            return cls.from_microgrid(env, **kwargs)
+
+        return env
+
+    @classmethod
     def load(cls, stream):
         return cls(super().load(stream))
