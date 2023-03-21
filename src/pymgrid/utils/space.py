@@ -1,60 +1,68 @@
 import numpy as np
 import warnings
 
-from gym.spaces import Box, Space
+from gym.spaces import Box, Dict, Space, Tuple
 
 
-class ModuleSpace(Space):
-    """
-    A space with both normalized and unnormalized versions.
-
-    Both normalized and unormalized versions are of type :class:`gym:gym.spaces.Box`.
-
-    This object also handles conversion of values from normalized to unnormalized and vice-versa.
-
-    Parameters
-    ----------
-    unnormalized_low : float or array-like
-        Lower bound of the space.
-
-    unnormalized_high : float or array-like
-        Upper bound of the space.
-
-    shape : tuple or None, default None
-        Shape of the space. If None, shape is inferred from `unnormalized_low` and `unnormalized_high`.
-
-    dtype : np.dtype, default np.float64
-        dtype of the action space.
-
-    seed : int or None, default None
-        Random seed.
-
-        .. warning::
-            This parameter will be ignored if earlier versions of `gym` are installed.
-
-    """
-    def __init__(self, unnormalized_low, unnormalized_high, shape=None, dtype=np.float64, seed=None):
-
-        low = np.float64(unnormalized_low) if np.isscalar(unnormalized_low) else unnormalized_low.astype(np.float64)
-        high = np.float64(unnormalized_high) if np.isscalar(unnormalized_high) else unnormalized_high.astype(np.float64)
-
-        self._unnormalized = Box(low=low,
-                                 high=high,
-                                 shape=shape,
-                                 dtype=dtype)
-
-        self._normalized = Box(low=0, high=1, shape=self._unnormalized.shape, dtype=dtype)
-
+class _PymgridDict(Dict):
+    def __init__(self, d, normalized=False, seed=None):
         try:
-            super().__init__(shape=self._unnormalized.shape, dtype=self._unnormalized.dtype, seed=seed)
+            super().__init__(self._transform_builtins(d, normalized), seed=seed)
         except TypeError:
-            super().__init__(shape=self._unnormalized.shape, dtype=self._unnormalized.dtype)
             import gym
             warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
                           f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
 
-        self._spread = self._unnormalized.high - self._unnormalized.low
-        self._spread[self._spread == 0] = 1
+            super().__init__(self._transform_builtins(d, normalized))
+
+        print('here')
+
+    def _transform_builtins(self, d, normalized=False):
+        space_key = 'normalized' if normalized else 'unnormalized'
+
+        transformed = {}
+
+        if isinstance(d, dict):
+            transformed = {}
+            for k, v in d.items():
+                if k == 'action_space':
+                    assert isinstance(v, Space) and len(d) == 1
+                    return v[space_key]
+                elif isinstance(v, Space):
+                    transformed[k] = v[space_key]
+                else:
+                    transformed[k] = self._transform_builtins(v)
+
+            transformed = Dict(transformed)
+
+        elif isinstance(d, list):
+            transformed = []
+            for v in d:
+                if isinstance(v, Space):
+                    transformed.append(v[space_key])
+                else:
+                    transformed.append(self._transform_builtins(v))
+
+            transformed = Tuple(transformed)
+
+        return transformed
+
+    def get_attr(self, attr):
+        return {k: [getattr(v, attr) for v in tup] for k, tup in self.items()}
+
+    @property
+    def low(self):
+        return self.get_attr('low')
+
+    @property
+    def high(self):
+        return self.get_attr('high')
+
+    @property
+    def shape(self):
+        return self.get_attr('shape')
+
+
 
     def contains(self, x):
         """
@@ -147,3 +155,30 @@ class ModuleSpace(Space):
             return NotImplemented
 
         return self.unnormalized == other.unnormalized
+
+
+class ModuleSpace(_PymgridSpace):
+    def __init__(self, unnormalized_low, unnormalized_high, shape=None, dtype=np.float64, seed=None):
+
+        low = np.float64(unnormalized_low) if np.isscalar(unnormalized_low) else unnormalized_low.astype(np.float64)
+        high = np.float64(unnormalized_high) if np.isscalar(unnormalized_high) else unnormalized_high.astype(np.float64)
+
+        self._unnormalized = Box(low=low,
+                                 high=high,
+                                 shape=shape,
+                                 dtype=dtype)
+
+        self._normalized = Box(low=0, high=1, shape=self._unnormalized.shape, dtype=dtype)
+
+        try:
+            super().__init__(shape=self._unnormalized.shape, dtype=self._unnormalized.dtype, seed=seed)
+        except TypeError:
+            super().__init__(shape=self._unnormalized.shape, dtype=self._unnormalized.dtype)
+            import gym
+            warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
+                          f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
+
+        self._spread = self._unnormalized.high - self._unnormalized.low
+        self._spread[self._spread == 0] = 1
+
+
