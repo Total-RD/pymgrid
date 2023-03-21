@@ -66,7 +66,6 @@ class PriorityListAlgo:
 
         return [el for el in priority_lists if not any(redundant in el for redundant in redundant_genset_actions)]
 
-
     def _populate_action(self, priority_list):
         action = self.get_empty_action()
         loads, total_load = self._get_load()
