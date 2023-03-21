@@ -105,6 +105,37 @@ class DiscreteMicrogridEnv(BaseMicrogridEnv, PriorityListAlgo):
         self.action_space = Discrete(self.action_space.n - 1)
 
     def step(self, action):
+        """
+        Run one timestep of the environment's dynamics.
+
+        When the end of the episode is reached, you are responsible for calling `reset()`
+        to reset the environment's state.
+
+        Accepts an action and returns a tuple (observation, reward, done, info).
+
+        Parameters
+        ----------
+        action : int
+            An action provided by the agent.
+
+        Returns
+        -------
+        observation : dict[str, list[float]] or np.ndarray, shape self.observation_space.shape
+            Observations of each module after using the passed ``action``.
+            ``observation`` is a nested dict if :attr:`~.flat_spaces` is True and a one-dimensional numpy array
+            otherwise.
+
+        reward : float
+            Reward/cost of running the microgrid. A positive value implies revenue while a negative
+            value is a cost.
+
+        done : bool
+            Whether the microgrid terminates.
+
+        info : dict
+            Additional information from this step.
+
+        """
         self._microgrid_logger.log(action=action)
         microgrid_action = self._get_action(action)
         return super().step(microgrid_action, normalized=False)
