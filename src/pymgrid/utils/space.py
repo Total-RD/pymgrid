@@ -7,14 +7,25 @@ from typing import Union
 
 class _PymgridDict(Dict):
     def __init__(self, d, normalized=False, seed=None):
+        builtins = self._extract_builtins(d, normalized=normalized)
         try:
-            super().__init__(self._transform_builtins(d, normalized), seed=seed)
+            super().__init__(builtins, seed=seed)
         except TypeError:
             import gym
             warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
                           f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
 
-            super().__init__(self._transform_builtins(d, normalized))
+            super().__init__(builtins)
+
+    def _extract_builtins(self, d, normalized=False):
+        controllable = {}
+
+        for module_name, module_list in d.items():
+            controllable_spaces = [v['action_space'] for v in module_list if 'controllable' in v['module_type']]
+            if controllable_spaces:
+                controllable[module_name] = controllable_spaces
+
+        return self._transform_builtins(controllable, normalized=normalized)
 
     def _transform_builtins(self, d, normalized=False):
         space_key = 'normalized' if normalized else 'unnormalized'
@@ -24,13 +35,10 @@ class _PymgridDict(Dict):
         if isinstance(d, dict):
             transformed = {}
             for k, v in d.items():
-                if k == 'action_space':
-                    assert isinstance(v, Space) and len(d) == 1
-                    return v[space_key]
-                elif isinstance(v, Space):
+                if isinstance(v, Space):
                     transformed[k] = v[space_key]
                 else:
-                    transformed[k] = self._transform_builtins(v)
+                    transformed[k] = self._transform_builtins(v, normalized=normalized)
 
             transformed = Dict(transformed)
 
@@ -40,7 +48,7 @@ class _PymgridDict(Dict):
                 if isinstance(v, Space):
                     transformed.append(v[space_key])
                 else:
-                    transformed.append(self._transform_builtins(v))
+                    transformed.append(self._transform_builtins(v, normalized=normalized))
 
             transformed = Tuple(transformed)
 
