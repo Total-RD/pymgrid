@@ -185,3 +185,32 @@ class ModuleSpace(_PymgridSpace):
         self._spread[self._spread == 0] = 1
 
 
+class MicrogridSpace(_PymgridSpace):
+    def __init__(self, module_space_dict, seed=None):
+
+        self._unnormalized = _PymgridDict(module_space_dict)
+        self._normalized = _PymgridDict(module_space_dict, normalized=True)
+
+        try:
+            super().__init__(shape=None, seed=seed)
+
+        except TypeError:
+            super().__init__(shape=None)
+            import gym
+            warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
+                          f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
+
+        self._spread = self._get_spread()
+
+    def _get_spread(self):
+        spread = {}
+
+        for k, high_list in self._unnormalized.high.items():
+            low_list = self._unnormalized.low[k]
+            s = [h-l for h, l in zip(high_list, low_list)]
+            for s_val in s:
+                s_val[s_val == 0] = 1
+
+            spread[k] = s
+
+        return spread
