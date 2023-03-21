@@ -212,9 +212,9 @@ class BaseMicrogridEnv(Microgrid, Env):
         return cls(modules.to_tuples(), **kwargs)
 
     @classmethod
-    def from_nonmodular(cls, nonmodular):
+    def from_nonmodular(cls, nonmodular, **kwargs):
         microgrid = super().from_nonmodular(nonmodular)
-        return cls.from_microgrid(microgrid)
+        return cls.from_microgrid(microgrid, **kwargs)
 
     @classmethod
     def from_scenario(cls, microgrid_number=0, **kwargs):
