@@ -23,8 +23,8 @@ class BaseMicrogridModule(yaml.YAMLObject):
     """
     Type of the module.
 
-    Returns : tuple[str, {'fixed', 'flex'}]
-        length-two tuple denoting the name of the module class and whether it is a fixed or flex module.
+    Returns : tuple[str, {'fixed', 'flex', 'controllable'}]
+        length-two tuple denoting the name of the module class and whether it is a fixed, flex, or controllable module.
 
     """
     yaml_tag = None
