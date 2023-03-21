@@ -163,7 +163,8 @@ class Container(UserDict):
         uniques, nonuniques = {}, []
 
         for k, v in d_df.items():
-            unique_items = v[v != NotImplemented].unique()
+            not_notimplemented = v[v != NotImplemented]
+            unique_items = not_notimplemented.drop_duplicates().values
 
             try:
                 unique_item = unique_items.item()
