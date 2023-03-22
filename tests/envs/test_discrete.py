@@ -85,8 +85,14 @@ class TestDiscreteEnvScenario(TestCase):
         env = DiscreteMicrogridEnv.from_scenario(microgrid_number=self.microgrid_number,
                                                  observation_keys=keys_in_all_scenarios)
 
-        env.step(env.action_space.sample())
-        print(env.log)
+        obs, _, _, _ = env.step(env.action_space.sample())
+
+        expected_obs = [
+            env.modules['load'].item().state_dict(normalized=True)['load_current'],
+            env.modules['pv'].item().state_dict(normalized=True)['renewable_current']
+        ]
+
+        self.assertEqual(obs.tolist(), expected_obs)
 
 
 class TestDiscreteEnvScenario1(TestDiscreteEnvScenario):
