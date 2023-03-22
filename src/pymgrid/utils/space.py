@@ -17,7 +17,7 @@ class _PymgridDict(Dict):
             warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
                           f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
 
-            super().__init__(builtins)
+            super().__init__(builtins.spaces)
 
     def _extract_builtins(self, d, act_or_obs='act', normalized=False):
         if act_or_obs == 'act':
