@@ -69,7 +69,7 @@ class UnbalancedEnergyModule(BaseMicrogridModule):
         else:
             raise TypeError("One of as_source or as_sink must be True.")
 
-    def state_dict(self):
+    def _state_dict(self):
         return dict()
 
     @property

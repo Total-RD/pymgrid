@@ -426,7 +426,7 @@ class GensetModule(BaseMicrogridModule):
     def serializable_state_attributes(self):
         return ["_current_step"] + [f"_{key}" for key in self.state_dict().keys()]
 
-    def state_dict(self):
+    def _state_dict(self):
         return {'current_status': self._current_status,
                 'goal_status': self._goal_status,
                 'steps_until_up': self._steps_until_up,

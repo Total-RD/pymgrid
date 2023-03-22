@@ -487,7 +487,20 @@ class BaseMicrogridModule(yaml.YAMLObject):
         if normalized:
             return dict(zip(self.state_dict.keys(), self._observation_space.normalize(self.state)))
 
-        return NotImplemented
+        return self._state_dict()
+
+    @abstractmethod
+    def _state_dict(self):
+        """
+        Unnormalized state_dict.
+
+        Returns
+        -------
+        state_dict : dict
+            The return value of :meth:`.state_dict` if ``normalized=False``.
+
+        """
+        pass
 
     @property
     def state(self):
