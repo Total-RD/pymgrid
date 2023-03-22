@@ -696,12 +696,16 @@ class Microgrid(yaml.YAMLObject):
         """
         return self._modules
 
-    @property
-    def state_dict(self):
+    def state_dict(self, normalized=False):
         """
         State of the microgrid as a dict.
 
         Keys are module names and values are lists of state dicts for all modules with said name.
+
+        Parameters
+        ----------
+        normalized : bool, default False
+            Whether to return a dict of normalized values.
 
         Returns
         -------
@@ -709,7 +713,9 @@ class Microgrid(yaml.YAMLObject):
             State of the microgrid as a nested dict.
 
         """
-        return {name: [module.state_dict() for module in modules] for name, modules in self._modules.iterdict()}
+        return {name: [
+            module.state_dict(normalized=normalized) for module in modules
+        ] for name, modules in self._modules.iterdict()}
 
     @property
     def log(self):
