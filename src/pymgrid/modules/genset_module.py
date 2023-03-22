@@ -424,9 +424,8 @@ class GensetModule(BaseMicrogridModule):
         return self.next_status(goal_status) * self.running_min_production
 
     def serializable_state_attributes(self):
-        return ["_current_step"] + [f"_{key}" for key in self.state_dict.keys()]
+        return ["_current_step"] + [f"_{key}" for key in self.state_dict().keys()]
 
-    @property
     def state_dict(self):
         return {'current_status': self._current_status,
                 'goal_status': self._goal_status,

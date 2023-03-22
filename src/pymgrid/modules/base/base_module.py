@@ -149,7 +149,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
                 else:
                     denormalized_action = 0.0
 
-        state_dict = self.state_dict
+        state_dict = self.state_dict()
         reward, done, info = self._unnormalized_step(denormalized_action)
         self._log(state_dict, reward=reward, **info)
         self._update_step()
@@ -470,7 +470,6 @@ class BaseMicrogridModule(yaml.YAMLObject):
         assert isinstance(logger, ModularLogger)
         self._logger = logger
 
-    @property
     @abstractmethod
     def state_dict(self):
         """
@@ -495,7 +494,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
         np.ndarray
 
         """
-        return np.array([*self.state_dict.values()])
+        return np.array([*self.state_dict().values()])
 
     @property
     def current_step(self):
@@ -843,7 +842,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
             List of attribute names.
 
         """
-        return ["_current_step", *self.state_dict.keys()]
+        return ["_current_step", *self.state_dict().keys()]
 
     def _serialize_state_attributes(self):
         return {attr_name: getattr(self, attr_name) for attr_name in self.serializable_state_attributes()}

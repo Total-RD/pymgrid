@@ -329,7 +329,6 @@ class BaseTimeSeriesMicrogridModule(BaseMicrogridModule):
         except AttributeError:
             pass
 
-    @property
     def state_dict(self):
         state_dict = dict(zip(self._state_dict_keys['current'], self.current_obs))
 
