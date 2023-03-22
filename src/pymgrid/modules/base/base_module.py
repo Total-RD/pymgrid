@@ -485,7 +485,7 @@ class BaseMicrogridModule(yaml.YAMLObject):
 
         """
         if normalized:
-            return dict(zip(self.state_dict.keys(), self._observation_space.normalize(self.state)))
+            return dict(zip(self.state_dict().keys(), self._observation_space.normalize(self.state)))
 
         return self._state_dict()
 
