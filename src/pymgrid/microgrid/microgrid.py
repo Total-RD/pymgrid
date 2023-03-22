@@ -709,7 +709,7 @@ class Microgrid(yaml.YAMLObject):
             State of the microgrid as a nested dict.
 
         """
-        return {name: [module.state_dict for module in modules] for name, modules in self._modules.iterdict()}
+        return {name: [module.state_dict() for module in modules] for name, modules in self._modules.iterdict()}
 
     @property
     def log(self):

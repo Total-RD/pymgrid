@@ -238,7 +238,7 @@ class BatteryModule(BaseMicrogridModule):
                     battery_cost_cycle=self.battery_cost_cycle,
                     max_production=self.max_production,
                     max_consumption=self.max_consumption,
-                    state_dict=self.state_dict
+                    state_dict=self.state_dict()
                     )
 
     @staticmethod
@@ -277,7 +277,6 @@ class BatteryModule(BaseMicrogridModule):
         else:
             return external_energy_change * efficiency
 
-    @property
     def state_dict(self):
         return dict(zip(('soc', 'current_charge'), [self._soc, self._current_charge]))
 
