@@ -64,10 +64,10 @@ class BaseMicrogridEnv(Microgrid, Env):
 
     def __new__(cls, modules, *args, **kwargs):
         if isinstance(modules, (NonModularMicrogrid, Microgrid)):
-            instance = cls.from_microgrid(modules)
+            instance = cls.from_microgrid(modules, **kwargs)
 
         elif isinstance(modules, int):
-            instance = cls.from_scenario(modules)
+            instance = cls.from_scenario(modules, **kwargs)
         else:
             return super().__new__(cls)
 
