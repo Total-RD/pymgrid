@@ -105,7 +105,7 @@ class BaseMicrogridEnv(Microgrid, Env):
         if isinstance(keys, str):
             keys = [keys]
 
-        possible_keys = self.state_series.index.get_level_values(-1).unique()
+        possible_keys = self.state_series().index.get_level_values(-1).unique()
         bad_keys = [key for key in keys if key not in possible_keys]
 
         if bad_keys:
