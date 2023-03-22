@@ -89,6 +89,24 @@ class _PymgridDict(Dict):
     def shape(self):
         return self.get_attr('shape')
 
+    @shape.setter
+    def shape(self, value):
+        """
+        Necessary for compatability with gym<0.21.
+        """
+        assert value is None
+
+    def __getattr__(self, item):
+        """
+        Necessary for compatability with gym<0.21, where gym.spaces.Dict did not inherit from collections.Mapping.
+        """
+        if item == 'spaces':
+            raise AttributeError('spaces')
+        try:
+            return getattr(self.spaces, item)
+        except AttributeError:
+            raise AttributeError(item)
+
 
 class _PymgridSpace(Space):
     _unnormalized: Union[Box, _PymgridDict]
