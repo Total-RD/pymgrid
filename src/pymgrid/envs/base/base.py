@@ -156,7 +156,7 @@ class BaseMicrogridEnv(Microgrid, Env):
 
     def reset(self):
         obs = super().reset()
-        return flatten(self._nested_observation_space, obs) if self._flat_spaces else obs
+        return self._get_obs(obs)
 
     def step(self, action, normalized=True):
         """
