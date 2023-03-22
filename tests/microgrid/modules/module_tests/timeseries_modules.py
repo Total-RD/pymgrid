@@ -76,7 +76,7 @@ class TestTimeseriesModuleNoForecasting(TestTimeseriesModule):
         module = self.get_module()
         self.assertIsNone(module.forecast())
         self.assertEqual(module.state, self.time_series[0])
-        self.assertEqual(len(module.state_dict), 1+self.forecast_horizon)
+        self.assertEqual(len(module.state_dict()), 1+self.forecast_horizon)
 
 
 class TestTimeseriesModuleForecasting(TestTimeseriesModule):
@@ -87,7 +87,7 @@ class TestTimeseriesModuleForecasting(TestTimeseriesModule):
         self.assertIsNotNone(module.forecast())
         self.assertEqual(module.forecast(), self.time_series[1:1 + self.forecast_horizon].reshape((-1, 1)))
         self.assertEqual(module.state, self.time_series[:1 + self.forecast_horizon])
-        self.assertEqual(len(module.state_dict), 1 + self.forecast_horizon)
+        self.assertEqual(len(module.state_dict()), 1 + self.forecast_horizon)
 
 
 class TestTimeSeriesModuleNoForecastingNegativeVals(TestTimeseriesModuleNoForecasting):
