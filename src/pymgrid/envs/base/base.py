@@ -1,3 +1,5 @@
+import pandas as pd
+
 from gym import Env
 from gym.spaces import Dict, Tuple, flatten_space, flatten
 from abc import abstractmethod
@@ -163,6 +165,9 @@ class BaseMicrogridEnv(Microgrid, Env):
         """
 
         obs, reward, done, info = self.run(action, normalized=normalized)
+        if self.observation_keys:
+            obs = self.state_series.loc[pd.IndexSlice[:, :, self.observation_keys]]
+
         if self._flat_spaces:
             obs = flatten(self._nested_observation_space, obs)
         return obs, reward, done, info
