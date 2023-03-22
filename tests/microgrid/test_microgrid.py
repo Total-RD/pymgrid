@@ -42,7 +42,7 @@ class TestMicrogrid(TestCase):
 
     def test_action_space(self):
         microgrid = get_modular_microgrid()
-        action = microgrid.action_space.sample()
+        action = microgrid.microgrid_action_space.sample()
 
         for module_name, module_list in microgrid.modules.iterdict():
             for module_num, module in enumerate(module_list):
