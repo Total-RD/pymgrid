@@ -82,7 +82,7 @@ class BaseMicrogridEnv(Microgrid, Env):
                  reward_shaping_func=None,
                  trajectory_func=None,
                  flat_spaces=True,
-                 observation_keys=None
+                 observation_keys=()
                  ):
 
         super().__init__(modules,
@@ -99,8 +99,8 @@ class BaseMicrogridEnv(Microgrid, Env):
         self.observation_space, self._nested_observation_space = self._get_observation_space()
 
     def _validate_observation_keys(self, keys):
-        if keys is None:
-            return None
+        if not keys:
+            return keys
 
         if isinstance(keys, str):
             keys = [keys]
