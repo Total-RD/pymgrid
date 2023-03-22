@@ -64,10 +64,18 @@ class BaseMicrogridEnv(Microgrid, Env):
 
     def __new__(cls, modules, *args, **kwargs):
         if isinstance(modules, (NonModularMicrogrid, Microgrid)):
+            import warnings
+            warnings.warn('Initializing an environment with a microgrid will be deprecated in a future version.'
+                          'Use from_microgrid() instead.', category=FutureWarning)
+
             instance = cls.from_microgrid(modules, **kwargs)
 
         elif isinstance(modules, int):
+            import warnings
+            warnings.warn('Initializing an environment with a scenario integer will be deprecated in a future version.'
+                          'Use from_scenario() instead.', category=FutureWarning)
             instance = cls.from_scenario(modules, **kwargs)
+
         else:
             return super().__new__(cls)
 
