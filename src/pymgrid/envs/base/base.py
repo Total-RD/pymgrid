@@ -79,7 +79,8 @@ class BaseMicrogridEnv(Microgrid, Env):
                  overgeneration_cost=2,
                  reward_shaping_func=None,
                  trajectory_func=None,
-                 flat_spaces=True
+                 flat_spaces=True,
+                 observation_keys=None
                  ):
 
         super().__init__(modules,
@@ -90,8 +91,25 @@ class BaseMicrogridEnv(Microgrid, Env):
                          trajectory_func=trajectory_func)
 
         self._flat_spaces = flat_spaces
+        self.observation_keys = self._validate_observation_keys(observation_keys)
+
         self.action_space = self._get_action_space()
         self.observation_space, self._nested_observation_space = self._get_observation_space()
+
+    def _validate_observation_keys(self, keys):
+        if keys is None:
+            return None
+
+        if isinstance(keys, str):
+            keys = [keys]
+
+        possible_keys = self.state_series.index.get_level_values(-1).unique()
+        bad_keys = [key for key in keys if key not in possible_keys]
+
+        if bad_keys:
+            raise NameError(f'Keys {bad_keys} not found in state.')
+
+        return keys
 
     @abstractmethod
     def _get_action_space(self, remove_redundant_actions=False):
