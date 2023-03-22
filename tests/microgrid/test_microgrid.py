@@ -52,8 +52,8 @@ class TestMicrogrid(TestCase):
 
     def test_action_space_normalize(self):
         microgrid = get_modular_microgrid()
-        action = microgrid.action_space.sample()
-        normalized = microgrid.action_space.normalize(action)
+        action = microgrid.microgrid_action_space.sample()
+        normalized = microgrid.microgrid_action_space.normalize(action)
 
         for module_name, module_list in microgrid.modules.iterdict():
             for module_num, module in enumerate(module_list):
@@ -63,8 +63,8 @@ class TestMicrogrid(TestCase):
 
     def test_action_space_denormalize(self):
         microgrid = get_modular_microgrid()
-        action = microgrid.action_space.sample(normalized=True)
-        denormalized = microgrid.action_space.denormalize(action)
+        action = microgrid.microgrid_action_space.sample(normalized=True)
+        denormalized = microgrid.microgrid_action_space.denormalize(action)
 
         for module_name, module_list in microgrid.modules.iterdict():
             for module_num, module in enumerate(module_list):
