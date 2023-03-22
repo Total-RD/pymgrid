@@ -732,13 +732,17 @@ class Microgrid(yaml.YAMLObject):
         """
         return self.get_log()
 
-    @property
-    def state_series(self):
+    def state_series(self, normalized=False):
         """
         State of the microgrid as a pandas Series.
 
         Three are three levels in the MultiIndex: ``microgrid_name``, ``microgrid_number``
         (relative to each ``microgrid_name``) and state key name.
+
+        Parameters
+        ----------
+        normalized : bool, default False
+            Whether to return a Series of normalized values.
 
         Returns
         -------
@@ -749,7 +753,7 @@ class Microgrid(yaml.YAMLObject):
         return pd.Series(
             {
                 (name, num, key): value
-                for name, sd_list in self.state_dict.items()
+                for name, sd_list in self.state_dict(normalized=normalized).items()
                 for num, sd in enumerate(sd_list)
                 for key, value in sd.items()
             }
