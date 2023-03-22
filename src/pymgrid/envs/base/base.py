@@ -198,8 +198,14 @@ class BaseMicrogridEnv(Microgrid, Env):
         if self.observation_keys:
             obs = self.state_series(normalized=True).loc[pd.IndexSlice[:, :, self.observation_keys]]
 
-        if self._flat_spaces:
+            if self._flat_spaces:
+                obs = obs.values
+            else:
+                obs = obs.to_frame().unstack(level=1).T.droplevel(level=1, axis=1).to_dict(orient='list')
+
+        elif self._flat_spaces:
             obs = flatten(self._nested_observation_space, obs)
+
         return obs, reward, done, info
 
     def render(self, mode="human"):
