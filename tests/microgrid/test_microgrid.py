@@ -233,7 +233,7 @@ class TestMicrogridLoadPV(TestCase):
         self.assertEqual(len(sampled_action['renewable']), self.n_pvs)
 
     def test_state_dict(self):
-        sd = self.microgrid.state_dict
+        sd = self.microgrid.state_dict()
         self.assertIn('load', sd)
         self.assertIn('renewable', sd)
         self.assertIn('balancing', sd)
@@ -241,7 +241,7 @@ class TestMicrogridLoadPV(TestCase):
         self.assertEqual(len(sd['balancing']), 1)
 
     def test_state_series(self):
-        ss = self.microgrid.state_series
+        ss = self.microgrid.state_series()
         self.assertEqual({'load', 'renewable'}, set(ss.index.get_level_values(0)))
         self.assertEqual(ss['load'].index.get_level_values(0).nunique(), self.n_loads)
         self.assertEqual(ss['renewable'].index.get_level_values(0).nunique(), self.n_pvs)
