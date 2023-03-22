@@ -110,7 +110,8 @@ class Microgrid(yaml.YAMLObject):
                                                    loss_load_cost,
                                                    overgeneration_cost)
 
-        self.action_space = MicrogridSpace(self._modules.get_attrs('action_space', 'module_type', as_pandas=False))
+        self.action_space = MicrogridSpace(self._modules.get_attrs('action_space', 'module_type', as_pandas=False), 'act')
+        self.observation_space = MicrogridSpace(self._modules.get_attrs('observation_space', as_pandas=False), 'obs')
 
         self._initial_step = self._get_module_initial_step()
         self._final_step = self._get_module_final_step()
