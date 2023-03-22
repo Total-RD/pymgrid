@@ -723,6 +723,7 @@ class Microgrid(yaml.YAMLObject):
         Microgrid's log as a DataFrame.
 
         This is equivalent to `:meth:`get_log`.
+
         Returns
         -------
         log : pd.DataFrame
