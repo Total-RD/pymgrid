@@ -79,6 +79,15 @@ class TestDiscreteEnvScenario(TestCase):
         n_actions = factorial(n_action_modules) * (2 ** genset_modules)
         self.assertEqual(env.action_space.n, n_actions)
 
+    def test_simple_observation_keys(self):
+        keys_in_all_scenarios = ['load_current', 'renewable_current']
+
+        env = DiscreteMicrogridEnv.from_scenario(microgrid_number=self.microgrid_number,
+                                                 observation_keys=keys_in_all_scenarios)
+
+        env.step(env.action_space.sample())
+        print(env.log)
+
 
 class TestDiscreteEnvScenario1(TestDiscreteEnvScenario):
     microgrid_number = 1
