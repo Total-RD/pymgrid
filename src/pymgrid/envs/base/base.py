@@ -1,7 +1,7 @@
 import pandas as pd
 
 from gym import Env
-from gym.spaces import Dict, Tuple, flatten_space, flatten
+from gym.spaces import Box, Dict, Tuple, flatten_space, flatten
 from abc import abstractmethod
 
 from pymgrid import NonModularMicrogrid, Microgrid
@@ -118,9 +118,39 @@ class BaseMicrogridEnv(Microgrid, Env):
         pass
 
     def _get_observation_space(self):
-        obs_space = Dict({name:
-                         Tuple([module.observation_space['normalized'] for module in modules_list]) for
-                     name, modules_list in self.modules.iterdict()})
+        obs_space = {}
+
+        state_series = self.state_series()
+
+        for name, module_list in self.modules.iterdict():
+            tup = []
+            for module_num, module in enumerate(module_list):
+                normalized_space = module.observation_space['normalized']
+
+                if not self.observation_keys:
+                    tup.append(normalized_space)
+                else:
+                    try:
+                        relevant_state_idx = state_series.loc[pd.IndexSlice[name, module_num]].index
+                    except KeyError:
+                        continue
+
+                    locs = [
+                        relevant_state_idx.get_loc(key) for key in self.observation_keys if key in relevant_state_idx
+                    ]
+                    if locs:
+                        box_slice = Box(
+                            normalized_space.low[locs],
+                            normalized_space.high[locs],
+                            shape=(len(locs), ),
+                            dtype=normalized_space.dtype
+                        )
+
+                        tup.append(box_slice)
+            if tup:
+                obs_space[name] = Tuple(tup)
+
+        obs_space = Dict(obs_space)
 
         return (flatten_space(obs_space) if self._flat_spaces else obs_space), obs_space
 
