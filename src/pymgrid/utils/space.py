@@ -12,7 +12,7 @@ class _PymgridDict(Dict):
         builtins = self._extract_builtins(d, act_or_obs=act_or_obs, normalized=normalized)
         try:
             super().__init__(builtins, seed=seed)
-        except TypeError:
+        except AssertionError:
             import gym
             warnings.warn(f"gym.Space does not accept argument 'seed' in version {gym.__version__}; this argument will "
                           f"be ignored. Upgrade your gym version with 'pip install -U gym' to use this functionality.")
