@@ -470,16 +470,23 @@ class BaseMicrogridModule(yaml.YAMLObject):
         assert isinstance(logger, ModularLogger)
         self._logger = logger
 
-    @abstractmethod
-    def state_dict(self):
+    def state_dict(self, normalized=False):
         """
         Current state of the module as a dictionary.
 
+        Parameters
+        ----------
+        normalized : bool, default False
+            Whether to return a dict of normalized values.
+
         Returns
         -------
-        dict
+        state_dict : dict
 
         """
+        if normalized:
+            return dict(zip(self.state_dict.keys(), self._observation_space.normalize(self.state)))
+
         return NotImplemented
 
     @property
