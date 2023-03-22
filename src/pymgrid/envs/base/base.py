@@ -195,6 +195,12 @@ class BaseMicrogridEnv(Microgrid, Env):
         """
 
         obs, reward, done, info = self.run(action, normalized=normalized)
+
+        obs = self._get_obs(obs)
+
+        return obs, reward, done, info
+
+    def _get_obs(self, obs):
         if self.observation_keys:
             obs = self.state_series(normalized=True).loc[pd.IndexSlice[:, :, self.observation_keys]]
 
@@ -206,7 +212,7 @@ class BaseMicrogridEnv(Microgrid, Env):
         elif self._flat_spaces:
             obs = flatten(self._nested_observation_space, obs)
 
-        return obs, reward, done, info
+        return obs
 
     def render(self, mode="human"):
         """:meta private:"""
