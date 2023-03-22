@@ -8,8 +8,8 @@ from typing import Union
 
 
 class _PymgridDict(Dict):
-    def __init__(self, d, normalized=False, seed=None):
-        builtins = self._extract_builtins(d, normalized=normalized)
+    def __init__(self, d, act_or_obs, normalized=False, seed=None):
+        builtins = self._extract_builtins(d, act_or_obs=act_or_obs, normalized=normalized)
         try:
             super().__init__(builtins, seed=seed)
         except TypeError:
@@ -19,15 +19,33 @@ class _PymgridDict(Dict):
 
             super().__init__(builtins)
 
-    def _extract_builtins(self, d, normalized=False):
-        controllable = {}
+    def _extract_builtins(self, d, act_or_obs='act', normalized=False):
+        if act_or_obs == 'act':
+            spaces = self._extract_action_spaces(d)
+        elif act_or_obs == 'obs':
+            spaces = self._extract_observation_spaces(d)
+        else:
+            raise NameError(act_or_obs)
 
+        return self._transform_builtins(spaces, normalized=normalized)
+
+    def _extract_action_spaces(self, d):
+        controllable = {}
         for module_name, module_list in d.items():
             controllable_spaces = [v['action_space'] for v in module_list if 'controllable' in v['module_type']]
             if controllable_spaces:
                 controllable[module_name] = controllable_spaces
 
-        return self._transform_builtins(controllable, normalized=normalized)
+        return controllable
+
+    def _extract_observation_spaces(self, d):
+        obs_spaces = {}
+        for module_name, module_list in d.items():
+            spaces = [v['observation_space'] for v in module_list]
+            if spaces:
+                obs_spaces[module_name] = spaces
+
+        return obs_spaces
 
     def _transform_builtins(self, d, normalized=False):
         space_key = 'normalized' if normalized else 'unnormalized'
@@ -204,10 +222,10 @@ class ModuleSpace(_PymgridSpace):
 
 
 class MicrogridSpace(_PymgridSpace):
-    def __init__(self, module_space_dict, seed=None):
+    def __init__(self, module_space_dict, act_or_obs, seed=None):
 
-        self._unnormalized = _PymgridDict(module_space_dict)
-        self._normalized = _PymgridDict(module_space_dict, normalized=True)
+        self._unnormalized = _PymgridDict(module_space_dict, act_or_obs)
+        self._normalized = _PymgridDict(module_space_dict, act_or_obs, normalized=True)
 
         try:
             super().__init__(shape=None, seed=seed)
