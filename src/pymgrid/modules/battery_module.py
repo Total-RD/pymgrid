@@ -281,12 +281,12 @@ class BatteryModule(BaseMicrogridModule):
     @property
     def max_production(self):
         # Max discharge
-        return min(self.max_discharge, self._current_charge-self.min_capacity) * self.efficiency
+        return self.model_transition(min(self.max_discharge, self._current_charge-self.min_capacity))
 
     @property
     def max_consumption(self):
         # Max charge
-        return min(self.max_charge, self.max_capacity - self._current_charge) / self.efficiency
+        return -1 * self.model_transition(-1 * min(self.max_charge, self.max_capacity - self._current_charge))
 
     @property
     def current_charge(self):
