@@ -274,14 +274,21 @@ class Microgrid(yaml.YAMLObject):
                 module_step = module.step(_control, normalized=normalized)  # obs, reward, done, info.
                 microgrid_step.append(name, *module_step)
 
-        provided, consumed, _, _ = microgrid_step.balance()
-        difference = provided - consumed                # if difference > 0, have an excess. Try to use flex sinks to dissapate
-                                                        # otherwise, insufficient. Use flex sources to make up
+        controllable_fixed_provided, controllable_fixed_consumed, _, _ = microgrid_step.balance()
+        difference = controllable_fixed_provided - controllable_fixed_consumed
 
-        log_dict = self._get_log_dict(provided-fixed_provided, consumed-fixed_consumed, log_dict=log_dict, prefix='controllable')
+        log_dict = self._get_log_dict(
+            controllable_fixed_provided-fixed_provided,
+            controllable_fixed_consumed-fixed_consumed,
+            log_dict=log_dict,
+            prefix='controllable'
+        )
 
         if len(control_copy) > 0:
             warn(f'\nIgnoring the following keys in passed control:\n {list(control_copy.keys())}')
+
+        # if difference > 0, have an excess. Try to use flex sinks to dissapate
+        # otherwise, insufficient. Use flex sources to make up
 
         if difference > 0:
             energy_excess = difference
@@ -314,6 +321,14 @@ class Microgrid(yaml.YAMLObject):
                     energy_needed -= source_amt
 
         provided, consumed, reward, shaped_reward = microgrid_step.balance()
+
+        log_dict = self._get_log_dict(
+            provided-controllable_fixed_provided,
+            consumed-controllable_fixed_consumed,
+            log_dict=log_dict,
+            prefix='flex'
+        )
+
         log_dict = self._get_log_dict(provided, consumed, log_dict=log_dict, prefix='overall')
 
         self._balance_logger.log(reward=reward, shaped_reward=shaped_reward, **log_dict)
