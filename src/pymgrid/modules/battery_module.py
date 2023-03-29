@@ -22,8 +22,18 @@ class BatteryModule(BaseMicrogridModule):
     max_charge : float
         Maximum amount the battery can be charged in one step.
 
+        .. warning::
+            This amount is the maximum the battery can be charged internally, dependent on the
+            ``battery_transition_model``. The amount the battery can be charged externally (e.g. the amount of
+            energy the battery can absorb) is defined as the negative of :attr:`.min_act`.
+
     max_discharge : float
         Maximum amount the battery can be discharged in one step.
+
+        .. warning::
+            This amount is the maximum the battery can be discharged internally, dependent on the
+            ``battery_transition_model``. The amount the battery can be discharged externally (e.g. the amount of
+            energy the battery can provide) is defined as :attr:`.max_act`.
 
     efficiency : float
         Efficiency of the battery.
