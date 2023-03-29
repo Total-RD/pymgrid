@@ -338,6 +338,38 @@ class BatteryModule(BaseMicrogridModule):
         return self.model_transition(self.max_discharge)
 
     @property
+    def max_external_charge(self):
+        """
+        Maximum amount of energy the battery can absorb when charging.
+
+        This is distinct from :attr:`.max_charge`, which is the maximum difference in battery capacity when charging.
+        If the battery is perfectly efficient, these are equivalent.
+
+        Returns
+        -------
+        max_external_charge : float
+            Maximum amount of energy the battery can aborb when charging.
+
+        """
+        return -1 * self.min_act
+
+    @property
+    def max_external_discharge(self):
+        """
+        Maximum amount of energy the battery can provide when discharging.
+
+        This is distinct from :attr:`.max_discharge`, which is the maximum difference in battery capacity when
+        discharging. If the battery is perfectly efficient, these are equivalent.
+
+        Returns
+        -------
+        max_external_discharge : float
+            Maximum amount of energy the battery can provide when discharging.
+
+        """
+        return self.max_act
+
+    @property
     def production_marginal_cost(self):
         return self.battery_cost_cycle
 
