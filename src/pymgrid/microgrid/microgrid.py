@@ -782,34 +782,35 @@ class Microgrid(yaml.YAMLObject):
     @property
     def fixed(self):
         """
-        List of all fixed modules in the microgrid.
+        Container of all fixed modules in the microgrid.
 
-        Returns
         -------
-        list of modules
+        fixed : `.Container`
+            Container of fixed modules.
         """
         return self._modules.fixed
 
     @property
     def flex(self):
         """
-        List of all flex modules in the microgrid.
+        Container of all flex modules in the microgrid.
 
         Returns
         -------
-        list
-            The list of modules
+        flex : `.Container`
+            Container of flex modules.
         """
         return self._modules.flex
 
     @property
     def controllable(self):
         """
-        List of all controllable modules in the microgrid.
+        Container of all controllable modules in the microgrid.
 
         Returns
         -------
-        list of modules
+        controllable : `.Container`
+            Container of controllable modules.
         """
         return self._modules.controllable
 
