@@ -331,11 +331,11 @@ class BatteryModule(BaseMicrogridModule):
 
     @property
     def min_act(self):
-        return -self.max_charge / self.efficiency
+        return self.model_transition(-1 * self.max_charge)
 
     @property
     def max_act(self):
-        return self.max_discharge * self.efficiency
+        return self.model_transition(self.max_discharge)
 
     @property
     def production_marginal_cost(self):
