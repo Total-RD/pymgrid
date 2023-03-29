@@ -296,7 +296,7 @@ class Microgrid(yaml.YAMLObject):
                 for module in modules:
                     if not module.is_sink:
                         sink_amt = 0.0
-                    elif module.max_consumption < energy_excess: # module cannot dissapate all excess energy
+                    elif module.max_consumption < energy_excess: # module cannot dissipate all excess energy
                         sink_amt = -1.0*module.max_consumption
                     else:
                         sink_amt = -1.0 * energy_excess
