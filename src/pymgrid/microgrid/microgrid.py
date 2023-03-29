@@ -431,7 +431,7 @@ class Microgrid(yaml.YAMLObject):
         return {module_name: [module.from_normalized(value, act=act, obs=obs) for module, value in zip(module_list, data_dict[module_name])]
                 for module_name, module_list in self._modules.iterdict() if module_name in data_dict}
 
-    def get_log(self, as_frame=True, drop_singleton_key=False):
+    def get_log(self, as_frame=True, drop_singleton_key=False, drop_forecasts=False):
         """
 
         Collect a log of controls and responses of the microgrid.
@@ -443,6 +443,8 @@ class Microgrid(yaml.YAMLObject):
         drop_singleton_key : bool, default False
             Whether to drop index level enumerating the modules by name if each module name has only one module.
             Ignored otherwise.
+        drop_forecasts : bool, default False
+            Whether to drop columns that are of time series forecasts.
 
         Returns
         -------
@@ -465,6 +467,9 @@ class Microgrid(yaml.YAMLObject):
 
         df = pd.DataFrame(_log_dict, index=pd.RangeIndex(start=self.initial_step, stop=self.current_step))
         df.columns = pd.MultiIndex.from_tuples(df.columns.to_list(), names=col_names)
+
+        if drop_forecasts:
+            df = df.drop(columns=df.columns[df.columns.get_level_values(-1).str.contains('forecast')])
 
         if drop_singleton_key:
             df.columns = df.columns.remove_unused_levels()
