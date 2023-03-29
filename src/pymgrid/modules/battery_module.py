@@ -174,8 +174,6 @@ class BatteryModule(BaseMicrogridModule):
                 max_discharge,
                 efficiency,
                 battery_cost_cycle,
-                max_production,
-                max_consumption,
                state_dict
             )
 
@@ -223,14 +221,6 @@ class BatteryModule(BaseMicrogridModule):
         battery_cost_cycle : float
             Marginal cost of charging and discharging.
 
-        max_production : float
-            Maximum amount of production, which is the lower of the maximum discharge and the discharge that would
-            send the battery to ``min_capacity``.
-
-        max_consumption : float
-            Maximum amount of consumption, which is the lower of the maximum charge and the charge that would send
-            the battery to ``max_capacity``.
-
         state_dict : dict
             State dictionary, with state of charge and current capacity information.
 
@@ -246,8 +236,6 @@ class BatteryModule(BaseMicrogridModule):
                     max_discharge=self.max_discharge,
                     efficiency=self.efficiency,
                     battery_cost_cycle=self.battery_cost_cycle,
-                    max_production=self.max_production,
-                    max_consumption=self.max_consumption,
                     state_dict=self.state_dict()
                     )
 
