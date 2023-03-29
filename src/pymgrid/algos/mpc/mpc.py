@@ -927,8 +927,8 @@ class ModelPredictiveControl:
         else:
             e_min = battery.min_soc
             e_max = battery.max_soc
-            battery_max_charge = battery.max_charge
-            battery_max_discharge = battery.max_discharge
+            battery_max_charge = battery.max_external_charge
+            battery_max_discharge = battery.max_external_discharge
 
             soc_0 = battery.soc
 
