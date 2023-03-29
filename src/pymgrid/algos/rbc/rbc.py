@@ -25,7 +25,7 @@ class RuleBasedControl(PriorityListAlgo):
     """
     def __init__(self, microgrid, priority_list=None, remove_redundant_gensets=True):
         super().__init__()
-        self._microgrid = deepcopy(microgrid)
+        self._microgrid = microgrid
         self._priority_list = self._get_priority_list(priority_list, remove_redundant_gensets)
 
     def _get_priority_list(self, priority_list, remove_redundant_gensets):
