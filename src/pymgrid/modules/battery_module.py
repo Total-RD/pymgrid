@@ -121,11 +121,13 @@ class BatteryModule(BaseMicrogridModule):
         if as_source:
             info_key = 'provided_energy'
             internal_energy_change = self.model_transition(-1.0 * external_energy_change)
-            assert internal_energy_change <= 0
+            assert internal_energy_change <= 0 and (-1 * internal_energy_change <= self.max_discharge or
+                                                    np.isclose(-1 * internal_energy_change, self.max_discharge))
         else:
             info_key = 'absorbed_energy'
             internal_energy_change = self.model_transition(external_energy_change)
-            assert internal_energy_change >= 0
+            assert internal_energy_change >= 0 and (internal_energy_change <= self.max_charge or
+                                                    np.isclose(internal_energy_change, self.max_charge)
 
         self._update_state(internal_energy_change)
         reward = -1.0 * self.get_cost(internal_energy_change)
