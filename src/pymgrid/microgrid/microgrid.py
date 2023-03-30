@@ -911,10 +911,7 @@ class Microgrid(yaml.YAMLObject):
             return cls.from_scenario(microgrid_number)
 
         instance = cls(mapping["modules"], add_unbalanced_module=False)
-        instance._balance_logger = instance._balance_logger.from_raw(mapping.get("balance_log"))
-        instance.trajectory_func = mapping.get('trajectory_func', None)
-        instance._initial_step = mapping.get('initial_step', instance.initial_step)
-        instance._final_step = mapping.get('final_step', instance.final_step)
+        instance.deserialize(mapping)
         return instance
 
     def serialize(self, dumper_stream):
@@ -931,6 +928,12 @@ class Microgrid(yaml.YAMLObject):
             'final_step': self.final_step,
             **self._balance_logger.serialize("balance_log")
         }
+
+    def deserialize(self, mapping):
+        self._balance_logger = self._balance_logger.from_raw(mapping.get("balance_log"))
+        self.trajectory_func = mapping.get('trajectory_func', None)
+        self._initial_step = mapping.get('initial_step', self.initial_step)
+        self._final_step = mapping.get('final_step', self.final_step)
 
     @classmethod
     def from_nonmodular(cls, nonmodular):
