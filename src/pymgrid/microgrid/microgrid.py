@@ -489,7 +489,9 @@ class Microgrid(yaml.YAMLObject):
             df = df.drop(columns=df.columns[df.columns.get_level_values(-1).str.contains('forecast')])
 
         if drop_singleton_key:
-            df.columns = df.columns.remove_unused_levels()
+            cols = df.columns
+            df.columns = pd.MultiIndex.from_arrays([
+                cols.get_level_values(j) for j in range(cols.nlevels) if cols.get_level_values(j).nunique() > 1])
 
         if as_frame:
             return df
