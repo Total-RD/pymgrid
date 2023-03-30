@@ -3,12 +3,11 @@ import yaml
 from contextlib import contextmanager
 from typing import Union
 
-from pymgrid import Microgrid
-from pymgrid.modules.base import BaseMicrogridModule
+import pymgrid
 
 
 @contextmanager
-def dry_run(pymgrid_object: Union[Microgrid, BaseMicrogridModule]):
+def dry_run(pymgrid_object: Union['pymgrid.Microgrid', 'pymgrid.modules.base.BaseMicrogridModule']):
     serialized = yaml.safe_dump(pymgrid_object)
 
     try:
