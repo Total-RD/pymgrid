@@ -373,16 +373,20 @@ class ModelPredictiveControl:
 
         return cp.Problem(objective, constraints)
 
-    def _get_solver(self, mosek_failure=None):
-        if self._passed_solver is not None:
+    def _get_solver(self, failure=False):
+        if self._passed_solver is not None and not failure:
             return self._passed_solver
 
-        elif "MOSEK" in cp.installed_solvers() and mosek_failure is None:
+        elif "MOSEK" in cp.installed_solvers() and not failure:
             solver = cp.MOSEK
-        elif "GLPK_MI" in cp.installed_solvers():
+        elif "GLPK_MI" in cp.installed_solvers() and self._solver == "MOSEK":
             solver = cp.GLPK_MI
         elif self.problem.is_mixed_integer():
             assert self.has_genset
+
+            if failure:
+                raise
+
             raise RuntimeError("If microgrid has a genset, the cvxpy problem becomes mixed integer. Either MOSEK or "
                                "CVXOPT must be installed.\n"
                                "You can install both by calling pip install -e .'[genset_mpc]' in the root folder of "
@@ -391,8 +395,8 @@ class ModelPredictiveControl:
         else:
             solver = None
 
-        if mosek_failure is not None:
-            logger.info(f"MOSEK Solver failed due to {mosek_failure}. Retrying with solver={solver}")
+        if failure:
+            logger.info(f" {self._solver} Solver failed. Retrying with solver={solver}")
         else:
             logger.info("Using default solver." if solver is None else f"Using {solver} solver.")
 
@@ -780,12 +784,14 @@ class ModelPredictiveControl:
                              p_max_import, p_max_export, soc_0, p_genset_max, cost_co2, grid_co2, genset_co2,)
 
         if mosek is not None:
-            try:
-                self.problem.solve(warm_start=True, solver=self._solver)
-            except mosek.Error as e:
-                self._solver = self._get_solver(mosek_failure=e)
-                self.problem.solve(warm_start=True, solver=self._solver)
+            errs = mosek.Error, cp.error.SolverError
         else:
+            errs = cp.error.SolverError
+
+        try:
+            self.problem.solve(warm_start=True, solver=self._solver)
+        except errs:
+            self._solver = self._get_solver(failure=True)
             self.problem.solve(warm_start=True, solver=self._solver)
 
         if self.problem.status == 'infeasible':
