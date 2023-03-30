@@ -472,6 +472,8 @@ class Microgrid(yaml.YAMLObject):
                 for key, value in module.log_dict().items():
                     _log_dict[(name, j, key)] = value
 
+        _log_dict = dict(sorted(_log_dict.items(), key=lambda k: k[0]))
+
         for key, value in self._balance_logger.to_dict().items():
             _log_dict[('balance', 0, key)] = value
 
