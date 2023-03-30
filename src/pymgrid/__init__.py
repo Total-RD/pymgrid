@@ -10,6 +10,7 @@ from .MicrogridGenerator import MicrogridGenerator
 from .utils import add_pymgrid_yaml_representers, dry_run
 
 import pymgrid.envs
+import pymgrid.modules
 
 __all__ = [
     'add_pymgrid_yaml_representers',
@@ -17,5 +18,6 @@ __all__ = [
     'Microgrid',
     'MicrogridGenerator',
     'NonModularMicrogrid',
-    'envs'
+    'envs',
+    'modules'
 ]
