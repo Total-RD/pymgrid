@@ -181,7 +181,8 @@ class BatteryModule(BaseMicrogridModule):
                 max_discharge,
                 efficiency,
                 battery_cost_cycle,
-               state_dict
+                current_step,
+                state_dict
             )
 
         The return value ``internal_energy_change``  must be a float.
@@ -226,6 +227,9 @@ class BatteryModule(BaseMicrogridModule):
         battery_cost_cycle : float
             Marginal cost of charging and discharging.
 
+        current_step : int
+            Current step.
+
         state_dict : dict
             State dictionary, with state of charge and current capacity information.
 
@@ -241,6 +245,7 @@ class BatteryModule(BaseMicrogridModule):
                     max_discharge=self.max_discharge,
                     efficiency=self.efficiency,
                     battery_cost_cycle=self.battery_cost_cycle,
+                    current_step=self._current_step,
                     state_dict=self.state_dict()
                     )
 
