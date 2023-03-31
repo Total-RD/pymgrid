@@ -84,7 +84,7 @@ class BatteryModule(BaseMicrogridModule):
                  max_discharge,
                  efficiency,
                  battery_cost_cycle=0.0,
-                 battery_transition_model=BatteryTransitionModel(),
+                 battery_transition_model=None,
                  init_charge=None,
                  init_soc=None,
                  initial_step=0,
@@ -95,7 +95,8 @@ class BatteryModule(BaseMicrogridModule):
         self.max_charge = max_charge
         self.max_discharge = max_discharge
         self.efficiency = efficiency
-        self.battery_transition_model = battery_transition_model
+        self.battery_transition_model = (battery_transition_model
+                                         if battery_transition_model is not None else BatteryTransitionModel())
         self.battery_cost_cycle = battery_cost_cycle
 
         self.min_soc, self.max_soc = min_capacity/max_capacity, 1
