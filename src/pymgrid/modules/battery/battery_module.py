@@ -47,14 +47,15 @@ class BatteryModule(BaseMicrogridModule):
 
     battery_transition_model : callable or None, default None
         Function to model the battery's transition.
-        If None, :meth:`BatteryModule.default_transition_model` is used.
+        If None, :class:`.BatteryTransitionModel` is used.
 
         .. note::
             If you define a battery_transition_model, it must be YAML-serializable if you plan to serialize
             your battery module or any microgrid containing your battery.
 
             For example, you can define it as a class with a ``__call__`` method and ``yaml.YAMLObject`` as its metaclass.
-            See the `PyYAML documentation <https://pyyaml.org/wiki/PyYAMLDocumentation>`_ for details.
+            See the `PyYAML documentation <https://pyyaml.org/wiki/PyYAMLDocumentation>`_ for details and
+            :class:`.BatteryTransitionModel` for an example.
 
     init_charge : float or None, default None
         Initial charge of the battery.
@@ -197,8 +198,6 @@ class BatteryModule(BaseMicrogridModule):
             Amount of energy that the battery must use or will retain given the external amount of energy.
 
         """
-        if self.battery_transition_model is None:
-            return self.default_transition_model(external_energy_change=energy, **self.transition_kwargs())
         return self.battery_transition_model(external_energy_change=energy, **self.transition_kwargs())
 
     def transition_kwargs(self):
@@ -243,42 +242,6 @@ class BatteryModule(BaseMicrogridModule):
                     battery_cost_cycle=self.battery_cost_cycle,
                     state_dict=self.state_dict()
                     )
-
-    @staticmethod
-    def default_transition_model(external_energy_change, efficiency, **transition_kwargs):
-        """
-        A simple battery transition model.
-
-        In this model, the amount of energy retained is given by ``efficiency``.
-
-        For example, if a microgrid requests 100 kWh of energy and ``efficiency=0.5``, the battery must use
-        200 kWh of energy. Alternatively, if a microgrid sends a battery 100 kWh of energy and ``efficiency=0.5``,
-        the battery's charge will increase by 50 kWh.
-
-        Parameters
-        ----------
-        external_energy_change : float
-            Amount of energy that is being requested externally.
-            If ``energy > 0``, it is energy that is absorbed by the battery -- a charge.
-            If ``energy < 0``, it is energy provided by the battery: a discharge.
-
-        efficiency : float
-            Battery efficiency.
-
-        transition_kwargs : dict
-            State transition values given by :meth:`BatteryModule.transition_kwargs`.
-
-        Returns
-        -------
-        internal_energy : float
-            Amount of energy that the battery must use or will retain given the external amount of energy.
-
-        """
-
-        if external_energy_change < 0:
-            return external_energy_change / efficiency
-        else:
-            return external_energy_change * efficiency
 
     def _state_dict(self):
         return dict(zip(('soc', 'current_charge'), [self._soc, self._current_charge]))
