@@ -26,6 +26,7 @@ class BatteryTransitionModel(yaml.YAMLObject):
 
     def __repr__(self):
         params = inspect.signature(self.__init__).parameters
+        params = {k: v for k, v in params.items() if k not in ('args', 'kwargs')}
         formatted_params = ', '.join([f'{p}={getattr(self, p)}' for p in params])
         return f'{self.__class__.__name__}({formatted_params})'
 
