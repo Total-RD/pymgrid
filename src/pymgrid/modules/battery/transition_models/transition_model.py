@@ -1,8 +1,6 @@
 import inspect
 import yaml
 
-from abc import abstractmethod
-
 
 class BatteryTransitionModel(yaml.YAMLObject):
     """
