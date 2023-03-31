@@ -19,11 +19,27 @@ class BatteryTransitionModel(yaml.YAMLObject):
         If ``energy > 0``, it is energy that is absorbed by the battery -- a charge.
         If ``energy < 0``, it is energy provided by the battery: a discharge.
 
-    efficiency : float
-        Battery efficiency.
+    min_capacity : float
+        Minimum energy that must be contained in the battery.
 
-    transition_kwargs : dict
-        State transition values given by :meth:`BatteryModule.transition_kwargs`.
+    max_capacity : float
+        Maximum energy that can be contained in the battery.
+        If ``soc=1``, capacity is at this maximum.
+
+    max_charge : float
+        Maximum amount the battery can be charged in one step.
+
+    max_discharge : float
+        Maximum amount the battery can be discharged in one step.
+
+    efficiency : float
+        Efficiency of the battery.
+
+    battery_cost_cycle : float
+        Marginal cost of charging and discharging.
+
+    state_dict : dict
+        State dictionary, with state of charge and current capacity information.
 
     Returns
     -------
