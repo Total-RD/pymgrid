@@ -1,7 +1,10 @@
-from pymgrid.modules.base import BaseMicrogridModule
 import numpy as np
 import yaml
+
 from warnings import warn
+
+from pymgrid.modules.base import BaseMicrogridModule
+
 
 
 class BatteryModule(BaseMicrogridModule):
