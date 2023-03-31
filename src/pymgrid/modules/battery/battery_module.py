@@ -4,7 +4,7 @@ import yaml
 from warnings import warn
 
 from pymgrid.modules.base import BaseMicrogridModule
-
+from pymgrid.modules.battery.transition_models import BatteryTransitionModel
 
 
 class BatteryModule(BaseMicrogridModule):
@@ -83,7 +83,7 @@ class BatteryModule(BaseMicrogridModule):
                  max_discharge,
                  efficiency,
                  battery_cost_cycle=0.0,
-                 battery_transition_model=None,
+                 battery_transition_model=BatteryTransitionModel(),
                  init_charge=None,
                  init_soc=None,
                  initial_step=0,
