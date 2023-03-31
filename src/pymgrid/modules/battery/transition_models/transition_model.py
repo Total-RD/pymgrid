@@ -45,6 +45,9 @@ class BatteryTransitionModel(yaml.YAMLObject):
                  efficiency,
                  battery_cost_cycle,
                  state_dict):
+        return self.transition(external_energy_change, efficiency)
+
+    def transition(self, external_energy_change, efficiency):
         if external_energy_change < 0:
             return external_energy_change / efficiency
         else:
