@@ -79,18 +79,18 @@ class RuleBasedControl(PriorityListAlgo):
             Results of running the rule-based control algorithm.
 
         """
-        if max_steps is None:
-            max_steps = len(self.microgrid)
-
         self.reset()
 
-        for _ in tqdm(range(max_steps), desc="RBC Progress", disable=(not verbose)):
+        for _ in tqdm(range(self._get_num_iter()), desc="RBC Progress", disable=(not verbose)):
             action = self._get_action()
             _, _, done, _ = self._microgrid.run(action, normalized=False)
             if done:
                 break
 
         return self._microgrid.get_log(as_frame=True)
+
+    def _get_num_iter(self):
+        return self.microgrid.final_step - self.microgrid.initial_step
 
     def get_empty_action(self):
         """
