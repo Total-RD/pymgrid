@@ -60,10 +60,21 @@ class BatteryTransitionModel(yaml.YAMLObject):
                  max_discharge,
                  efficiency,
                  battery_cost_cycle,
+                 current_step,
                  state_dict):
-        return self.transition(external_energy_change, efficiency)
+        return self.transition(
+            external_energy_change=external_energy_change,
+            efficiency=efficiency,
+            min_capacity=min_capacity,
+            max_capacity=max_capacity,
+            max_charge=max_charge,
+            max_discharge=max_discharge,
+            efficiency=efficiency,
+            battery_cost_cycle=battery_cost_cycle,
+            current_step=current_step, state_dict=state_dict
+        )
 
-    def transition(self, external_energy_change, efficiency):
+    def transition(self, external_energy_change, efficiency, **kwargs):
         if external_energy_change < 0:
             return external_energy_change / efficiency
         else:
