@@ -64,14 +64,14 @@ class BatteryTransitionModel(yaml.YAMLObject):
                  state_dict):
         return self.transition(
             external_energy_change=external_energy_change,
-            efficiency=efficiency,
             min_capacity=min_capacity,
             max_capacity=max_capacity,
             max_charge=max_charge,
             max_discharge=max_discharge,
             efficiency=efficiency,
             battery_cost_cycle=battery_cost_cycle,
-            current_step=current_step, state_dict=state_dict
+            current_step=current_step,
+            state_dict=state_dict
         )
 
     def transition(self, external_energy_change, efficiency, **kwargs):
