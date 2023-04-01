@@ -131,7 +131,23 @@ class TestBiasedBatteryModule(TestCase):
 
         self.assertEqual(battery.battery_transition_model.true_efficiency, true_efficiency)
         self.assertEqual(battery.battery_transition_model, battery_transition_model)
+        self.assertNotEqual(battery.efficiency, true_efficiency)
 
         _, _, _, info = battery.step(battery.max_act, normalized=False)
 
         self.assertEqual(info['provided_energy'], true_efficiency * DEFAULT_PARAMS['max_discharge'])
+
+    def test_single_step_discharge(self):
+        true_efficiency = 0.6
+        init_soc = 0.0
+
+        battery_transition_model = BiasedTransitionModel(true_efficiency=true_efficiency)
+        battery = get_battery(battery_transition_model=battery_transition_model, init_soc=init_soc)
+
+        self.assertEqual(battery.battery_transition_model.true_efficiency, true_efficiency)
+        self.assertEqual(battery.battery_transition_model, battery_transition_model)
+        self.assertNotEqual(battery.efficiency, true_efficiency)
+
+        _, _, _, info = battery.step(battery.min_act, normalized=False)
+
+        self.assertEqual(info['absorbed_energy'], DEFAULT_PARAMS['max_discharge'] / true_efficiency)
