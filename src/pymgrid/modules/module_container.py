@@ -194,6 +194,53 @@ class Container(UserDict):
 
         return d
 
+    def set_attrs(self, attr_dict, **attrs):
+        """
+        Set the value of an attribute in all modules containing that attribute.
+
+        Does nothing in modules not already containing the attribute.
+
+        You may either pass attr_dict, a dict of attributes, or pass attributes as keyword arguments.
+
+        Parameters
+        ----------
+        attr_dict : dict
+            Key-value pairs or attributes to set. Keys are attribute names values are the values
+            to set attribute to.
+        attrs : dict
+            Key-value pairs or attributes to set. Keys are attribute names values are the values
+            to set attribute to.
+
+        Raises
+        ------
+        AttributeError
+            If no module has the attribute.
+
+        """
+        if attr_dict:
+            if attrs:
+                raise ValueError('Both attr_dict and keyword arguments were passed.')
+        elif attrs:
+            attr_dict = attrs
+        else:
+            raise ValueError('Missing attributes to set.')
+
+        for attr_name, value in attr_dict.items():
+            self._set_attr(attr_name, value)
+
+    def _set_attr(self, attr_name, value):
+        set_at_least_one = False
+
+        for module in self._modules.iterlist():
+            if not hasattr(module, attr_name):
+                continue
+
+            setattr(module, attr_name, value)
+            set_at_least_one = True
+
+        if not set_at_least_one:
+            raise AttributeError(f"No module has attribute '{attr_name}'.")
+
     def dir_additions(self):
         """
         :meta private:
