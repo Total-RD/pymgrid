@@ -4,20 +4,7 @@ from tests.helpers.test_case import TestCase
 
 from pymgrid.modules import BatteryModule
 
-
-def get_battery(default_params, **params):
-    p = default_params.copy()
-    p.update(params)
-
-    if 'init_charge' in params and 'init_soc' not in params:
-        p.pop('init_soc')
-
-    return BatteryModule(**p)
-
-
-class TestBatteryModule(TestCase):
-    def setUp(self) -> None:
-        self.default_params = {
+DEFAULT_PARAMS = {
             'min_capacity': 0,
             'max_capacity': 100,
             'max_charge': 50,
@@ -28,9 +15,18 @@ class TestBatteryModule(TestCase):
             'init_soc': 0.5
         }
 
-    def get_battery(self, **params):
-        return get_battery(self.default_params, **params)
 
+def get_battery(**params):
+    p = DEFAULT_PARAMS.copy()
+    p.update(params)
+
+    if 'init_charge' in params and 'init_soc' not in params:
+        p.pop('init_soc')
+
+    return BatteryModule(**p)
+
+
+class TestBatteryModule(TestCase):
     def test_min_act(self):
         params = {
             'init_soc': 0,
@@ -39,7 +35,7 @@ class TestBatteryModule(TestCase):
             'max_discharge': 60
         }
 
-        battery = self.get_battery(**params)
+        battery = get_battery(**params)
         expected_min_act = -1 * params['max_charge'] / params['efficiency']
 
         self.assertEqual(battery.soc, 0)
@@ -59,11 +55,11 @@ class TestBatteryModule(TestCase):
             'max_discharge': 60
         }
 
-        battery = self.get_battery(**params)
+        battery = get_battery(**params)
         expected_max_act = params['max_discharge'] * params['efficiency']
 
         self.assertEqual(battery.soc, 1)
-        self.assertEqual(battery.current_charge, self.default_params['max_capacity'])
+        self.assertEqual(battery.current_charge, default_params['max_capacity'])
         self.assertEqual(battery.max_act, expected_max_act)
 
         obs, reward, done, info = battery.step(expected_max_act, normalized=False)
@@ -79,7 +75,7 @@ class TestBatteryModule(TestCase):
             'max_discharge': 60
         }
 
-        battery = self.get_battery(**params)
+        battery = get_battery(**params)
 
         self.assertEqual(battery.max_consumption, params['max_charge'] / params['efficiency'])
 
@@ -91,11 +87,11 @@ class TestBatteryModule(TestCase):
             'max_discharge': 60
         }
 
-        battery = self.get_battery(**params)
+        battery = get_battery(**params)
 
         self.assertEqual(
             battery.max_consumption,
-            (self.default_params['max_capacity']-params['init_charge']) / params['efficiency']
+            (DEFAULT_PARAMS['max_capacity']-params['init_charge']) / params['efficiency']
         )
 
     def test_max_production_max_discharge(self):
@@ -106,7 +102,7 @@ class TestBatteryModule(TestCase):
             'max_discharge': 60
         }
 
-        battery = self.get_battery(**params)
+        battery = get_battery(**params)
 
         self.assertEqual(battery.max_production, params['max_discharge'] * params['efficiency'])
 
@@ -118,9 +114,9 @@ class TestBatteryModule(TestCase):
             'max_discharge': 60
         }
 
-        battery = self.get_battery(**params)
+        battery = get_battery(**params)
 
         self.assertEqual(
             battery.max_production,
-            (params['init_charge']-self.default_params['min_capacity']) * params['efficiency']
+            (params['init_charge']-DEFAULT_PARAMS['min_capacity']) * params['efficiency']
         )
