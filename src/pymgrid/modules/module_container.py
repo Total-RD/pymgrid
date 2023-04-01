@@ -194,7 +194,7 @@ class Container(UserDict):
 
         return d
 
-    def set_attrs(self, attr_dict, **attrs):
+    def set_attrs(self, attr_dict=None, **attrs):
         """
         Set the value of an attribute in all modules containing that attribute.
 
