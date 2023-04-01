@@ -604,18 +604,22 @@ class Microgrid(yaml.YAMLObject):
 
         return horizons[0]
 
-    def set_module_attr(self, attr_name, value):
+    def set_module_attrs(self, attr_dict, **attrs):
         """
         Set the value of an attribute in all modules containing that attribute.
 
         Does nothing in modules not already containing the attribute.
 
+        You may either pass attr_dict, a dict of attributes, or pass attributes as keyword arguments.
+
         Parameters
         ----------
-        attr_name : str
-            Name of the module attribute.
-        value : any
-            Value to set the attribute to.
+        attr_dict : dict
+            Key-value pairs or attributes to set. Keys are attribute names values are the values
+            to set attribute to.
+        attrs : dict
+            Key-value pairs or attributes to set. Keys are attribute names values are the values
+            to set attribute to.
 
         Raises
         ------
@@ -623,17 +627,7 @@ class Microgrid(yaml.YAMLObject):
             If no module has the attribute.
 
         """
-        set_at_least_one = False
-
-        for module in self._modules.iterlist():
-            if not hasattr(module, attr_name):
-                continue
-
-            setattr(module, attr_name, value)
-            set_at_least_one = True
-
-        if not set_at_least_one:
-            raise AttributeError(f"No module has attribute '{attr_name}'.")
+        self._modules.set_attrs(attr_dict, **attrs)
 
     @property
     def current_step(self):
