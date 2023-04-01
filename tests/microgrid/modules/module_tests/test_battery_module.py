@@ -121,8 +121,8 @@ class TestBatteryModule(TestCase):
         )
 
 
-class TestBiasedBatteryModuleCharge(TestCase):
-    def test_single_step(self):
+class TestBiasedBatteryModule(TestCase):
+    def test_single_step_charge(self):
         true_efficiency = 0.6
         init_soc = 1.0
 
