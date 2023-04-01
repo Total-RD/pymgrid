@@ -125,7 +125,7 @@ class TestMicrogrid(TestCase):
         forecast_horizon = 50
 
         microgrid = get_modular_microgrid()
-        microgrid.set_module_attr('forecast_horizon', forecast_horizon)
+        microgrid.set_module_attrs(forecast_horizon=forecast_horizon)
 
         microgrid_fh = [module.forecast_horizon for module in microgrid.modules.iterlist()
                         if hasattr(module, 'forecast_horizon')]
@@ -138,7 +138,7 @@ class TestMicrogrid(TestCase):
         microgrid = get_modular_microgrid()
 
         with self.assertRaises(AttributeError):
-            microgrid.set_module_attr('blah', 'blah')
+            microgrid.set_module_attrs(blah='blah')
 
     def test_get_cost_info(self):
         modules = 'genset', 'battery', 'renewable', 'load', 'grid', 'balancing'
