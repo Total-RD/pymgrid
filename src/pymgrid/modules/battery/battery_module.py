@@ -247,7 +247,7 @@ class BatteryModule(BaseMicrogridModule):
                     max_discharge=self.max_discharge,
                     efficiency=self.efficiency,
                     battery_cost_cycle=self.battery_cost_cycle,
-                    current_step=self._current_step,
+                    current_step=getattr(self, '_current_step', 0),
                     state_dict=self.state_dict()
                     )
 
