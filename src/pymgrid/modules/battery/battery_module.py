@@ -102,7 +102,9 @@ class BatteryModule(BaseMicrogridModule):
         self.min_soc, self.max_soc = min_capacity/max_capacity, 1
         self.init_charge, self.init_soc = init_charge, init_soc
         self._current_charge, self._soc = self._init_battery(init_charge, init_soc)
+        self._min_act, self._max_act = self._set_min_max_act()
         self.name = ('battery', None)
+
         super().__init__(raise_errors,
                          initial_step=initial_step,
                          provided_energy_name='discharge_amount',
@@ -249,6 +251,12 @@ class BatteryModule(BaseMicrogridModule):
                     state_dict=self.state_dict()
                     )
 
+    def _set_min_max_act(self):
+        min_act = self.model_transition(-1 * self.max_charge)
+        max_act = self.model_transition(self.max_discharge)
+
+        return min_act, max_act
+
     def _state_dict(self):
         return dict(zip(('soc', 'current_charge'), [self._soc, self._current_charge]))
 
@@ -303,11 +311,11 @@ class BatteryModule(BaseMicrogridModule):
 
     @property
     def min_act(self):
-        return self.model_transition(-1 * self.max_charge)
+        return self._min_act
 
     @property
     def max_act(self):
-        return self.model_transition(self.max_discharge)
+        return self._max_act
 
     @property
     def max_external_charge(self):
