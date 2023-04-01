@@ -1,5 +1,3 @@
-import numpy as np
-
 from tests.helpers.test_case import TestCase
 
 from pymgrid.modules import BatteryModule
