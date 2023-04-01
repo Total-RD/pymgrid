@@ -151,3 +151,61 @@ class TestBiasedBatteryModule(TestCase):
         _, _, _, info = battery.step(battery.min_act, normalized=False)
 
         self.assertEqual(info['absorbed_energy'], DEFAULT_PARAMS['max_discharge'] / true_efficiency)
+
+
+class TestDecayBatteryModule(TestCase):
+    def test_single_step_discharge(self):
+        init_soc = 1.0
+        efficiency = 1.0
+        decay_rate = 0.5
+
+        battery_transition_model = DecayTransitionModel(decay_rate=decay_rate)
+        battery = get_battery(battery_transition_model=battery_transition_model, init_soc=init_soc, efficiency=efficiency)
+
+        self.assertEqual(battery.battery_transition_model.decay_rate, decay_rate)
+        self.assertEqual(battery.battery_transition_model, battery_transition_model)
+        self.assertEqual(battery.efficiency, efficiency)
+
+        self.assertEqual(battery.max_act, DEFAULT_PARAMS['max_discharge'])
+
+        _, _, _, info = battery.step(battery.max_act, normalized=False)
+
+        self.assertEqual(battery.max_act, DEFAULT_PARAMS['max_discharge'])
+
+        self.assertEqual(info['provided_energy'],  DEFAULT_PARAMS['max_discharge'])
+
+    def test_single_step_charge(self):
+        init_soc = 0.0
+        efficiency = 1.0
+        decay_rate = 0.5
+
+        battery_transition_model = DecayTransitionModel(decay_rate=decay_rate)
+        battery = get_battery(battery_transition_model=battery_transition_model, init_soc=init_soc, efficiency=efficiency)
+
+        self.assertEqual(battery.battery_transition_model.decay_rate, decay_rate)
+        self.assertEqual(battery.battery_transition_model, battery_transition_model)
+        self.assertEqual(battery.efficiency, efficiency)
+
+        self.assertEqual(battery.min_act, -1 * DEFAULT_PARAMS['max_charge'])
+
+        _, _, _, info = battery.step(battery.min_act, normalized=False)
+
+        self.assertEqual(battery.min_act, -1 * DEFAULT_PARAMS['max_charge'])
+
+        self.assertEqual(info['absorbed_energy'],  DEFAULT_PARAMS['max_charge'])
+
+    def test_two_step_discharge(self):
+        init_soc = 1.0
+        efficiency = 1.0
+        decay_rate = 0.5
+
+        battery_transition_model = DecayTransitionModel(decay_rate=decay_rate)
+        battery = get_battery(battery_transition_model=battery_transition_model, init_soc=init_soc, efficiency=efficiency)
+
+        self.assertEqual(battery.max_act, DEFAULT_PARAMS['max_discharge'])
+
+        _, _, _, info = battery.step(battery.max_act, normalized=False)
+        _, _, _, info = battery.step(battery.max_act, normalized=False)
+
+        self.assertEqual(battery.max_act, DEFAULT_PARAMS['max_discharge'])
+        self.assertEqual(info['provided_energy'],  0.5 * DEFAULT_PARAMS['max_discharge'])
