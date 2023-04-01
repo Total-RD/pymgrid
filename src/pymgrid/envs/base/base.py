@@ -113,7 +113,7 @@ class BaseMicrogridEnv(Microgrid, Env):
         if isinstance(keys, str):
             keys = [keys]
 
-        possible_keys = self.state_series().index.get_level_values(-1).unique()
+        possible_keys = self.potential_observation_keys()
         bad_keys = [key for key in keys if key not in possible_keys]
 
         if bad_keys:
@@ -161,6 +161,9 @@ class BaseMicrogridEnv(Microgrid, Env):
         obs_space = Dict(obs_space)
 
         return (flatten_space(obs_space) if self._flat_spaces else obs_space), obs_space
+
+    def potential_observation_keys(self):
+        return self.state_series().index.get_level_values(-1).unique()
 
     def reset(self):
         obs = super().reset()
