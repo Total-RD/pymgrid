@@ -9,8 +9,8 @@ class DecayTransitionModel(BatteryTransitionModel):
 
         Parameters
         ----------
-        decay_rate : float in (0, 1], default 0.99**(1/24)
-            Amount to decay in one time step. If 1, no decay and equivalent to parent model.
+        decay_rate : float, default 0.99**(1/24)
+            Amount to decay in one time step; should be in (0, 1]. If 1, no decay and equivalent to parent model.
             Default is equivalent to 1/10 of a percent decay in one day.
 
         """
