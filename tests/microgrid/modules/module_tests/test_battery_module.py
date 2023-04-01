@@ -1,6 +1,7 @@
 from tests.helpers.test_case import TestCase
 
 from pymgrid.modules import BatteryModule
+from pymgrid.modules.battery.transition_models import BiasedTransitionModel, DecayTransitionModel
 
 DEFAULT_PARAMS = {
             'min_capacity': 0,
@@ -118,3 +119,19 @@ class TestBatteryModule(TestCase):
             battery.max_production,
             (params['init_charge']-DEFAULT_PARAMS['min_capacity']) * params['efficiency']
         )
+
+
+class TestBiasedBatteryModuleCharge(TestCase):
+    def test_single_step(self):
+        true_efficiency = 0.6
+        init_soc = 1.0
+
+        battery_transition_model = BiasedTransitionModel(true_efficiency=true_efficiency)
+        battery = get_battery(battery_transition_model=battery_transition_model, init_soc=init_soc)
+
+        self.assertEqual(battery.battery_transition_model.true_efficiency, true_efficiency)
+        self.assertEqual(battery.battery_transition_model, battery_transition_model)
+
+        _, _, _, info = battery.step(battery.max_act, normalized=False)
+
+        self.assertEqual(info['provided_energy'], true_efficiency * DEFAULT_PARAMS['max_discharge'])
