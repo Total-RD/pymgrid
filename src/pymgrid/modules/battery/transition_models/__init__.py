@@ -1,2 +1,3 @@
 from .transition_model import BatteryTransitionModel
 from .biased_transition_model import BiasedTransitionModel
+from .decay_transition_model import DecayTransitionModel
