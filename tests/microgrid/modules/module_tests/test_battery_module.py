@@ -57,7 +57,7 @@ class TestBatteryModule(TestCase):
         expected_max_act = params['max_discharge'] * params['efficiency']
 
         self.assertEqual(battery.soc, 1)
-        self.assertEqual(battery.current_charge, default_params['max_capacity'])
+        self.assertEqual(battery.current_charge, DEFAULT_PARAMS['max_capacity'])
         self.assertEqual(battery.max_act, expected_max_act)
 
         obs, reward, done, info = battery.step(expected_max_act, normalized=False)
