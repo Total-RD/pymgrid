@@ -231,7 +231,7 @@ class Container(UserDict):
     def _set_attr(self, attr_name, value):
         set_at_least_one = False
 
-        for module in self._modules.iterlist():
+        for module in self.iterlist():
             if not hasattr(module, attr_name):
                 continue
 
