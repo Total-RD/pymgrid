@@ -171,4 +171,4 @@ This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/mast
 
 ## Contact
 
-For any question you can contact me at avishai.halev [@] external.totalenergies.com
+For any questions you can contact me at avishaihalev@gmail.com.
