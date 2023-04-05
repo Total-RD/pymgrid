@@ -20,6 +20,12 @@ def add_pymgrid_yaml_representers():
         BatteryDischargeShaper
     )
 
+    from pymgrid.modules.battery.transition_models import (
+        BatteryTransitionModel,
+        BiasedTransitionModel,
+        DecayTransitionModel
+    )
+
 
 def dump_data(data_dict, stream, yaml_tag):
     if not hasattr(stream, "name"):
