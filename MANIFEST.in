@@ -1,2 +1,1 @@
-global-include *.csv
-global-include *.pkl
+graft src/pymgrid/data/scenario
