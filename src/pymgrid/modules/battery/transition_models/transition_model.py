@@ -80,13 +80,29 @@ class BatteryTransitionModel(yaml.YAMLObject):
         else:
             return external_energy_change * efficiency
 
-    def __repr__(self):
+    def new_kwargs(self):
         params = inspect.signature(self.__init__).parameters
-        params = {k: v for k, v in params.items() if k not in ('args', 'kwargs')}
-        formatted_params = ', '.join([f'{p}={getattr(self, p)}' for p in params])
+        params = {k: getattr(self, k) for k in params.keys() if k not in ('args', 'kwargs')}
+        return params
+
+    def __repr__(self):
+        params = self.new_kwargs()
+        formatted_params = ', '.join([f'{p}={v}' for p, v in params.items()])
         return f'{self.__class__.__name__}({formatted_params})'
 
     def __eq__(self, other):
         if type(self) != type(other):
             return NotImplemented
         return repr(self) == repr(other)
+
+    @classmethod
+    def to_yaml(cls, dumper, data):
+        return dumper.represent_mapping(cls.yaml_tag, data.new_kwargs(), flow_style=cls.yaml_flow_style)
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        mapping = loader.construct_mapping(node, deep=True)
+        if mapping:
+            return cls(**mapping)
+        else:
+            return cls()
