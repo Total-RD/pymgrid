@@ -9,8 +9,8 @@ DOWNLOAD_URL = f"https://github.com/Total-RD/pymgrid/archive/refs/tags/v{VERSION
 MAINTAINER = "Avishai Halev"
 MAINTAINER_EMAIL = "avishaihalev@gmail.com"
 LICENSE = "GNU LGPL 3.0"
-PROJECT_URLS = {"Source Code": "https://github.com/Total-RD/pymgrid",
-                "Documentation": "https://pymgrid.readthedocs.io/en/latest/"}
+PROJECT_URLS = {"Source Code": "https://github.com/ahalev/python-microgrid",
+                "Documentation": "https://python-microgrid.readthedocs.io/"}
 
 EXTRAS = dict()
 EXTRAS["genset_mpc"] = ["Mosek", "cvxopt"]
@@ -31,7 +31,7 @@ EXTRAS["all"] = list(set(sum(EXTRAS.values(), [])))
 
 
 setup(
-    name="pymgrid",
+    name="python-microgrid",
     package_dir={"": "src"},
     packages=find_packages("src"),
     python_requires=">=3.6",
