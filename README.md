@@ -1,5 +1,10 @@
 # pymgrid
 
+## Important Notice
+
+### The person that has been maintaining pymgrid since 2020 has moved future development to [python-microgrid](https://github.com/ahalev/python-microgrid) for the foreseeable future, a drop in replacement for pymgrid, and pymgrid may not be receiving any future updates. Please open any new issues in python-microgrid.
+
+
 ![Build](https://github.com/Total-RD/pymgrid/workflows/build/badge.svg?dummy=unused)
 
 pymgrid (PYthon MicroGRID) is a python library to generate and simulate a large number of microgrids.
