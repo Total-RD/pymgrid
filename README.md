@@ -1,24 +1,24 @@
-# pymgrid
+# python-microgrid
 
 ![Build](https://github.com/Total-RD/pymgrid/workflows/build/badge.svg?dummy=unused)
 
-pymgrid (PYthon MicroGRID) is a python library to generate and simulate a large number of microgrids.
+*python-microgrid* is a python library to generate and simulate a large number of microgrids. It is an extension of TotalEnergies' [*pymgrid*](https://github.com/Total-RD/pymgrid).
 
 For more context, please see the [presentation](https://www.climatechange.ai/papers/neurips2020/3) done at Climate Change AI
-and the [documentation](https://pymgrid.readthedocs.io).
+and the [documentation](https://python-microgrid.readthedocs.io/).
 
 ## Installation
 
-The easiest way to install pymgrid is with pip:
+The easiest way to install python-microgrid is with pip:
 
-`pip install -U pymgrid`
+`pip install -U python-microgrid`
 
 Alternatively, you can install from source. First clone the repo:
  
 ```bash
-git clone https://github.com/Total-RD/pymgrid.git
+git clone https://github.com/ahalev/python-microgrid.git
 ``` 
-Then navigate to the root directory of pymgrid and call
+Then navigate to the root directory of python-microgrid and call
 
 ```bash
 pip install .
@@ -171,4 +171,4 @@ This repo is under a GNU LGPL 3.0 (https://github.com/total-sa/pymgrid/edit/mast
 
 ## Contact
 
-For any questions you can contact me at avishaihalev@gmail.com.
+For any questions or bugs, please [open an issue](https://github.com/ahalev/python-microgrid/issues/new) in the [Issues tab](https://github.com/ahalev/python-microgrid/issues).
