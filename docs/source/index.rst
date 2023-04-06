@@ -26,8 +26,8 @@ See the :doc:`getting_started` section for further information, including instru
 :ref:`install <installation>` the project.
 
 **Useful links**:
-`Binary Installers <https://pypi.org/project/pymgrid/>`__ |
-`Source Repository <https://github.com/Total-RD/pymgrid>`__
+`Binary Installers <https://pypi.org/project/python-microgrid/>`__ |
+`Source Repository <https://github.com/ahalev/python-microgrid>`__
 
 
 .. note::
