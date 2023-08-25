@@ -1,2 +1,3 @@
 from .discrete.discrete import DiscreteMicrogridEnv
+from .discrete.incremental_battery import IncrementalBatteryDiscreteEnv
 from .continuous.continuous import ContinuousMicrogridEnv

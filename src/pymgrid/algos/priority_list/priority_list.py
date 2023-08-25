@@ -24,6 +24,14 @@ class PriorityListAlgo:
             List of all priority lists.
 
         """
+
+        controllable_sources = self._get_elements()
+        all_permutations = permutations(controllable_sources)
+        priority_lists = self._remove_redundant_actions(all_permutations, gensets=remove_redundant_gensets)
+
+        return priority_lists
+
+    def _get_elements(self):
         controllable_sources = [Element(module.name, module.action_space.shape[0], n_actions, module.marginal_cost)
                                 for module in self.modules.controllable.sources.iterlist()
                                 for n_actions in range(module.action_space.shape[0])]
@@ -32,10 +40,7 @@ class PriorityListAlgo:
                                      for module in self.modules.controllable.source_and_sinks.iterlist()
                                      for n_actions in range(module.action_space.shape[0])])
 
-        all_permutations = permutations(controllable_sources)
-        priority_lists = self._remove_redundant_actions(all_permutations, gensets=remove_redundant_gensets)
-
-        return priority_lists
+        return controllable_sources
 
     def _remove_redundant_actions(self, priority_lists, gensets=False):
         pls = []
@@ -136,11 +141,8 @@ class PriorityListAlgo:
         return module_consumption
 
     def _produce_from_module(self, module_action_number, module_to_deploy, remaining_load):
-        try:
-            max_production = module_to_deploy.next_max_production(module_action_number)
-            min_production = module_to_deploy.next_min_production(module_action_number)
-        except AttributeError:
-            max_production, min_production = module_to_deploy.max_production, module_to_deploy.min_production
+        min_production, max_production = self.module_production_bounds(module_to_deploy, module_action_number)
+
         if min_production <= remaining_load <= max_production:
             # Module can meet demand
             module_production = remaining_load
@@ -153,6 +155,15 @@ class PriorityListAlgo:
 
         assert module_production >= 0
         return module_production
+
+    def module_production_bounds(self, module, module_action_number):
+        try:
+            max_production = module.next_max_production(module_action_number)
+            min_production = module.next_min_production(module_action_number)
+        except AttributeError:
+            max_production, min_production = module.max_production, module.min_production
+
+        return min_production, max_production
 
     def _get_load(self):
         loads = dict()
