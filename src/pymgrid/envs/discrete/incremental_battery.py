@@ -86,13 +86,3 @@ class IncrementalBatteryDiscreteEnv(DiscreteMicrogridEnv):
             assert max_production == parent_max
 
         return min_production, max_production
-
-
-if __name__ == '__main__':
-    from tests.helpers.modular_microgrid import get_modular_microgrid
-
-    env = IncrementalBatteryDiscreteEnv.from_scenario(get_modular_microgrid(), discharge_increments=[0.5, 1.0])
-
-    action = env.sample_action(strict_bound=True)
-    env.step(0)
-    print(env.log)
