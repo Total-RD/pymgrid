@@ -35,23 +35,6 @@ class IncrementalBatteryDiscreteEnv(DiscreteMicrogridEnv):
             observation_keys=observation_keys,
             remove_redundant_gensets=remove_redundant_gensets)
 
-        # self.action_space, self.actions_list = self._get_action_space(
-        #     remove_redundant_gensets=remove_redundant_gensets,
-        #     n_discharges=n_discharges
-        # )
-
-    def _get_action_space(self, remove_redundant_gensets=False, n_discharges=1):
-        space, priority_lists = super()._get_action_space(remove_redundant_gensets=remove_redundant_gensets)
-        if n_discharges == 1:
-            return space, priority_lists
-
-        # deployments = set(sum([list(x) for x in priority_lists], []))
-        # additional_deployments = Element() # todo define new elements
-        # self.modules['battery']
-
-
-        raise RuntimeError
-
     def _get_elements(self):
         controllable_sources = super()._get_elements()
         if len(self._discharge_increments) == 1:
