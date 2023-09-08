@@ -43,8 +43,9 @@ class IncrementalBatteryDiscreteEnv(DiscreteMicrogridEnv):
         modules_to_expand = sum([self.modules[name] for name in self._discharge_module_names], [])
         names = [module.name for module in modules_to_expand]
 
+        # Element.module_actions is purposely set to one so the value in the resultant action is a scalar.
         new_sources = [
-            Element(module.name, len(self._discharge_increments), n_actions, module.marginal_cost)
+            Element(module.name, 1, n_actions, module.marginal_cost)
             for module in modules_to_expand
             for n_actions in range(len(self._discharge_increments))
         ]
