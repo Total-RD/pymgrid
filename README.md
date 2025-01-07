@@ -165,6 +165,8 @@ Data in pymgrid are based on TMY3 (data based on representative weather). The PV
 
 The CO2 data is from Jacque de Chalendar and his gridemissions API.
 
+reference links: [1](https://gridemissions.jdechalendar.su.domains/#/), [repo](https://github.com/jdechalendar/gridemissions)
+
 ## Contributing
 Pull requests are welcome for bug fixes. For new features, please open an issue first to discuss what you would like to add.
 
